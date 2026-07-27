@@ -5,12 +5,45 @@
 > way you read `ci-cd.md` before deploying. If a value you need isn't here, derive it
 > from the scales here — don't invent one.
 >
-> **Status:** v1.0.0 · 2026-07-27
-> **Mode:** SCRAPE — measured, not invented. Every number below was extracted from the
-> live production homepage via Playwright at a 1440×1000 viewport unless marked otherwise.
-> **Implemented in:** `https://www.kalynyuk.com` — Divi Builder module settings + the
+> **Status:** v2.0.0 · 2026-07-27
+> **Mode:** SCRAPE, reconciled against the **Figma UI Kit** (page `336:2947`).
+> **Source priority:** (1) the UI Kit — 21 text styles, the Colors section, the
+> Buttons/Inputs component sets; (2) Figma frame `1163:950` for layout/grid;
+> (3) production computed styles via Playwright at 1440×1000, for anything the kit
+> does not define.
+> **Implemented in:** `https://www.kalynyuk.com` — Divi module settings + the
 > `et_divi` option. There is **no stylesheet** implementing this system; see §13.
-> **Not yet applied to:** pages 2484 (`en`) and 2485 (`ru`) — both empty, 0 bytes.
+> **Not yet applied to:** pages 2484 (`en`) and 2485 (`ru`) — both empty, now drafts.
+
+> ## ⚠️ v2.0.0 — what the UI Kit corrected
+>
+> v1.0.0 was reverse-engineered from production computed styles **before the kit was
+> available**. Production is the OLD Divi implementation; the kit is what we build.
+> Four v1 claims were wrong and are corrected in place below:
+>
+> 1. **`#609079` is a real token, not noise.** v1 §2 said *"there is no second accent
+>    hue… #609079 appears exactly once as a border and is noise — do not propagate
+>    it."* It is an official kit swatch and its label states its role: **stroke on a
+>    green background**. It appeared once on production because the implementation
+>    under-used it, not because it isn't a token.
+> 2. **There is no 50px pill.** Every kit button variant is `cornerRadius: 24`. At the
+>    standard 48px button height that reads as a full pill, which is why production's
+>    literal 50px looked correct — but the kit's **wide** button is 493×**57** with the
+>    same radius 24, so it is a rounded rectangle. The system is a constant 24px
+>    radius; "always pill" was a Divi artifact. `--radius-pill` is removed.
+> 3. **Button labels are SemiBold 600, not Medium 500.** The kit contains **no
+>    Medium(500) and no Light(300) style at all**. Weights are 400 / 600 / 700 only —
+>    so the Google Fonts request should drop 300 **and** 500.
+> 4. **H2 is 32px, not 48px.** Production renders every H2 at 48px, identical to H1.
+>    The kit separates them: H1 48, H2 32 (desktop).
+>
+> Two v1 gaps are now closed: the **mobile type scale** exists in the kit (gap #9 was
+> "desktop only"), and **weight 300** is confirmed unused (gap #12).
+>
+> The kit also reproduces a defect: its primary-button fill is `#307156`, one digit
+> off the `#307155` swatch — the same split as `et_divi`'s `accent_color` vs
+> `footer_bg`. So the Divi typo **originated in the design file**. The swatch is
+> canonical.
 
 ---
 
@@ -45,7 +78,8 @@ Measured by frequency across the rendered homepage. `n` = element count.
 | `--surface` | `#FEF8EF` | Panels, cards, form inputs — the raised cream, one step lighter than canvas | 41 |
 | `--surface-sunken` | `#EEEADC` | Recessed / alternate panel fill | 11 |
 | `--accent` | `#307155` | The one accent. Inverted bands, primary button, focus rules | 6 bg / 10 ink |
-| `--border` | `#D6D0C6` | Default hairline on cream | 21 |
+| `--accent-light` | `#609079` | **Stroke on a GREEN background** — kit swatch, role from its own label. Hairline only, never a fill. Added v2.0.0. | 1 |
+| `--border` | `#D6D0C6` | **Stroke on a LIGHT background** — kit swatch, role from its own label | 21 |
 | `--ink-muted` | `rgba(42,32,17,0.56)` | Secondary text on cream | 30 |
 | `--border-soft` | `rgba(42,32,17,0.24)` | Hairline on cream, lighter variant | 7 |
 | `--canvas-muted` | `rgba(247,242,233,0.56)` | Secondary text on green | 4 |
@@ -67,9 +101,19 @@ rather than writing CSS): `accent_color` → `#307155`, `secondary_accent_color`
 4. Icon or figure colour inside an otherwise-cream panel.
 
 It is **not** allowed as: a text colour for body copy, a link colour in running text, a
-panel fill, a hover tint on cream surfaces, or a gradient stop. There is **no second
-accent hue.** A lighter green `#609079` appears exactly once as a border and is noise,
-not a token — do not propagate it.
+panel fill, a hover tint on cream surfaces, or a gradient stop.
+
+There is **no second accent hue** — but there **is** a second green, and it is a real
+token. **CORRECTED in v2.0.0:** `--accent-light` `#609079` is an official UI Kit swatch
+whose label states its role, *"Stroke on green bg."* v1.0.0 wrongly called it noise
+because production uses it exactly once. Its scope is narrow and strict: **a 1px hairline
+on a green band, and nothing else.** It is not a fill, not a text colour, not a second
+accent — use `--accent` for anything that carries meaning.
+
+> Note the implementation diverges here: production mostly draws hairlines on green with
+> translucent cream `rgba(247,242,233,0.24)` (4×) and `#609079` only once. The kit says
+> `#609079`. **New work follows the kit;** the translucent value stays documented only so
+> existing Divi sections are legible.
 
 ### Foreign colours — do not adopt
 
@@ -193,7 +237,7 @@ Measured: 12 distinct values. The **real** system is four steps; the rest is noi
 | `--radius-sm` | **8px** | Small chips, tight controls | 7 |
 | `--radius-md` | **16px** | Form inputs, small cards | 21 |
 | `--radius-lg` | **24px** | Panels, large cards, Gravity Forms submit | 26 |
-| `--radius-pill` | **50px** | **All Divi buttons.** Fully rounded. | 7 |
+| ~~`--radius-pill`~~ | ~~50px~~ | **REMOVED in v2.0.0** — the kit has no pill token. Buttons use `--radius-lg` (24px); at 48px height that reads as a pill. | — |
 | `--radius-circle` | **50%** | Avatars, icon circles | 24 |
 
 Split radii are permitted for stacked/joined panels: measured `24px 24px 0 0` and
@@ -354,7 +398,7 @@ All values measured off production.
 
 ### Buttons
 
-Every Divi button is a **50px pill** at **16px / weight 500 / tracking normal /
+Every kit button is **radius 24px** at **16px / weight 600 (SemiBold) / lh 116% / tracking -1% / 
 `text-transform: none`**. Three variants, differing only in fill:
 
 | Variant | Height | Padding | Fill | Text | Border |
@@ -520,7 +564,7 @@ This is a gap, recorded in §13.
 - Pick body line-height by reading length: **1.4** for UI copy, **1.625** for long-form.
 - Give tracking `normal` to anything ≤18px and negative tracking to anything ≥20px.
 - Build panels as `#FEF8EF` + `1px solid #D6D0C6` + `24px` radius + `24px` padding.
-- Make Divi buttons **50px pills**; make Gravity Forms submits **24px rectangles in `--ink`**.
+- Give every button **radius 24px** and label **16px / 600 / -0.01em**. The 493×57 wide variant keeps radius 24 (a rounded rectangle, not a pill).
 - Outline panels rather than filling them when they sit on a green band.
 - Cap running prose at **680px** even though the content column is 1368px.
 - Name transition properties explicitly, at 0.15/0.2/0.3/0.4s.
@@ -533,7 +577,7 @@ This is a gap, recorded in §13.
 - Don't add a **radius step**. The system is 8 / 16 / 24 / 50px / 50%; the stray 3, 6, 12, 20, 32 are noise.
 - Don't add a **second shadow value**. One shadow: `0 1px 4px rgba(18,25,97,0.08)`.
 - Don't add a **second typeface** — no serif, no mono, and no Roboto Flex outside the Review Wall widget.
-- Don't use **weight 300**, or weight 500 on a heading, or weight 600 below 24px.
+- Don't use **weight 300 or weight 500 at all** — neither exists in the kit. Only 400 / 600 / 700.
 - Don't tighten tracking on body copy.
 - Don't write **`transition: all`**.
 - Don't add a **gradient** or a **section background image** — the site has zero of both.
@@ -550,7 +594,7 @@ The eight values to paste inline when briefing a build:
 ```
 Canvas #F7F2E9 · ink #2A2011 · one accent #307155 · panel #FEF8EF
 Nunito Sans only — display 48/600/lh1.0/ls-0.04em · body 16/400/lh1.4 (1.625 long-form)
-Radius 8/16/24 · buttons = 50px pill 16/500 · GF submit = 24px radius, #2A2011 fill
+Radius 8/16/24 (no pill) · buttons = radius 24, 48px tall, label 16/600/-0.01em
 Panels: #FEF8EF + 1px #D6D0C6 + 24px radius + 24px padding
 Two section backgrounds only: cream #F7F2E9 (default) or green #307155 (hero/mission/CTA)
 Border-first, not shadow-first. One shadow: 0 1px 4px rgba(18,25,97,.08)
@@ -628,7 +672,7 @@ Motion: 0.2s ease-in-out on opacity + background-color. Never `transition: all`.
   --radius-sm:     8px;
   --radius-md:    16px;
   --radius-lg:    24px;
-  --radius-pill:  50px;
+  /* --radius-pill removed in v2.0.0 — see the header note */
   --radius-circle: 50%;
 
   /* ── Elevation — one shadow only ────────────────── */

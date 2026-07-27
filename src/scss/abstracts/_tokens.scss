@@ -1,148 +1,184 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // TOKENS — GENERATED FILE. DO NOT HAND-EDIT.
 //
-// Source of truth: {theme}/.claude/design.md (the binding design contract,
-// measured off production with Playwright on 2026-07-27).
-// If a value needs to change, change design.md FIRST, then regenerate this file.
-// Adding a token that is not in design.md is a defect — see dev-bem-scss.
+// Source of truth, in priority order:
+//   1. The Figma UI Kit page (336:2947) — 21 text styles + the Colors section
+//      + the Buttons/Inputs component sets. THE design system.
+//   2. Figma frame 1163:950 — the homepage design, for layout/grid.
+//   3. {theme}/.claude/design.md — the project contract, which records both plus
+//      the production measurements and every gap.
 //
-// Contract version: design.md v1.0.0
+// Change design.md FIRST, then regenerate this file. Adding a token that is not
+// in the kit or design.md is a defect (dev-bem-scss).
+//
+// Contract version: design.md v2.0.0 (rebuilt from the UI Kit, 2026-07-27)
+//
+// ⚠️ v1 of this file was derived from PRODUCTION computed styles only, before the
+// UI Kit was available. The kit corrected several values — see the notes inline
+// and design.md §13. Production is the OLD Divi implementation; the kit is what
+// we are building.
 // ─────────────────────────────────────────────────────────────────────────────
 
 @use 'sass:map';
 
-// ─── Colour ──────────────────────────────────────────────────────── design.md §2
-$color-ink:            #2a2011;                    // primary text, dark band bg
-$color-ink-muted:      rgba(42, 32, 17, 0.56);     // secondary text on cream
-$color-canvas:         #f7f2e9;                    // THE PAGE. body bg, text on green
-$color-canvas-muted:   rgba(247, 242, 233, 0.56);  // secondary text on green
-$color-surface:        #fef8ef;                    // panels, cards, form inputs
-$color-surface-sunken: #eeeadc;                    // recessed / alternate panel
-$color-accent:         #307155;                    // THE ONE ACCENT
-$color-border:         #d6d0c6;                    // default hairline on cream
-$color-border-soft:    rgba(42, 32, 17, 0.24);     // lighter hairline on cream
-$color-border-inverse: rgba(247, 242, 233, 0.24);  // hairline on green
-$color-white:          #fff;                       // rare — third-party widgets only
+// ─── Colour ─────────────────────── UI Kit "Colors" section (337:4290) swatches
+// Read from the RECTANGLE fills, not the text labels — one label disagreed with
+// its swatch (it read `672133` over a swatch that is actually #609079). Six of
+// seven labels matched; that one is a typo in the file.
+$color-ink:            #2a2011;  // primary text, dark band bg, wide-button fill
+$color-canvas:         #f7f2e9;  // THE PAGE. body bg, text on green
+$color-surface:        #fef8ef;  // panels, cards, inputs, wide-button label
+$color-surface-sunken: #eeeadc;  // recessed / alternate panel
+$color-accent:         #307155;  // THE ONE ACCENT — primary button, the 2 bands
+$color-accent-light:   #609079;  // stroke on a GREEN background
+$color-border:         #d6d0c6;  // stroke on a LIGHT background
 
-// Iterable map (utility generation, theme.json export, etc.)
+// ⚠️ $color-accent-light was WRONG in v1 of this file. design.md v1 called
+// #609079 "noise, not a token — do not propagate it", because on production it
+// appeared exactly once, as a border. It is an official kit swatch whose label
+// states its role: "Stroke on green bg". Corrected.
+//
+// ⚠️ The kit's primary-button fill is #307156, one digit off the #307155 swatch.
+// The same 1-digit split exists in the live site (et_divi accent_color #307155 vs
+// footer_bg #307156) — so the Divi typo originated in the design file, not in
+// Divi. The SWATCH is canonical; #307156 is not a token.
+
+// Alpha derivations. Not swatches — measured on production and kept because the
+// kit has no opacity tokens. The 0.56 matches the kit's input-placeholder opacity.
+$color-ink-muted:      rgba(42, 32, 17, 0.56);     // secondary text on cream
+$color-ink-faint:      rgba(42, 32, 17, 0.24);     // hairline on cream, lighter
+$color-canvas-muted:   rgba(247, 242, 233, 0.56);  // secondary text on green
+$color-canvas-faint:   rgba(247, 242, 233, 0.24);  // hairline on green
+
 $colors: (
   'ink':            $color-ink,
-  'ink-muted':      $color-ink-muted,
   'canvas':         $color-canvas,
-  'canvas-muted':   $color-canvas-muted,
   'surface':        $color-surface,
   'surface-sunken': $color-surface-sunken,
   'accent':         $color-accent,
+  'accent-light':   $color-accent-light,
   'border':         $color-border,
-  'border-soft':    $color-border-soft,
-  'border-inverse': $color-border-inverse,
 );
 
-// ─── Typography ──────────────────────────────────────────────────── design.md §3
-// ONE family. design.md §3 explicitly bans a second — this deliberately overrides
-// the design-anti-slop "two families" default, and design.md wins per its own
-// stated hierarchy.
+// ─── Typography ─────────────────────────── UI Kit text styles (21, Desktop+Mobile)
+// ONE family. design.md bans a second, deliberately overriding the
+// design-anti-slop "two families" default.
 $font-sans: 'Nunito Sans', sans-serif;
 
-$weight-body:    400;
-$weight-ui:      500;  // buttons, labels, nav — never headings
-$weight-display: 600;  // 48px display only — never below 24px
-$weight-bold:    700;  // the "bold" of the system, ≤24px
+// The kit uses exactly THREE weights. There is no Medium(500) and no Light(300)
+// text style anywhere in it.
+// ⚠️ v1 of this file had $weight-ui: 500, measured off production buttons. The
+// kit's button labels are SemiBold(600). Production is wrong; corrected.
+// Practical win: the Google Fonts request can drop 300 AND 500.
+$weight-regular:  400;
+$weight-semibold: 600;  // display headings AND button/UI labels
+$weight-bold:     700;
 
-// Size / leading / tracking, one triple per named role.
-$text-display:      48px;  $leading-display:      48px;    $tracking-display:   -1.92px;
-$text-stat:         34px;  $leading-stat:         34px;    $tracking-stat:      -0.2px;
-$text-title:        24px;  $leading-title:        27.84px; $tracking-title:     -0.24px;
-$text-lead:         20px;  $leading-lead:         26px;    $tracking-lead:      -0.2px;
-$text-body:         16px;  $leading-body:         22.4px;  // UI-adjacent copy, 1.4
-                           $leading-body-long:    26px;    $tracking-body-long: -0.16px; // long-form, 1.625
-$text-small:        14px;  $leading-small:        16.24px;
-$text-micro:        12px;  $leading-micro:        17.16px;
+// Line-heights and tracking are PERCENT in the kit, so they are expressed here as
+// unitless multipliers and `em` — which is also more robust than v1's px values.
+$lh-tight:  0.95;  // 95%  — H1/H2 display
+$lh-snug:   1.16;  // 116% — most roles
+$lh-normal: 1.24;  // 124% — desktop 20px body
+$lh-relaxed: 1.28; // 128% — desktop 16/14px body
 
-// The two tracking rules that define the voice (design.md §3):
-//   ≥20px  → negative tracking
-//   ≤18px  → `normal`, never tighten body copy
-$tracking-normal: normal;
+$ls-display: -0.04em;  // -4%
+$ls-text:    -0.01em;  // -1%
 
-// ─── Spacing ─────────────────────────────────────────────────────── design.md §4
-// Base unit 8px. `$space-6` (50px) and `$gutter` (20px) are the two off-grid
-// survivors recorded in design.md — they come from Divi module defaults.
+// Desktop scale — "Desktop/*" text styles
+$text-h1-desktop:         48px;
+$text-h2-desktop:         32px;
+$text-h3-desktop:         24px;
+$text-h4-desktop:         24px;
+$text-body-desktop:       20px;
+$text-body-sm-desktop:    16px;
+$text-body-xs-desktop:    14px;
+
+// Mobile scale — "Mobile/*" text styles.
+// ⚠️ This closes design.md v1 gap #9 ("only the desktop breakpoint was
+// measured"). The mobile scale was never guessed — it is in the kit.
+$text-h1-mobile:          32px;
+$text-h2-mobile:          28px;
+$text-h3-mobile:          24px;
+$text-h4-mobile:          20px;
+$text-h5-mobile:          20px;
+$text-body-mobile:        18px;
+$text-body-sm-mobile:     16px;
+$text-body-xs-mobile:     14px;
+
+// ─── Spacing ─────────────────────────────────────────────────── design.md §4
+// Base unit 8px.
 $space-1:  8px;
 $space-2: 16px;
-$space-3: 24px;   // panel inner padding, form field padding
+$space-3: 24px;
 $space-4: 32px;
 $space-5: 40px;
 $space-6: 50px;
-$space-8: 120px;  // hero / feature-band top padding
-$gutter:  20px;   // mobile gutter
+$space-8: 120px;
+$gutter:  20px;
 
 $spaces: (1: $space-1, 2: $space-2, 3: $space-3, 4: $space-4, 5: $space-5, 6: $space-6, 8: $space-8);
 
-// ─── Shape ───────────────────────────────────────────────────────── design.md §4
-// Four steps + circle. The stray 3 / 6 / 12 / 20 / 32px measured on production
-// are recorded as NOISE in design.md §13 and deliberately absent here.
+// ─── Shape ──────────────────────── UI Kit Buttons/Inputs (337:4158) + design.md
+// THREE steps + circle.
+//
+// ⚠️ v1 had $radius-pill: 50px, measured off Divi's buttons. The kit has NO pill
+// token — every button variant is cornerRadius 24. At the standard 48px button
+// height, 24px reads as a full pill, which is why production's literal 50px
+// looked right. But the kit's WIDE button is 493×57 with the same radius 24, so
+// it is a rounded rectangle, not a pill. The system is a constant 24px radius;
+// "always pill" was an artifact of Divi's implementation. Removed.
 $radius-sm:     8px;
-$radius-md:    16px;   // form inputs, small cards
-$radius-lg:    24px;   // panels, large cards, Gravity Forms submit
-$radius-pill:  50px;   // all Divi-era buttons
-$radius-circle: 50%;
+$radius-md:    16px;   // small cards
+$radius-lg:    24px;   // panels, cards, ALL buttons, inputs
+$radius-circle: 50%;   // avatars, flag buttons in the language switcher
 
-// ─── Elevation ───────────────────────────────────────────────────── design.md §4
-// Border-first system: borders outnumber shadows 45:11 on production.
-// ONE shadow, and its hue is a known defect (navy, unrelated to the palette) —
-// documented in design.md §13 gap #2. Kept as-shipped for consistency.
-$shadow: 0 1px 4px rgba(18, 25, 97, 0.08);
+// ─── Elevation ───────────────────────────────────────────────── design.md §4
+// Border-first: the kit defines two explicit stroke colours and no effect styles
+// at all (effectStyles: [] in the document).
 $border-width: 1px;
 $border-width-emphasis: 3px;
 
-// ─── Layout ──────────────────────────────────────────────────────── design.md §6
-// NOTE the layout contract in vibe-frontend-standards §3: the PAGE canvas gets no
-// max-width and section backgrounds are full-bleed. `$container-max` caps the
-// INNER content only. That combination satisfies both documents: no boxed
-// background, no hollow stretched hero.
-$container-max: 1600px;  // inner content cap (measured on production)
-$content-max:   1368px;  // measured content column at a 1440 viewport
-$measure-max:    680px;  // hard cap for running prose (~72ch at 16px/1.625)
+// ⚠️ NOT a kit token. The kit has zero effect styles; this is the single shadow
+// measured on production, and its hue is a navy unrelated to the palette — a Divi
+// preset nobody adjusted (design.md §13 gap #2). Kept only so existing components
+// stay consistent. Do NOT use it on anything new until the gap is resolved.
+$shadow-legacy: 0 1px 4px rgba(18, 25, 97, 0.08);
 
-// Adaptive gutter.
-//
-// ⚠️ DELIBERATE OVERRIDE of vibe-frontend-standards §3, which prescribes
-// 80 / 48 / 20. This project's grid is 32px:
-//   · Figma frame 1163:950 — EVERY section sits at x=32, width=1376 (1440 canvas),
-//     and the header logotype is at x=32 too.
-//   · Independently confirmed by the production measurement in design.md §6:
-//     content column 1368px at a 1440 viewport ≈ 36px gutters.
-// Two independent sources agree on ~32px, so 80px would be a house default
-// overriding the actual design. design.md wins per its own stated hierarchy.
-//
-// An earlier revision of this file wrongly carried 80/48/20 and contradicted
-// design.md §6. Fixed 2026-07-27 after reading the Figma frame.
-$pad-inline-desktop: 32px;  // [measured: Figma 1163:950 section grid]
+// ─── Layout ────────────────────── Figma frame 1163:950 + design.md §6
+$container-max: 1600px;  // inner content cap
+$content-max:   1368px;  // measured content column at a 1440 viewport
+$measure-max:    680px;  // hard cap for running prose
+
+// Gutters. DELIBERATE OVERRIDE of vibe-frontend-standards §3 (80/48/20): every
+// section in the design sits at x=32 width=1376 on a 1440 canvas, and the header
+// logotype is at x=32. Two independent sources (Figma + the production
+// measurement in design.md §6) agree on ~32px.
+$pad-inline-desktop: 32px;
 $pad-inline-tablet:  24px;  // inferred — no tablet frame in the design yet
-$pad-inline-mobile:  $gutter;  // 20px [measured: Divi hero custom_padding_phone]
+$pad-inline-mobile:  $gutter;
+
+// ─── Component sizing ───────────────── UI Kit Buttons/Inputs component sets
+$btn-height:       48px;   // 224×48 standard
+$btn-width-min:   224px;
+$btn-padding:      10px;   // all four sides, autolayout
+$btn-height-wide:  57px;   // the 493×57 wide variant
+$input-height:     57px;   // Input/Default frame is 243×57
+$header-height:    78px;   // Figma 1163:952, the header band
+$header-nav-gap:   24px;   // nav autolayout itemSpacing
+$header-right-gap: 32px;   // lang-switcher ↔ CTA itemSpacing
 
 // ─── Breakpoints ─────────────────────────────────────────────────────────────
 // Three STRUCTURAL breakpoints from vibe-frontend-standards §4 — ≥1025 desktop,
-// 641–1024 tablet, ≤640 mobile — expressed MOBILE-FIRST (min-width) because
-// dev-bem-scss mandates mobile-first for hand-written SCSS.
-//
-// Why that is not a contract violation: frontend-standards' `max-width`
+// 641–1024 tablet, ≤640 mobile — expressed MOBILE-FIRST because dev-bem-scss
+// mandates mobile-first for hand-written SCSS. That skill's `max-width`
 // requirement sits under "Print / PDF" and is justified by Playwright rendering
-// mockups to PDF at a 1440 viewport. This is a production theme, not a mockup —
-// the rationale does not transfer. The three structural BOUNDARIES are preserved
-// exactly; only the direction is inverted.
+// MOCKUPS to PDF at 1440; this is a production theme, so it does not transfer.
+// The three boundaries are preserved exactly; only the direction is inverted.
 //
-// ⚠️ Divi-era content is authored against Divi's breakpoints (981 / 768 / 767,
-// design.md §6). Until a page is migrated, the two sets coexist. Chrome is
-// full-bleed so the mismatch is not visible there, but check any page that mixes
-// migrated and Divi sections.
-$bp-tablet:  641px;   // ≥ 641  — tablet and up
-$bp-desktop: 1025px;  // ≥ 1025 — desktop and up
-
-// Optional scale-up breakpoints (frontend-standards §4a). Only needed for
-// sections that stretch past 1440 AND contain fixed-size content. We cap inner
-// content at $container-max instead, which §4a explicitly allows as the
-// alternative — so these are available but should rarely be used.
+// The kit's own split is Desktop vs Mobile with no tablet styles, so tablet
+// inherits the mobile type scale and switches to desktop at $bp-desktop.
+$bp-tablet:  641px;
+$bp-desktop: 1025px;
 $bp-wide:  1600px;
 $bp-ultra: 1800px;
 
@@ -153,9 +189,8 @@ $breakpoints: (
   'ultra':   $bp-ultra,
 );
 
-// ─── Motion ──────────────────────────────────────────────────────── design.md §9
-// Budget: 2 moments, both already spent (preloader + hover/state transitions).
-// `transition: all` is BANNED — always name the properties.
+// ─── Motion ──────────────────────────────────────────────────── design.md §9
+// Budget: 2 moments. `transition: all` is BANNED — always name the properties.
 $dur-fast:   0.15s;
 $dur-base:   0.2s;
 $dur-slow:   0.3s;
@@ -163,12 +198,11 @@ $dur-slower: 0.4s;
 $ease:       ease-in-out;
 $ease-out:   ease-out;
 
-// ─── Z-index scale ───────────────────────────────────────────────────────────
-// Not in design.md (nothing to measure — Divi owns stacking today). Declared here
-// as the single ladder so we never write a raw z-index. Add to design.md if it
-// ever needs to be a design decision.
+// ─── Z-index ladder ──────────────────────────────────────────────────────────
+// Not a design decision — declared so no raw z-index is ever written.
 $z-base:      1;
 $z-sticky:  100;
 $z-header:  200;
+$z-dropdown: 250;
 $z-drawer:  300;
 $z-overlay: 400;

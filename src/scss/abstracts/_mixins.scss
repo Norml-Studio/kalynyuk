@@ -2,17 +2,8 @@
 @use 'tokens' as t;
 
 // ─── bp() — the only way to write a media query ───────────────────────────────
-// Mobile-first, min-width. Base styles are the ≤640 mobile case; scale up.
-// Usage — media queries live INSIDE the class, never in a trailing block:
-//
-//   // .site-header__title
-//   .site-header__title {
-//     font-size: t.$text-title;
-//
-//     @include bp(desktop) {
-//       font-size: t.$text-display;
-//     }
-//   }
+// Mobile-first, min-width. Base styles are the ≤640 case; scale up.
+// Media queries live INSIDE the class, never in a trailing block (dev-bem-scss).
 @mixin bp($name) {
   @if not map.has-key(t.$breakpoints, $name) {
     @error "bp(): unknown breakpoint `#{$name}`. Known: #{map.keys(t.$breakpoints)}.";
@@ -23,8 +14,17 @@
   }
 }
 
-// ─── container() — the page/section inner wrapper ──────────────────────────────
-// Caps INNER content only. The section's own background must stay full-bleed —
+// ─── Focus ────────────────────────────────────────────────────────────────────
+// Not in the kit — production has no visible focus style at all, which is an
+// accessibility gap rather than a decision. Uses the accent as an emphasis rule,
+// which design.md §2 permits.
+@mixin focus-ring {
+  outline: t.$border-width-emphasis solid t.$color-accent;
+  outline-offset: 2px;
+}
+
+// ─── container() — the section inner wrapper ───────────────────────────────────
+// Caps INNER content only. The section's own background stays full-bleed —
 // vibe-frontend-standards §3 bans a max-width on the page canvas, because a boxed
 // background leaves visible gutters on wide screens.
 @mixin container($max: t.$container-max) {
@@ -43,101 +43,164 @@
 }
 
 // ─── measure() — cap running prose ────────────────────────────────────────────
-// The content column is 1368px wide; body copy must never run that far.
 @mixin measure($max: t.$measure-max) {
   max-width: $max;
 }
 
-// ─── Type roles ───────────────────────────────────────────────────────────────
-// One mixin per named role in design.md §3. Never set font-size/line-height/
-// letter-spacing by hand — that is how a 40-combo mess gets rebuilt.
-@mixin text-display {
+// ─────────────────────────────────────────────────────────────────────────────
+// TYPE ROLES — one mixin per UI Kit text style, Mobile base + Desktop scale-up.
+//
+// The kit ships a Desktop/* and Mobile/* pair for each role and NO tablet styles,
+// so each mixin starts at the mobile value and switches at bp(desktop).
+// Never set font-size / line-height / letter-spacing by hand — that is how a
+// 40-combination mess gets rebuilt.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Desktop/H1 48 SemiBold 95% -4%  ·  Mobile/H1 32 SemiBold 95% -4%
+@mixin text-h1 {
   font-family: t.$font-sans;
-  font-size: t.$text-title;              // mobile step-down
-  font-weight: t.$weight-display;
-  line-height: t.$leading-title;
-  letter-spacing: t.$tracking-title;
+  font-size: t.$text-h1-mobile;
+  font-weight: t.$weight-semibold;
+  line-height: t.$lh-tight;
+  letter-spacing: t.$ls-display;
 
   @include bp(desktop) {
-    font-size: t.$text-display;
-    line-height: t.$leading-display;
-    letter-spacing: t.$tracking-display;
+    font-size: t.$text-h1-desktop;
   }
 }
 
-@mixin text-stat {
+// Desktop/H2 32 SemiBold 116% -4%  ·  Mobile/H2 28 SemiBold 95% -4%
+// The line-height genuinely differs between the two kit styles — verbatim, not a
+// transcription slip.
+@mixin text-h2 {
   font-family: t.$font-sans;
-  font-size: t.$text-stat;
-  font-weight: t.$weight-body;
-  line-height: t.$leading-stat;
-  letter-spacing: t.$tracking-stat;
+  font-size: t.$text-h2-mobile;
+  font-weight: t.$weight-semibold;
+  line-height: t.$lh-tight;
+  letter-spacing: t.$ls-display;
+
+  @include bp(desktop) {
+    font-size: t.$text-h2-desktop;
+    line-height: t.$lh-snug;
+  }
 }
 
-@mixin text-title {
+// Desktop/H3 24 Bold 116% -1%  ·  Mobile/H3 24 SemiBold 116% -4%
+// Same size at both breakpoints; weight AND tracking change. Verbatim.
+@mixin text-h3 {
   font-family: t.$font-sans;
-  font-size: t.$text-lead;               // mobile step-down
+  font-size: t.$text-h3-mobile;
+  font-weight: t.$weight-semibold;
+  line-height: t.$lh-snug;
+  letter-spacing: t.$ls-display;
+
+  @include bp(desktop) {
+    font-weight: t.$weight-bold;
+    letter-spacing: t.$ls-text;
+  }
+}
+
+// Desktop/H4 24 SemiBold 116% -4%  ·  Mobile/H4 20 Bold 116% -1%
+@mixin text-h4 {
+  font-family: t.$font-sans;
+  font-size: t.$text-h4-mobile;
   font-weight: t.$weight-bold;
-  line-height: t.$leading-lead;
-  letter-spacing: t.$tracking-lead;
+  line-height: t.$lh-snug;
+  letter-spacing: t.$ls-text;
 
-  @include bp(tablet) {
-    font-size: t.$text-title;
-    line-height: t.$leading-title;
-    letter-spacing: t.$tracking-title;
+  @include bp(desktop) {
+    font-size: t.$text-h4-desktop;
+    font-weight: t.$weight-semibold;
+    letter-spacing: t.$ls-display;
   }
 }
 
-@mixin text-lead {
+// Mobile/H5 20 SemiBold 116% -4%. The kit has NO Desktop/H5 — on desktop, use H4.
+// Recorded as a gap in design.md §13 rather than invented.
+@mixin text-h5 {
   font-family: t.$font-sans;
-  font-size: t.$text-lead;
-  font-weight: t.$weight-body;
-  line-height: t.$leading-lead;
-  letter-spacing: t.$tracking-lead;
+  font-size: t.$text-h5-mobile;
+  font-weight: t.$weight-semibold;
+  line-height: t.$lh-snug;
+  letter-spacing: t.$ls-display;
 }
 
+// Desktop/Body Regular 20 Regular 124% -1%  ·  Mobile/Body Regular 18 Regular 116% -1%
 @mixin text-body {
   font-family: t.$font-sans;
-  font-size: t.$text-body;
-  font-weight: t.$weight-body;
-  line-height: t.$leading-body;
-  letter-spacing: t.$tracking-normal;
+  font-size: t.$text-body-mobile;
+  font-weight: t.$weight-regular;
+  line-height: t.$lh-snug;
+  letter-spacing: t.$ls-text;
+
+  @include bp(desktop) {
+    font-size: t.$text-body-desktop;
+    line-height: t.$lh-normal;
+  }
 }
 
-@mixin text-body-long {
+// Desktop/Body Bold 20 Bold 124% -1%  ·  Mobile/Body SemiBold 18 SemiBold 116% -4%
+@mixin text-body-strong {
   font-family: t.$font-sans;
-  font-size: t.$text-body;
-  font-weight: t.$weight-body;
-  line-height: t.$leading-body-long;
-  letter-spacing: t.$tracking-body-long;
+  font-size: t.$text-body-mobile;
+  font-weight: t.$weight-semibold;
+  line-height: t.$lh-snug;
+  letter-spacing: t.$ls-display;
+
+  @include bp(desktop) {
+    font-size: t.$text-body-desktop;
+    font-weight: t.$weight-bold;
+    line-height: t.$lh-normal;
+    letter-spacing: t.$ls-text;
+  }
 }
 
+// Desktop/Body Small Regular 16 Regular 128% -1%  ·  Mobile 16 Regular 116% -1%
+@mixin text-body-sm {
+  font-family: t.$font-sans;
+  font-size: t.$text-body-sm-mobile;
+  font-weight: t.$weight-regular;
+  line-height: t.$lh-snug;
+  letter-spacing: t.$ls-text;
+
+  @include bp(desktop) {
+    line-height: t.$lh-relaxed;
+  }
+}
+
+// Desktop/Body Small SemiBold 16 SemiBold 128% -1%  ·  Mobile 16 SemiBold 116% -1%
+// ALSO the button / UI-label role: the kit's button labels are exactly
+// 16 SemiBold 116% -1%.
 @mixin text-ui {
   font-family: t.$font-sans;
-  font-size: t.$text-body;
-  font-weight: t.$weight-ui;
-  line-height: t.$leading-body;
-  letter-spacing: t.$tracking-normal;
+  font-size: t.$text-body-sm-mobile;
+  font-weight: t.$weight-semibold;
+  line-height: t.$lh-snug;
+  letter-spacing: t.$ls-text;
+
+  @include bp(desktop) {
+    line-height: t.$lh-relaxed;
+  }
 }
 
-@mixin text-small {
+// Desktop/Body XSmall Regular 14 Regular 128% -1%  ·  Mobile 14 Regular 116% -1%
+@mixin text-body-xs {
   font-family: t.$font-sans;
-  font-size: t.$text-small;
-  font-weight: t.$weight-bold;
-  line-height: t.$leading-small;
-  letter-spacing: t.$tracking-normal;
+  font-size: t.$text-body-xs-mobile;
+  font-weight: t.$weight-regular;
+  line-height: t.$lh-snug;
+  letter-spacing: t.$ls-text;
+
+  @include bp(desktop) {
+    line-height: t.$lh-relaxed;
+  }
 }
 
-@mixin text-micro {
-  font-family: t.$font-sans;
-  font-size: t.$text-micro;
-  font-weight: t.$weight-ui;
-  line-height: t.$leading-micro;
-  letter-spacing: t.$tracking-normal;
-}
-
-// ─── Surfaces ─────────────────────────────────────────────────────── design.md §5
-// On a green band, panels are OUTLINED, not filled — a cream fill on green reads
-// as a hole. That is the measured pattern, and it is the correct one.
+// ─────────────────────────────────────────────────────────────────────────────
+// SURFACES — design.md §5
+// On a green band, panels are OUTLINED, not filled: a cream fill on green reads
+// as a hole. The kit provides a dedicated stroke colour for exactly that case.
+// ─────────────────────────────────────────────────────────────────────────────
 @mixin panel {
   background-color: t.$color-surface;
   border: t.$border-width solid t.$color-border;
@@ -147,17 +210,37 @@
 
 @mixin panel-on-accent {
   background-color: transparent;
-  border: t.$border-width solid t.$color-border-inverse;
+  border: t.$border-width solid t.$color-accent-light;
   border-radius: t.$radius-lg;
   padding: t.$space-3;
 }
 
-// ─── Focus ────────────────────────────────────────────────────────────────────
-// Not in design.md (production has no visible focus style — an accessibility gap,
-// not a decision). Uses the accent as an emphasis rule, which §2 permits.
-@mixin focus-ring {
-  outline: t.$border-width-emphasis solid t.$color-accent;
-  outline-offset: 2px;
+// ─────────────────────────────────────────────────────────────────────────────
+// BUTTON BASE — UI Kit component sets (337:4158). All four variants share this;
+// only fill / stroke / colour differ. Radius is a constant 24px, NOT a pill.
+// ─────────────────────────────────────────────────────────────────────────────
+@mixin btn-base {
+  @include text-ui;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: t.$btn-padding;
+  min-height: t.$btn-height;
+  padding: t.$btn-padding t.$space-3;
+  border: t.$border-width solid transparent;
+  border-radius: t.$radius-lg;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color t.$dur-base t.$ease,
+    border-color t.$dur-base t.$ease,
+    color t.$dur-base t.$ease;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
 }
 
 // ─── Visually hidden ──────────────────────────────────────────────────────────
