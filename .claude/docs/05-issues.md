@@ -117,10 +117,14 @@
 - **Where:** `cron` option (8.4 KB, autoloaded)
 - **Why it matters:** On a low-traffic site the queue backs up; on a busy one every visitor pays a share of the work. Four of the five belong to WP Rocket, so the performance plugin is itself a recurring per-request cost.
 
-### The theme re-enqueues the parent stylesheet under a second handle, with no dependency declared
-- **What:** `anna_kalynyuk___norml_studio_theme_enqueue_scripts()` enqueues `get_template_directory_uri() . '/style.css'` — which Divi already enqueues as `divi-style` — and enqueues the child stylesheet with no `deps` array. The child `style.css` contains **zero rules**.
-- **Where:** [functions.php:2-6](functions.php#L2-L6)
-- **Why it matters:** Divi's stylesheet is requested twice (unless minification collapses it), and child-vs-parent load order is registration-order luck rather than declared. Because the child stylesheet is empty, the function currently provides no benefit at all — but it interacts with RUCSS and the cache, so it is not a free deletion.
+### ~~The theme re-enqueues the parent stylesheet under a second handle~~ — CORRECTED + FIXED
+> **Corrected 2026-07-27 during phase 0.** The original entry claimed the *parent*
+> stylesheet was requested twice. That was **wrong**. Established by reading
+> `Divi/functions.php:381-393` and by rendering the site in both states.
+- **What actually happened:** the old callback enqueued the parent `style.css` under its own handle plus the child `style.css` with no `deps`. Divi's `et_divi_enqueue_stylesheet()` picks its branch by regex-testing whether the child already enqueued a parent `style*.css`. WordPress loads the **child** `functions.php` first, so the child's priority-10 callback won that race, pushed Divi into its *"the child already did it"* branch (line 387), and Divi then enqueued `divi-style` pointing at the **child's** `style.css`. The duplicated file was therefore the **child's** (empty) stylesheet — not the parent's. Load order was also registration-order luck rather than declared.
+- **Where:** `functions.php` (pre-migration), `Divi/functions.php:381-393`
+- **Status: FIXED.** [inc/assets.php](inc/assets.php) enqueues **neither** stylesheet, letting Divi take its intended branch and load both itself, once. Our CSS is enqueued at priority **20** — after Divi has registered `divi-style` — with a conditional dependency on it, so cascade order is declared rather than accidental. Measured on the local homepage: `style.css` sat at stylesheet index 16 before the fix, 15 after. One redundant request removed.
+- **Still open, related:** `et-cache/global/et-divi-customizer-global.min.css` loads **after** our `dist/css/main.css`. It is Divi-selector-scoped so it does not collide today, but any header/footer rule sharing a Divi selector will lose to it. Watch for this in phase 1.
 
 ### Two shortcode/filter functions are unprefixed globals
 - **What:** `vertical_menu_shortcode()` and `filter_gravity_forms_force_ajax()` occupy the global namespace with generic names, while the enqueue callback in the same file is fully prefixed (`anna_kalynyuk___norml_studio_theme_*`).

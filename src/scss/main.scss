@@ -1,0 +1,26 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// main.scss — WIRING ONLY. No rules may live in this file (dev-bem-scss).
+//
+// Load order is cascade order. abstracts/ emit no CSS (variables + mixins only),
+// so they are consumed by the partials rather than loaded here.
+//
+// Architecture (dev-bem-scss, 7-1 trimmed):
+//   abstracts/   tokens (generated from .claude/design.md) · mixins
+//   base/        reset · base (the canvas) · typography
+//   components/  reusable blocks — a block used on 2+ pages graduates here
+//   sections/    one section = one partial, named {page}-{section}
+//   pages/       compose sections; page-level layout only
+// ─────────────────────────────────────────────────────────────────────────────
+
+@use 'base/reset';
+@use 'base/base';
+@use 'base/typography';
+
+// ─── components/ ─────────────────────────────────────────────────────────────
+// (empty — first entries land with the header/footer in phase 1)
+
+// ─── sections/ ───────────────────────────────────────────────────────────────
+// (empty — phase 1 adds site-header / site-footer)
+
+// ─── pages/ ──────────────────────────────────────────────────────────────────
+// (empty — phase 3)

@@ -1,0 +1,162 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// TOKENS — GENERATED FILE. DO NOT HAND-EDIT.
+//
+// Source of truth: {theme}/.claude/design.md (the binding design contract,
+// measured off production with Playwright on 2026-07-27).
+// If a value needs to change, change design.md FIRST, then regenerate this file.
+// Adding a token that is not in design.md is a defect — see dev-bem-scss.
+//
+// Contract version: design.md v1.0.0
+// ─────────────────────────────────────────────────────────────────────────────
+
+@use 'sass:map';
+
+// ─── Colour ──────────────────────────────────────────────────────── design.md §2
+$color-ink:            #2a2011;                    // primary text, dark band bg
+$color-ink-muted:      rgba(42, 32, 17, 0.56);     // secondary text on cream
+$color-canvas:         #f7f2e9;                    // THE PAGE. body bg, text on green
+$color-canvas-muted:   rgba(247, 242, 233, 0.56);  // secondary text on green
+$color-surface:        #fef8ef;                    // panels, cards, form inputs
+$color-surface-sunken: #eeeadc;                    // recessed / alternate panel
+$color-accent:         #307155;                    // THE ONE ACCENT
+$color-border:         #d6d0c6;                    // default hairline on cream
+$color-border-soft:    rgba(42, 32, 17, 0.24);     // lighter hairline on cream
+$color-border-inverse: rgba(247, 242, 233, 0.24);  // hairline on green
+$color-white:          #fff;                       // rare — third-party widgets only
+
+// Iterable map (utility generation, theme.json export, etc.)
+$colors: (
+  'ink':            $color-ink,
+  'ink-muted':      $color-ink-muted,
+  'canvas':         $color-canvas,
+  'canvas-muted':   $color-canvas-muted,
+  'surface':        $color-surface,
+  'surface-sunken': $color-surface-sunken,
+  'accent':         $color-accent,
+  'border':         $color-border,
+  'border-soft':    $color-border-soft,
+  'border-inverse': $color-border-inverse,
+);
+
+// ─── Typography ──────────────────────────────────────────────────── design.md §3
+// ONE family. design.md §3 explicitly bans a second — this deliberately overrides
+// the design-anti-slop "two families" default, and design.md wins per its own
+// stated hierarchy.
+$font-sans: 'Nunito Sans', sans-serif;
+
+$weight-body:    400;
+$weight-ui:      500;  // buttons, labels, nav — never headings
+$weight-display: 600;  // 48px display only — never below 24px
+$weight-bold:    700;  // the "bold" of the system, ≤24px
+
+// Size / leading / tracking, one triple per named role.
+$text-display:      48px;  $leading-display:      48px;    $tracking-display:   -1.92px;
+$text-stat:         34px;  $leading-stat:         34px;    $tracking-stat:      -0.2px;
+$text-title:        24px;  $leading-title:        27.84px; $tracking-title:     -0.24px;
+$text-lead:         20px;  $leading-lead:         26px;    $tracking-lead:      -0.2px;
+$text-body:         16px;  $leading-body:         22.4px;  // UI-adjacent copy, 1.4
+                           $leading-body-long:    26px;    $tracking-body-long: -0.16px; // long-form, 1.625
+$text-small:        14px;  $leading-small:        16.24px;
+$text-micro:        12px;  $leading-micro:        17.16px;
+
+// The two tracking rules that define the voice (design.md §3):
+//   ≥20px  → negative tracking
+//   ≤18px  → `normal`, never tighten body copy
+$tracking-normal: normal;
+
+// ─── Spacing ─────────────────────────────────────────────────────── design.md §4
+// Base unit 8px. `$space-6` (50px) and `$gutter` (20px) are the two off-grid
+// survivors recorded in design.md — they come from Divi module defaults.
+$space-1:  8px;
+$space-2: 16px;
+$space-3: 24px;   // panel inner padding, form field padding
+$space-4: 32px;
+$space-5: 40px;
+$space-6: 50px;
+$space-8: 120px;  // hero / feature-band top padding
+$gutter:  20px;   // mobile gutter
+
+$spaces: (1: $space-1, 2: $space-2, 3: $space-3, 4: $space-4, 5: $space-5, 6: $space-6, 8: $space-8);
+
+// ─── Shape ───────────────────────────────────────────────────────── design.md §4
+// Four steps + circle. The stray 3 / 6 / 12 / 20 / 32px measured on production
+// are recorded as NOISE in design.md §13 and deliberately absent here.
+$radius-sm:     8px;
+$radius-md:    16px;   // form inputs, small cards
+$radius-lg:    24px;   // panels, large cards, Gravity Forms submit
+$radius-pill:  50px;   // all Divi-era buttons
+$radius-circle: 50%;
+
+// ─── Elevation ───────────────────────────────────────────────────── design.md §4
+// Border-first system: borders outnumber shadows 45:11 on production.
+// ONE shadow, and its hue is a known defect (navy, unrelated to the palette) —
+// documented in design.md §13 gap #2. Kept as-shipped for consistency.
+$shadow: 0 1px 4px rgba(18, 25, 97, 0.08);
+$border-width: 1px;
+$border-width-emphasis: 3px;
+
+// ─── Layout ──────────────────────────────────────────────────────── design.md §6
+// NOTE the layout contract in vibe-frontend-standards §3: the PAGE canvas gets no
+// max-width and section backgrounds are full-bleed. `$container-max` caps the
+// INNER content only. That combination satisfies both documents: no boxed
+// background, no hollow stretched hero.
+$container-max: 1600px;  // inner content cap (measured on production)
+$content-max:   1368px;  // measured content column at a 1440 viewport
+$measure-max:    680px;  // hard cap for running prose (~72ch at 16px/1.625)
+
+// Adaptive gutter. frontend-standards §3 prescribes 80 / 48 / 20.
+$pad-inline-desktop: 80px;
+$pad-inline-tablet:  48px;
+$pad-inline-mobile:  $gutter;
+
+// ─── Breakpoints ─────────────────────────────────────────────────────────────
+// Three STRUCTURAL breakpoints from vibe-frontend-standards §4 — ≥1025 desktop,
+// 641–1024 tablet, ≤640 mobile — expressed MOBILE-FIRST (min-width) because
+// dev-bem-scss mandates mobile-first for hand-written SCSS.
+//
+// Why that is not a contract violation: frontend-standards' `max-width`
+// requirement sits under "Print / PDF" and is justified by Playwright rendering
+// mockups to PDF at a 1440 viewport. This is a production theme, not a mockup —
+// the rationale does not transfer. The three structural BOUNDARIES are preserved
+// exactly; only the direction is inverted.
+//
+// ⚠️ Divi-era content is authored against Divi's breakpoints (981 / 768 / 767,
+// design.md §6). Until a page is migrated, the two sets coexist. Chrome is
+// full-bleed so the mismatch is not visible there, but check any page that mixes
+// migrated and Divi sections.
+$bp-tablet:  641px;   // ≥ 641  — tablet and up
+$bp-desktop: 1025px;  // ≥ 1025 — desktop and up
+
+// Optional scale-up breakpoints (frontend-standards §4a). Only needed for
+// sections that stretch past 1440 AND contain fixed-size content. We cap inner
+// content at $container-max instead, which §4a explicitly allows as the
+// alternative — so these are available but should rarely be used.
+$bp-wide:  1600px;
+$bp-ultra: 1800px;
+
+$breakpoints: (
+  'tablet':  $bp-tablet,
+  'desktop': $bp-desktop,
+  'wide':    $bp-wide,
+  'ultra':   $bp-ultra,
+);
+
+// ─── Motion ──────────────────────────────────────────────────────── design.md §9
+// Budget: 2 moments, both already spent (preloader + hover/state transitions).
+// `transition: all` is BANNED — always name the properties.
+$dur-fast:   0.15s;
+$dur-base:   0.2s;
+$dur-slow:   0.3s;
+$dur-slower: 0.4s;
+$ease:       ease-in-out;
+$ease-out:   ease-out;
+
+// ─── Z-index scale ───────────────────────────────────────────────────────────
+// Not in design.md (nothing to measure — Divi owns stacking today). Declared here
+// as the single ladder so we never write a raw z-index. Add to design.md if it
+// ever needs to be a design decision.
+$z-base:      1;
+$z-sticky:  100;
+$z-header:  200;
+$z-drawer:  300;
+$z-overlay: 400;

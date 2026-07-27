@@ -1,0 +1,133 @@
+@use '../abstracts/tokens' as t;
+@use '../abstracts/mixins' as m;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TYPOGRAPHY — element defaults for content we do not control the markup of
+// (the_content(), Gravity Forms labels, editor output).
+//
+// Scoped under .ak-prose so it can NEVER leak into Divi-rendered page content
+// while the migration is in flight. Divi styles its own modules inline; a bare
+// `h2 { ... }` here would fight it on every unmigrated page.
+//
+// Type roles come from the mixins — never set size/leading/tracking by hand.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// .ak-prose
+.ak-prose {
+  @include m.text-body-long;
+  @include m.measure;
+
+  color: t.$color-ink;
+
+  // Headings — display role at h1/h2, title role from h3 down.
+  // design.md §3: weight 600 at 48px only, 700 at ≤24px. Never 500 on a heading.
+  h1,
+  h2 {
+    @include m.text-display;
+
+    margin: 0 0 t.$space-3;
+    text-wrap: balance;
+  }
+
+  h3,
+  h4,
+  h5,
+  h6 {
+    @include m.text-title;
+
+    margin: t.$space-5 0 t.$space-2;
+    text-wrap: balance;
+  }
+
+  p {
+    margin: 0 0 t.$space-3;
+    text-wrap: pretty;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  // Lists get their bullets back — the reset strips them globally because
+  // navigation and card grids are lists too.
+  ul,
+  ol {
+    margin: 0 0 t.$space-3;
+    padding-left: t.$space-3;
+  }
+
+  ul {
+    list-style: disc;
+  }
+
+  ol {
+    list-style: decimal;
+  }
+
+  li {
+    margin-bottom: t.$space-1;
+  }
+
+  // Links in running text use the ink colour with an underline, NOT the accent.
+  // design.md §2 accent discipline: the accent is banned as a link colour in
+  // running text — it is reserved for bands, primary buttons, rules and icons.
+  a {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+    transition: color t.$dur-base t.$ease;
+
+    &:hover,
+    &:focus-visible {
+      color: t.$color-ink-muted;
+    }
+
+    &:focus-visible {
+      @include m.focus-ring;
+    }
+  }
+
+  strong,
+  b {
+    font-weight: t.$weight-bold;
+  }
+
+  blockquote {
+    margin: t.$space-4 0;
+    padding-left: t.$space-3;
+    border-left: t.$border-width-emphasis solid t.$color-accent;
+    color: t.$color-ink-muted;
+  }
+
+  hr {
+    margin: t.$space-5 0;
+    border: 0;
+    border-top: t.$border-width solid t.$color-border;
+  }
+
+  // Tables do not exist on production (design.md §7 says define one before
+  // shipping). This is the minimum readable default; if a real table ships,
+  // write its spec into design.md §7 first.
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 0 t.$space-3;
+  }
+
+  th,
+  td {
+    padding: t.$space-2;
+    border-bottom: t.$border-width solid t.$color-border;
+    text-align: left;
+  }
+
+  th {
+    @include m.text-small;
+  }
+
+  // Any dynamically-changing figure gets tabular figures
+  // (make-interfaces-feel-better).
+  td {
+    font-variant-numeric: tabular-nums;
+  }
+}

@@ -1,0 +1,82 @@
+@use '../abstracts/tokens' as t;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BASE — the page canvas.
+//
+// 🔒 THE ONE-CANVAS RULE (design.md §5): the page IS cream. A section declares
+// no background unless it is one of the two allowed bands. Audit on production:
+// 13 sections → 2 distinct backgrounds. PASS. Do not add a third.
+//
+// Note there is NO max-width here. vibe-frontend-standards §3 bans a cap on the
+// page canvas — the inner container does the capping (see the container() mixin).
+// ─────────────────────────────────────────────────────────────────────────────
+
+body {
+  background-color: t.$color-canvas;
+  color: t.$color-ink;
+  font-family: t.$font-sans;
+  font-size: t.$text-body;
+  font-weight: t.$weight-body;
+  line-height: t.$leading-body;
+  width: 100%;
+  overflow-x: hidden; // belt-and-braces against the horizontal-scroll failure
+}
+
+// Custom properties are exported so third-party markup we cannot restyle from
+// SCSS (Gravity Forms, the Review Wall widget) can still be nudged with the
+// project's own tokens. Mirrors design.md §12.
+:root {
+  --ak-ink: #{t.$color-ink};
+  --ak-ink-muted: #{t.$color-ink-muted};
+  --ak-canvas: #{t.$color-canvas};
+  --ak-canvas-muted: #{t.$color-canvas-muted};
+  --ak-surface: #{t.$color-surface};
+  --ak-surface-sunken: #{t.$color-surface-sunken};
+  --ak-accent: #{t.$color-accent};
+  --ak-border: #{t.$color-border};
+  --ak-border-soft: #{t.$color-border-soft};
+  --ak-border-inverse: #{t.$color-border-inverse};
+
+  --ak-radius-sm: #{t.$radius-sm};
+  --ak-radius-md: #{t.$radius-md};
+  --ak-radius-lg: #{t.$radius-lg};
+  --ak-radius-pill: #{t.$radius-pill};
+
+  --ak-shadow: #{t.$shadow};
+
+  --ak-dur-base: #{t.$dur-base};
+  --ak-ease: #{t.$ease};
+}
+
+// .u-visually-hidden
+// The one sanctioned utility class. dev-bem-scss allows documented escape
+// hatches; screen-reader-only text is the canonical one.
+.u-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+// .u-skip-link
+.u-skip-link {
+  position: absolute;
+  top: t.$space-1;
+  left: t.$space-1;
+  z-index: t.$z-overlay;
+  padding: t.$space-1 t.$space-2;
+  background-color: t.$color-accent;
+  color: t.$color-canvas;
+  border-radius: t.$radius-sm;
+  transform: translateY(-200%);
+  transition: transform t.$dur-base t.$ease;
+
+  &:focus-visible {
+    transform: translateY(0);
+  }
+}
