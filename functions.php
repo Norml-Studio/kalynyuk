@@ -29,5 +29,6 @@ define( 'AK_URI', get_stylesheet_directory_uri() );
 require_once AK_DIR . '/inc/setup.php';
 require_once AK_DIR . '/inc/helpers.php';
 require_once AK_DIR . '/inc/assets.php';
+require_once AK_DIR . '/inc/post-types.php';
 require_once AK_DIR . '/inc/shortcodes.php';
 require_once AK_DIR . '/inc/integrations.php';
