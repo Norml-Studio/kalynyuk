@@ -1,0 +1,146 @@
+# Anna Kalynyuk — WordPress Development Context
+
+> This `.claude/` folder is the master context layer for this WordPress
+> theme. Everything Claude needs to know about the codebase lives here:
+> the architecture docs (`docs/`), the design contract (`design.md`), the
+> deployment contract (`ci-cd.md`), a self-compressing changelog, and
+> project-specific skills.
+
+## Project overview
+- **Project:** Anna Kalynyuk
+- **Theme slug:** `anna-kalynyuk---norml-studio-theme`
+- **Parent theme:** Divi 4.27.7 (stock, vendored — never edit)
+- **Source hosting:** Bitbucket — client production code (per `dev-ci-cd` + Source Hosting Policy in root CLAUDE.md)
+- **Production:** https://www.kalynyuk.com
+- **Staging:** [fill in URL — none known]
+- **Repo:** [fill in Bitbucket URL — **no git repo exists locally yet**]
+- **Local environment:** OpenServer (Apache + PHP 8.1 + MySQL 5.7) at `f:\localsites\kalynyuk.loc`, served on `http://kalynyuk.loc`
+- **Drive folder:** [fill in Norml Drive path]
+- **Project slug:** `anna-kalynyuk`
+- **Content languages:** Ukrainian (default) · Portuguese · English · Russian, via Polylang
+
+## What this project actually is
+
+A **Divi Builder site**. The child theme is 3 files and ~40 lines of PHP; it holds
+two shortcodes and an enqueue. **All layout and content lives in the database as
+Divi shortcodes**, assembled through the Divi Theme Builder (global header / footer
+/ post templates) and per-page Divi layouts. Custom CSS lives in the database too,
+in a `custom-code` post edited through the CodeKit plugin — not in the theme.
+
+Practical consequence: *do not go looking for page layout in PHP files.* Read
+`docs/04-content-structure.md` to find which Divi Theme Builder template or page
+layout owns the thing you're changing.
+
+## Production access
+
+Server connection info, SSH details, WP admin reference, and credential-store entry
+names live at:
+
+```
+~/.config/norml-studio/credentials/
+```
+
+When you need to connect to production / staging:
+1. Read `~/.config/norml-studio/credentials/projects/anna-kalynyuk.json` for project-level pointers (URL, server reference, WP admin URL, credential entry names).
+2. From that file, read `~/.config/norml-studio/credentials/servers/{server-slug}.json` for SSH details.
+3. For password-style secrets (WP REST API app passwords, DB), read them from **Windows Credential Manager** at runtime.
+
+⚠️ **`projects/anna-kalynyuk.json` does not exist yet.** Production access is
+therefore unresolvable. Hard stop and ask Petr before attempting any remote work —
+never improvise or interactively prompt for credentials. See
+`~/.config/norml-studio/credentials/README.md` for the schema.
+**Never paste credentials into this CLAUDE.md or any committed file.**
+
+## WP-CLI access
+
+Config lives at `wp-config.json` (sibling of this file). WP-CLI is **not on PATH**
+on this machine — it runs as a phar through OpenServer's PHP:
+
+```
+"D:\OpenServer\modules\php\PHP_8.1\php.exe" "C:\Users\Petr\wp-cli.phar" --path=f:/localsites/kalynyuk.loc <command>
+```
+
+Use `eval-file <script.php>` rather than inline `eval` — PowerShell mangles `$` and
+quoting when passing PHP to a native executable.
+
+## CI/CD pipeline
+
+This project's deployment pattern, environments, database strategy, backup strategy,
+and permissions matrix live in `./ci-cd.md` (sibling of this file). **Every dev skill
+that touches deploy or DB reads `ci-cd.md` first** — `vibe-wp-developer`,
+`dev-wp-developer`, `vibe-wp-manager`, `dev-wp-migration`. The catalog of patterns
+lives in `{norml-claude-skills}/.claude/skills/dev-ci-cd/`.
+
+⚠️ `ci-cd.md` is currently **provisional** — the pattern is a default, not a
+confirmed decision, and the environment rows are unfilled. Deploys are blocked until
+it's confirmed.
+
+## Design contract — REQUIRED READING
+
+`./design.md` (sibling of this file) is this project's **binding design contract**:
+palette tokens, type scale, spacing / radius / elevation, the surface + canvas rule,
+container and layout, per-component specs, imagery, motion, do/don't, and a CSS export.
+
+**Every skill that writes or edits HTML / CSS / Blade / a block / a page MUST read
+`design.md` first and conform to it.** It ranks alongside `ci-cd.md` (how it deploys):
+`design.md` is **how it looks**, and it is not optional.
+
+Rules:
+- **Never invent a value that isn't in `design.md`.** Derive from the scales there. If the design genuinely needs a new token, add it to `design.md` first, then use it.
+- **Never introduce a second accent hue, a new radius step, or a per-section background** — `design.md` §5 holds the one-canvas rule.
+- `design.md` sits UNDER the universal floor in `design-anti-slop` and the structural contract in `vibe-frontend-standards`; where it deliberately overrides a house default, it says so explicitly and wins.
+
+If `design.md` is missing or stale, run `dev-wp-init-project` Stage 6 (*"rescan design"*).
+
+## Architecture docs
+
+`docs/` contains the full technical architecture of this project, produced and
+maintained by `dev-wp-init-project`'s scrape pipeline. **Read these before doing any
+implementation work.**
+
+- `docs/01-infrastructure.md` — server, PHP, database, caching, cron
+- `docs/02-application.md` — themes, plugins (grouped by function), page builder, plugin interaction map
+- `docs/03-theme-architecture.md` — every file in the theme, the Divi Theme Builder layer, shortcodes, CPTs, the CodeKit CSS layer
+- `docs/04-content-structure.md` — pages, menus, Polylang wiring, how each page is built
+- `docs/05-issues.md` — problems and inconsistencies found
+
+To refresh just one layer, say *"rescan theme architecture"* (Stage 3 only), etc.
+
+## Changelog
+
+Three-tier rolling changelog that compresses itself so history never becomes junk:
+
+- `changelog/daily.md` — raw entries from today's session
+- `changelog/weekly.md` — compressed summary of the current week
+- `changelog/changelog.md` — long-term history
+
+See `changelog/README.md` for the rollover protocol. Use the `dev-changelog` skill.
+**Write to the changelog at the end of any session where something changed, was
+decided, or was discovered that future sessions need to know.**
+
+## Project-specific skills
+
+`skills/` is where you add skills that only make sense for this project. Starts
+empty. Add skills as real patterns emerge — don't pre-design them.
+
+For everything else, use the global Norml skills:
+- `dev-wp-init-project` — refresh `docs/` / `design.md`, or re-scaffold `.claude/`
+- `dev-wp-developer` — Norml's WordPress architecture and the deep-dev pipeline
+- `vibe-wp-developer` — AI-led closed-loop builds for small / templated sites
+- `vibe-wp-manager` — manage content / media / users on a live site
+- `dev-wp-migration` · `dev-wp-pentest` · `dev-changelog` · `dev-code-review` · `norml-git`
+
+## Norml Studio standards
+
+Read `Norml Drive/.claude/docs/standards.md` before doing any work — naming,
+changelog, code review, WP standard, and skill versioning rules.
+
+## Key rules
+- **Never edit the Divi parent theme, `wp-includes/`, `wp-admin/`, or any plugin folder.** Updates overwrite the changes.
+- **New CSS goes into CodeKit** (`wp-admin → Custom Codes → Public Side SCSS`), not into the child `style.css`. See `docs/03-theme-architecture.md` for how that compiles.
+- **New PHP hooks / shortcodes** go into the child theme `functions.php`.
+- Always read `docs/03-theme-architecture.md` before touching theme code and `docs/04-content-structure.md` before touching page content.
+- Local `WP_DEBUG` is off and WP Rocket is on. When diagnosing, flip `WP_DEBUG` in `wp-config.php`, then turn it back off and purge `wp-content/cache/` + `wp-content/et-cache/`.
+- **Polylang is active.** Anything content-shaped has a language. Never create a page/post without deciding its language and its translation links.
+- Log meaningful changes to `changelog/daily.md` at end of session.
+- **`.claude/` is for AI, top-level is for humans.** AI-shaped artifacts go inside `.claude/`; source files a teammate opens during routine editorial / design work stay at the top level. See `norml-claude-skills/CLAUDE.md` → Project Folder — `.claude/` vs Top-Level.
