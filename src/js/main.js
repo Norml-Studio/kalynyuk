@@ -5,12 +5,21 @@
  *
  * Deliberately dependency-free. Divi still loads jQuery on every page during the
  * migration, but new code must not use it (dev-wp-developer: "No jQuery"). No
- * Alpine either — nothing here needs a reactivity layer yet. Add one only when a
- * component genuinely requires it.
+ * Alpine either — the header needs class and attribute toggles, not a reactivity
+ * layer. Add one only when a component genuinely requires it.
  */
 import '../scss/main.scss';
+import { initHeader } from './header.js';
 
-// Marker so we can confirm from the console / Playwright that the built bundle
-// actually loaded, rather than inferring it from styles that Divi might also
-// be providing.
-document.documentElement.dataset.akTheme = 'ready';
+const boot = () => {
+  initHeader();
+  // Marker so a Playwright run can confirm the built bundle actually executed,
+  // rather than inferring it from styles Divi might also be providing.
+  document.documentElement.dataset.akTheme = 'ready';
+};
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', boot, { once: true });
+} else {
+  boot();
+}

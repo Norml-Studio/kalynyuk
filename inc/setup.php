@@ -43,3 +43,27 @@ function ak_setup() {
 	add_editor_style( 'dist/css/main.css' );
 }
 add_action( 'after_setup_theme', 'ak_setup' );
+
+/**
+ * Drop Divi's hardcoded viewport meta.
+ *
+ * Divi/functions.php:536 emits:
+ *   <meta name="viewport" content="width=device-width, initial-scale=1.0,
+ *         maximum-scale=1.0, user-scalable=0" />
+ *
+ * `maximum-scale=1.0, user-scalable=0` disables pinch-zoom, which is a **WCAG
+ * 2.1 SC 1.4.4 (Resize Text) failure** — and it is not configurable, it is
+ * hardcoded in the parent theme. It also duplicated the correct viewport tag our
+ * header.php outputs, and being later in wp_head it won.
+ *
+ * Ours (in header.php) is `width=device-width, initial-scale=1` with no zoom
+ * lock, per vibe-frontend-standards §Responsive rule 1.
+ *
+ * Removed on `wp_head` at priority 1 — early enough to unhook before Divi's
+ * default-priority callback runs, and late enough that the parent theme's
+ * functions.php has been loaded and the callback actually exists to remove.
+ */
+function ak_remove_divi_viewport_meta() {
+	remove_action( 'wp_head', 'et_add_viewport_meta' );
+}
+add_action( 'wp_head', 'ak_remove_divi_viewport_meta', 1 );

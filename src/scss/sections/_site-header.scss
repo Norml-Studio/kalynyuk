@@ -1,0 +1,261 @@
+@use '../abstracts/tokens' as t;
+@use '../abstracts/mixins' as m;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// .site-header — Figma 1163:952 (desktop) / 1166:2456 (mobile)
+//
+// Sticky per header-standard §1. NO bottom separator: the stroke exists in the
+// Figma frame but is set visible:false, so its absence is a decision, not an
+// omission (design.md §7).
+//
+// ⚠️ Divi's et-cache/global/et-divi-customizer-global.min.css loads AFTER our
+// stylesheet (docs/05-issues.md). Every selector here is a .site-header* /
+// .site-nav* class Divi never emits, so there is nothing for it to override.
+// Do not introduce a Divi selector (#main-header, .et-menu, …) into this file.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// .site-header
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: t.$z-header;
+  background-color: t.$color-canvas;
+}
+
+// .site-header__inner
+.site-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: t.$space-2;
+  min-height: t.$header-height-mobile;
+  padding-inline: t.$header-pad-mobile;
+
+  @include m.bp(desktop) {
+    min-height: t.$header-height;
+    padding-inline: t.$pad-inline-desktop;
+  }
+}
+
+// .site-header__logo
+.site-header__logo {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+
+  img {
+    width: auto;
+    height: 25px;
+
+    @include m.bp(desktop) {
+      height: 32px;
+    }
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+}
+
+// .site-header__actions
+.site-header__actions {
+  display: flex;
+  align-items: center;
+  gap: t.$space-2;
+  flex: 0 0 auto;
+
+  @include m.bp(desktop) {
+    gap: t.$header-right-gap;
+  }
+}
+
+// .site-header__cta
+// Hidden on mobile: the drawer carries the CTA in its pinned action bar, so
+// showing both would be two primary CTAs in one viewport.
+.site-header__cta {
+  display: none;
+
+  @include m.bp(desktop) {
+    display: inline-flex;
+  }
+}
+
+// .site-header__toggle
+// Mobile only. 42×42 with radius 8, fill --accent — Figma 1166:2457. Comfortably
+// over the 40×40 minimum in header-standard §5.
+.site-header__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: t.$icon-btn-close;
+  height: t.$icon-btn-close;
+  background-color: t.$color-accent;
+  color: t.$color-canvas;
+  border-radius: t.$radius-sm;
+  transition: background-color t.$dur-base t.$ease;
+
+  &:hover {
+    background-color: t.$color-ink;
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+
+  @include m.bp(desktop) {
+    display: none;
+  }
+}
+
+// .site-header__burger
+.site-header__burger {
+  display: block;
+}
+
+// .site-header__cross
+.site-header__cross {
+  display: none;
+}
+
+// State: drawer open — the toggle becomes a close button. The icon swaps because
+// hamburger⇄✕ is what header-standard §4 asks for; the CHEVRONS rotate instead of
+// swapping, which is the rule that matters (§6).
+.site-header__toggle[aria-expanded='true'] {
+  .site-header__burger {
+    display: none;
+  }
+
+  .site-header__cross {
+    display: block;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// .site-nav — desktop only. The drawer handles mobile.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// .site-nav
+.site-nav {
+  display: none;
+
+  @include m.bp(desktop) {
+    display: block;
+  }
+}
+
+// .site-nav__list
+.site-nav__list {
+  display: flex;
+  align-items: center;
+  gap: t.$header-nav-gap;
+}
+
+// .site-nav__item
+.site-nav__item {
+  position: relative;
+}
+
+// .site-nav__link
+.site-nav__link {
+  @include m.text-ui;
+
+  display: inline-flex;
+  align-items: center;
+  min-height: t.$tap-min;
+  color: t.$color-ink;
+  transition: color t.$dur-base t.$ease;
+
+  &:hover {
+    color: t.$color-accent;
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+
+  &.is-current {
+    color: t.$color-accent;
+  }
+}
+
+// .site-nav__trigger
+// A parent item is a <button>, never a link — header-standard §1.
+.site-nav__trigger {
+  @include m.text-ui;
+
+  display: inline-flex;
+  align-items: center;
+  gap: t.$space-1;
+  min-height: t.$tap-min;
+  color: t.$color-ink;
+  transition: color t.$dur-base t.$ease;
+
+  &:hover {
+    color: t.$color-accent;
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+
+  &.is-current {
+    color: t.$color-accent;
+  }
+}
+
+// .site-nav__chevron
+// ROTATES 180°, never swaps glyph — header-standard §6.
+.site-nav__chevron {
+  transition: transform t.$dur-base t.$ease;
+
+  [aria-expanded='true'] > & {
+    transform: rotate(180deg);
+  }
+}
+
+// .site-nav__panel
+// A SIMPLE dropdown, not a mega-menu: 4 flat links (header-standard §2).
+// 548×176 in Figma 1163:1809.
+.site-nav__panel {
+  position: absolute;
+  top: calc(100% + #{t.$space-1});
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: t.$z-dropdown;
+  width: max-content;
+  max-width: t.$header-dropdown-width;
+  padding: t.$space-3;
+  background-color: t.$color-surface;
+  border-radius: t.$radius-lg;
+  box-shadow: t.$shadow-legacy;
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+// .site-nav__sublist
+.site-nav__sublist {
+  display: grid;
+  gap: t.$space-2;
+}
+
+// .site-nav__sublink
+.site-nav__sublink {
+  @include m.text-body-sm;
+
+  display: block;
+  min-height: t.$tap-min;
+  padding-block: t.$space-1;
+  color: t.$color-ink;
+  transition: color t.$dur-base t.$ease;
+
+  &:hover {
+    color: t.$color-accent;
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+}
+

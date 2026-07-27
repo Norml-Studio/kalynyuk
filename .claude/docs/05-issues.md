@@ -17,8 +17,28 @@
 > **Found 2026-07-27 during phase 0**, by rendering production with Playwright and
 > walking the DOM ancestry of a nav link. Present on production AND local — not a
 > local artifact.
-- **What:** the visible header nav is a **Divi `et_pb_menu` module with no menu assigned**, so Divi falls back to `wp_page_menu()`. Its items are `li.page_item`, and the ancestry is `a → li.page_item.page-item-2440 → ul.et-menu.nav → nav.et-menu-nav → div.et_pb_menu__menu → div.et_pb_menu__wrap`. It renders **12 items wrapping onto three lines**: `FAQ · Feedback · Portugal · Блог · Відгуки · Головна · Довіра · Калькулятор · Політика конфіденційності · Послуги · Про мене · Іпотека`.
-- **Where:** Divi header layouts 284 / 2213 / 2214 (the `et_pb_menu` module inside them); visible on `https://www.kalynyuk.com/`
+> **ROOT CAUSE CORRECTED 2026-07-27** during the phase-1 header build. The original
+> entry blamed *"a Divi `et_pb_menu` module with no menu assigned"*. **That was
+> wrong.** The module had a menu assigned; **Polylang was nullifying the location.**
+>
+> `polylang/src/frontend/frontend-nav-menu.php:244`:
+> ```php
+> $menus[$loc] = empty($options['nav_menus'][$theme][$loc][$curlang->slug]) ? 0 : …;
+> ```
+> Polylang **overwrites every menu location with `0`** on the front end unless that
+> location has an explicit per-language assignment — and `polylang.nav_menus` was an
+> empty array. So `primary-menu` resolved to 0 in every language, `wp_nav_menu()`
+> found no menu, and fell back to `wp_page_menu()`. Proven by building a new header
+> that reads the location directly: it rendered an empty nav until the per-language
+> assignment was written, then rendered all 8 items.
+>
+> **Status: FIXED, two ways.** Data: `polylang.nav_menus[{theme}]['primary-menu']['uk'] = 2`.
+> Code: `ak_nav_menu_location_fallback()` in `inc/nav.php` (filter
+> `theme_mod_nav_menu_locations`, priority 30 — after Polylang's 20) makes any
+> language without its own assignment inherit the **default language's** menu, so a
+> newly added language never ships an empty header.
+- **What:** the visible header nav was an auto-generated page list — `li.page_item` items under `ul.et-menu.nav → div.et_pb_menu__wrap`, i.e. `wp_page_menu()` output inside Divi's menu module. It rendered **12 items wrapping onto three lines**: `FAQ · Feedback · Portugal · Блог · Відгуки · Головна · Довіра · Калькулятор · Політика конфіденційності · Послуги · Про мене · Іпотека`.
+- **Where:** `polylang` option (`nav_menus`), surfaced through Divi header layouts 284 / 2213 / 2214; was visible on `https://www.kalynyuk.com/`
 - **Why it matters:** three of those entries should never be in primary nav — `Feedback` (150 B, orphaned), `Portugal` (448 B, orphaned) and `Політика конфіденційності`. A twelfth entry, `Іпотека → /category/ipoteka/`, is a **category archive**, not a page. The curated 8-item menu (`Меню`, term 2, assigned to `primary-menu`) is not what visitors see. The IA the client signed off on is not the IA that shipped, and the nav is visibly broken across three lines at 1440px.
 - **Compounding:** `[vertical_menu]` **does** render the correct 8-item menu (`ul.vertical-menu`, 16 `li.menu-item` = 8 × desktop+mobile), but its output has **no CSS anywhere in the project** (see the related Warning below), so the correct menu is on the page, unstyled and orphaned, while the wrong one is the one that displays.
 - **Fix scope:** phase 1 (custom header) resolves all of this at once. Do not patch the Divi module — it is being deleted.

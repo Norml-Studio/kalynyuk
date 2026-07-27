@@ -17,10 +17,13 @@
 @use 'base/typography';
 
 // ─── components/ ─────────────────────────────────────────────────────────────
-// (empty — first entries land with the header/footer in phase 1)
+@use 'components/button';
+@use 'components/lang-switch';
 
 // ─── sections/ ───────────────────────────────────────────────────────────────
-// (empty — phase 1 adds site-header / site-footer)
+@use 'sections/site-header';
+@use 'sections/nav-drawer';
+@use 'sections/site-footer';
 
 // ─── pages/ ──────────────────────────────────────────────────────────────────
 // (empty — phase 3)

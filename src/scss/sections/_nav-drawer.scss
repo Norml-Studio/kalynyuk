@@ -1,0 +1,209 @@
+@use '../abstracts/tokens' as t;
+@use '../abstracts/mixins' as m;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// .nav-drawer — Figma 1166:2455 (root) / 1166:2560 (drill-down)
+//
+// header-standard §4: side slide-in, drill-down sub-panels with a Back row, a
+// pinned action bar, scroll-lock, focus in/out. The design asks for a
+// FULL-VIEWPORT-WIDTH panel rather than the standard's default min(92vw, 420px) —
+// vibe-frontend-standards' own responsive rule 6 says "full-screen slide-in
+// panel", so the two agree and the design wins on width.
+//
+// The header bar stays cream and above the drawer, which is why the drawer starts
+// below it rather than covering it.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// .nav-drawer
+.nav-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: t.$z-drawer;
+
+  &[hidden] {
+    display: none;
+  }
+
+  @include m.bp(desktop) {
+    display: none;
+  }
+}
+
+// .nav-drawer__scrim
+.nav-drawer__scrim {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(42, 32, 17, 0.4);
+  opacity: 0;
+  transition: opacity t.$dur-slow t.$ease;
+
+  .nav-drawer.is-open & {
+    opacity: 1;
+  }
+}
+
+// .nav-drawer__dialog
+// Sits below the sticky header so the logo, flag and close button stay usable.
+.nav-drawer__dialog {
+  position: absolute;
+  top: t.$header-height-mobile;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: t.$color-accent;
+  color: t.$color-canvas;
+  transform: translateX(100%);
+  transition: transform t.$dur-slow t.$ease;
+
+  .nav-drawer.is-open & {
+    transform: translateX(0);
+  }
+}
+
+// .nav-drawer__panels
+// The scroll container. Panels are absolutely stacked inside it.
+.nav-drawer__panels {
+  position: relative;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+// .nav-drawer__panel
+.nav-drawer__panel {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: t.$space-4 t.$gutter t.$space-4;
+  transform: translateX(100%);
+  visibility: hidden;
+  transition: transform t.$dur-slow t.$ease, visibility t.$dur-slow t.$ease;
+
+  &.is-active {
+    transform: translateX(0);
+    visibility: visible;
+  }
+}
+
+// .nav-drawer__list
+.nav-drawer__list {
+  display: grid;
+  gap: t.$space-3;
+}
+
+// .nav-drawer__link
+.nav-drawer__link {
+  @include m.text-h4;
+
+  display: flex;
+  align-items: center;
+  min-height: t.$tap-min;
+  color: t.$color-canvas;
+  transition: opacity t.$dur-base t.$ease;
+
+  &:hover {
+    opacity: 0.72;
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+
+    outline-color: t.$color-canvas;
+  }
+}
+
+// .nav-drawer__trigger
+// chevron-RIGHT, and it drills down rather than expanding in place — §4.
+.nav-drawer__trigger {
+  @include m.text-h4;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: t.$space-2;
+  width: 100%;
+  min-height: t.$tap-min;
+  color: t.$color-canvas;
+  text-align: left;
+
+  &:focus-visible {
+    @include m.focus-ring;
+
+    outline-color: t.$color-canvas;
+  }
+}
+
+// .nav-drawer__chevron
+.nav-drawer__chevron {
+  flex: 0 0 auto;
+}
+
+// .nav-drawer__back
+.nav-drawer__back {
+  @include m.text-body;
+
+  display: inline-flex;
+  align-items: center;
+  gap: t.$space-1;
+  min-height: t.$tap-min;
+  margin-bottom: t.$space-3;
+  color: t.$color-canvas;
+
+  &:focus-visible {
+    @include m.focus-ring;
+
+    outline-color: t.$color-canvas;
+  }
+}
+
+// .nav-drawer__rule
+.nav-drawer__rule {
+  margin: t.$space-4 0;
+  border: 0;
+  border-top: t.$border-width solid t.$color-accent-light;
+}
+
+// .nav-drawer__contacts
+.nav-drawer__contacts {
+  display: grid;
+  gap: t.$space-3;
+}
+
+// .nav-drawer__contact
+.nav-drawer__contact {
+  @include m.text-body;
+
+  display: flex;
+  align-items: center;
+  min-height: t.$tap-min;
+  color: t.$color-canvas;
+
+  &:hover {
+    opacity: 0.72;
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+
+    outline-color: t.$color-canvas;
+  }
+}
+
+// .nav-drawer__actions
+// The pinned bar — 88px tall, does not scroll, CTA inset by 20px.
+// Figma 1166:2547 (bar) + 1166:2467 (button).
+.nav-drawer__actions {
+  flex: 0 0 auto;
+  min-height: t.$drawer-actionbar-h;
+  display: flex;
+  align-items: center;
+  padding: t.$drawer-actionbar-pad t.$gutter;
+  border-top: t.$border-width solid t.$color-accent-light;
+}
+
+// .nav-drawer__cta
+.nav-drawer__cta {
+  width: 100%;
+}

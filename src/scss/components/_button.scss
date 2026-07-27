@@ -1,0 +1,85 @@
+@use '../abstracts/tokens' as t;
+@use '../abstracts/mixins' as m;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// .btn — the four UI Kit variants (component sets under 337:4158).
+// Radius is a constant 24px, NOT a pill. See design.md §4 / the v2.0.0 note.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// .btn
+.btn {
+  @include m.btn-base;
+}
+
+// .btn--primary
+// Kit set 341:657 — fill --accent, 224×48. The kit's own instance is #307156;
+// the palette swatch #307155 is canonical (design.md §2).
+.btn--primary {
+  background-color: t.$color-accent;
+  border-color: t.$color-accent;
+  color: t.$color-canvas;
+
+  &:hover,
+  &:focus-visible {
+    background-color: t.$color-ink;
+    border-color: t.$color-ink;
+  }
+}
+
+// .btn--on-accent
+// Kit set 341:660 — solid cream, for use ON a green surface.
+.btn--on-accent {
+  background-color: t.$color-canvas;
+  border-color: t.$color-canvas;
+  color: t.$color-ink;
+
+  &:hover,
+  &:focus-visible {
+    background-color: t.$color-surface;
+    border-color: t.$color-surface;
+  }
+
+  &:focus-visible {
+    outline-color: t.$color-canvas;
+  }
+}
+
+// .btn--ghost
+// Kit set 341:663 — transparent with a cream hairline, for use ON a green surface.
+.btn--ghost {
+  background-color: transparent;
+  border-color: t.$color-canvas;
+  color: t.$color-canvas;
+
+  &:hover,
+  &:focus-visible {
+    background-color: t.$color-canvas;
+    color: t.$color-ink;
+  }
+
+  &:focus-visible {
+    outline-color: t.$color-canvas;
+  }
+}
+
+// .btn--wide
+// Kit set 341:666 — 493×57, fill --ink, label --surface. Radius stays 24, so at
+// 57px tall it is a rounded rectangle rather than a pill. That is the system.
+.btn--wide {
+  min-height: t.$btn-height-wide;
+  width: 100%;
+  background-color: t.$color-ink;
+  border-color: t.$color-ink;
+  color: t.$color-surface;
+
+  &:hover,
+  &:focus-visible {
+    background-color: t.$color-accent;
+    border-color: t.$color-accent;
+  }
+}
+
+// .btn--block
+.btn--block {
+  width: 100%;
+}

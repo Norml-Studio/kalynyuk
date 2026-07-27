@@ -1,0 +1,184 @@
+@use '../abstracts/tokens' as t;
+@use '../abstracts/mixins' as m;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// .site-footer — Figma Frame 152 (1163:1512)
+//
+// ⚠️ STRUCTURALLY FAITHFUL, NOT PIXEL-MEASURED. The Figma bridge disconnected
+// before frame 1163:303 could be read, so paddings and column widths here come
+// from the design.md scale rather than from the file. Re-measure and refine
+// before calling the footer done. Colours, type roles and the radius ARE from the
+// contract, so nothing is invented — only the rhythm is provisional.
+//
+// The footer is a GREEN band (design.md §5 allows exactly two accent bands; the
+// footer is one of them — production renders it #307155).
+// ─────────────────────────────────────────────────────────────────────────────
+
+// .site-footer
+.site-footer {
+  background-color: t.$color-accent;
+  color: t.$color-canvas;
+}
+
+// .site-footer__inner
+.site-footer__inner {
+  @include m.container;
+
+  display: grid;
+  gap: t.$space-5;
+  padding-block: t.$space-6;
+
+  @include m.bp(desktop) {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: t.$space-4;
+    padding-block: t.$space-8 t.$space-6;
+  }
+}
+
+// .site-footer__brand
+.site-footer__brand {
+  display: grid;
+  gap: t.$space-3;
+  justify-items: start;
+}
+
+// .site-footer__logo
+.site-footer__logo {
+  display: inline-flex;
+
+  // The logo is dark ink on cream; on the green band it needs inverting. The mark
+  // is an SVG so a filter is the least-bad option until a light variant exists —
+  // recorded as a gap rather than hidden.
+  img {
+    width: auto;
+    height: 32px;
+    filter: brightness(0) invert(1);
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+
+    outline-color: t.$color-canvas;
+  }
+}
+
+// .site-footer__nav
+.site-footer__nav {
+  display: block;
+}
+
+// .site-footer__list
+.site-footer__list {
+  display: grid;
+  gap: t.$space-2;
+}
+
+// .site-footer__sublist
+.site-footer__sublist {
+  display: grid;
+  gap: t.$space-2;
+  margin-top: t.$space-2;
+  padding-left: t.$space-2;
+}
+
+// .site-footer__group
+// A parent nav item is not a destination, so in the footer it is a plain label and
+// its children are exposed beneath it — every footer entry navigates somewhere.
+.site-footer__group {
+  @include m.text-ui;
+
+  display: block;
+  color: t.$color-canvas-muted;
+}
+
+// .site-footer__contacts
+.site-footer__contacts {
+  display: grid;
+  gap: t.$space-2;
+  align-content: start;
+}
+
+// .site-footer__link
+.site-footer__link {
+  @include m.text-body-sm;
+
+  display: inline-flex;
+  align-items: center;
+  min-height: t.$tap-min;
+  color: t.$color-canvas;
+  transition: opacity t.$dur-base t.$ease;
+
+  &:hover {
+    opacity: 0.72;
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+
+    outline-color: t.$color-canvas;
+  }
+}
+
+// .site-footer__form
+.site-footer__form {
+  @include m.bp(desktop) {
+    grid-column: 1 / -1;
+  }
+}
+
+// .site-footer__form-title
+.site-footer__form-title {
+  @include m.text-h2;
+
+  margin: 0 0 t.$space-3;
+}
+
+// .site-footer__bottom
+.site-footer__bottom {
+  border-top: t.$border-width solid t.$color-accent-light;
+}
+
+// .site-footer__bottom-inner
+// Legal + credit live in their own row, never inside the sitemap nav
+// (dev-wp-developer, "Site chrome").
+.site-footer__bottom-inner {
+  @include m.container;
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: t.$space-2 t.$space-4;
+  padding-block: t.$space-3;
+
+  @include m.bp(tablet) {
+    justify-content: space-between;
+  }
+}
+
+// .site-footer__copyright
+.site-footer__copyright {
+  @include m.text-body-xs;
+
+  margin: 0;
+  color: t.$color-canvas-muted;
+}
+
+// .site-footer__credit
+.site-footer__credit {
+  @include m.text-body-xs;
+
+  margin: 0;
+  color: t.$color-canvas-muted;
+
+  a {
+    color: t.$color-canvas;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+
+    &:focus-visible {
+      @include m.focus-ring;
+
+      outline-color: t.$color-canvas;
+    }
+  }
+}
