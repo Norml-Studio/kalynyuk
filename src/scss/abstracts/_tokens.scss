@@ -104,10 +104,22 @@ $container-max: 1600px;  // inner content cap (measured on production)
 $content-max:   1368px;  // measured content column at a 1440 viewport
 $measure-max:    680px;  // hard cap for running prose (~72ch at 16px/1.625)
 
-// Adaptive gutter. frontend-standards §3 prescribes 80 / 48 / 20.
-$pad-inline-desktop: 80px;
-$pad-inline-tablet:  48px;
-$pad-inline-mobile:  $gutter;
+// Adaptive gutter.
+//
+// ⚠️ DELIBERATE OVERRIDE of vibe-frontend-standards §3, which prescribes
+// 80 / 48 / 20. This project's grid is 32px:
+//   · Figma frame 1163:950 — EVERY section sits at x=32, width=1376 (1440 canvas),
+//     and the header logotype is at x=32 too.
+//   · Independently confirmed by the production measurement in design.md §6:
+//     content column 1368px at a 1440 viewport ≈ 36px gutters.
+// Two independent sources agree on ~32px, so 80px would be a house default
+// overriding the actual design. design.md wins per its own stated hierarchy.
+//
+// An earlier revision of this file wrongly carried 80/48/20 and contradicted
+// design.md §6. Fixed 2026-07-27 after reading the Figma frame.
+$pad-inline-desktop: 32px;  // [measured: Figma 1163:950 section grid]
+$pad-inline-tablet:  24px;  // inferred — no tablet frame in the design yet
+$pad-inline-mobile:  $gutter;  // 20px [measured: Divi hero custom_padding_phone]
 
 // ─── Breakpoints ─────────────────────────────────────────────────────────────
 // Three STRUCTURAL breakpoints from vibe-frontend-standards §4 — ≥1025 desktop,
