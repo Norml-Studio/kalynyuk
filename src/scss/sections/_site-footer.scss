@@ -7,9 +7,10 @@
 // The footer is a GREEN band. design.md §5 allows exactly two accent bands and
 // the footer is one of them.
 //
-// ⚠️ GUTTER: 40px here, while page SECTIONS use 32px. That 8px difference is in
-// the design file, not a mistake on our side. Recorded in design.md §7 and kept
-// verbatim rather than normalised, so the build matches the mockup.
+// GUTTER: the footer now uses the SHARED container() — canvas 1440, container
+// 1376, padding 30 desktop / 20 mobile (Petr's canonical rule, 2026-07-27). An
+// earlier revision honoured the 40px measured off this frame and the 32px measured
+// off the section grid as two separate rules; both were the design file drifting.
 //
 // Measured geometry (1440 canvas):
 //   logo            40,32   216×32
@@ -32,17 +33,19 @@
 // 40→633 (columns) and 752→1400 (form), i.e. very close to half and half with a
 // 120px channel holding the vertical rule.
 .site-footer__inner {
-  width: 100%;
-  max-width: t.$container-max;
-  margin-inline: auto;
-  padding: t.$space-4 t.$gutter 0;
+  @include m.container;
+
+  padding-block: t.$space-4 0;
   display: grid;
   gap: t.$space-5;
 
   @include m.bp(desktop) {
-    grid-template-columns: 1fr 1fr;
-    column-gap: t.$space-8;
-    padding: t.$space-4 t.$footer-pad-inline 0;
+    // STRICT 50 / 50 (Petr, 2026-07-27). Equal halves with no column gap; the
+    // vertical rule sits exactly on the midpoint as the right column's border,
+    // and each half carries its own inner padding instead of a shared gap —
+    // a gap would push the rule off centre.
+    grid-template-columns: 50% 50%;
+    column-gap: 0;
   }
 }
 
@@ -75,7 +78,9 @@
 }
 
 // .site-footer__cols
-// Two link columns: nav (163px measured) then contacts + regulatory (369px).
+// The left half: two link columns — nav (163px measured) then contacts +
+// regulatory. On desktop it is padded away from the midpoint rule so the rule
+// stays exactly on 50%.
 .site-footer__cols {
   display: grid;
   gap: t.$space-4;
@@ -83,6 +88,10 @@
   @include m.bp(tablet) {
     grid-template-columns: minmax(0, 163px) minmax(0, 1fr);
     column-gap: t.$space-6;
+  }
+
+  @include m.bp(desktop) {
+    padding-right: t.$space-6;
   }
 }
 
@@ -132,10 +141,11 @@
 // The vertical rule at x=720 is drawn as this column's left border on desktop.
 .site-footer__form {
   @include m.bp(desktop) {
-    padding-left: t.$space-8;
+    padding-left: t.$space-6;
     border-left: t.$border-width solid t.$color-accent-light;
   }
 }
+
 
 // .site-footer__form-head
 .site-footer__form-head {
@@ -198,21 +208,16 @@
 // Legal + credit live in their own row, never inside the sitemap nav
 // (dev-wp-developer, "Site chrome").
 .site-footer__bottom-inner {
-  width: 100%;
-  max-width: t.$container-max;
-  margin-inline: auto;
-  padding: t.$space-3 t.$gutter;
+  @include m.container;
+
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: t.$space-2 t.$space-4;
+  padding-block: t.$space-3;
 
   @include m.bp(tablet) {
     justify-content: space-between;
-  }
-
-  @include m.bp(desktop) {
-    padding-inline: t.$footer-pad-inline;
   }
 }
 
@@ -253,8 +258,8 @@
 // Gravity Forms inside the footer.
 //
 // GF markup is not ours, so these are the minimum overrides needed to make its
-// fields read as the design's: cream-outlined inputs on green, cream submit.
-// Kept to layout + colour only — no !important, no restructuring of GF's DOM.
+// fields read as the design's: cream-outlined inputs on green, cream submit, and
+// a WHITE consent checkbox. Layout + colour only, no restructuring of GF's DOM.
 // Field specs from design.md §7 (input radius 16, height 57).
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -312,7 +317,14 @@
     --gf-ctrl-border-color: #{t.$color-accent-light} !important;
     --gf-ctrl-border-color-focus: #{t.$color-canvas} !important;
     --gf-ctrl-placeholder-color: #{t.$color-canvas-muted} !important;
+    // Checkbox: WHITE box with an ink tick (Petr, 2026-07-27) — GF's default is
+    // its blue #204CE5, which read as a pale blue smudge on the green band.
     --gf-ctrl-checkbox-check-color: #{t.$color-ink} !important;
+    --gf-ctrl-checkbox-bg-color: #{t.$color-canvas} !important;
+    --gf-ctrl-checkbox-border-color: #{t.$color-canvas} !important;
+    --gf-ctrl-checkbox-bg-color-hover: #{t.$color-surface} !important;
+    --gf-ctrl-checkbox-border-color-hover: #{t.$color-surface} !important;
+    --gf-ctrl-checkbox-check-bg-color: #{t.$color-canvas} !important;
     --gf-ctrl-checkbox-bg-color-checked: #{t.$color-canvas} !important;
     --gf-ctrl-checkbox-border-color-checked: #{t.$color-canvas} !important;
 
@@ -320,6 +332,45 @@
     // validation errors, and a legible error matters more than palette purity.
     // If its contrast on green proves too low, pick a lighter warm red, add it to
     // design.md first, and set it here — do not silence it.
+  }
+
+  // Consent checkbox → WHITE box, ink tick (Petr, 2026-07-27).
+  // The --gf-ctrl-checkbox-* variables above do not reach it: GF styles the native
+  // input with `appearance: none` plus its own background, and measured after
+  // setting the vars the box was still transparent. Same documented escape hatch.
+  input[type='checkbox'] {
+    appearance: none;
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    background-color: t.$color-canvas !important;
+    border: t.$border-width solid t.$color-canvas !important;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-grid;
+    place-content: center;
+
+    &::before {
+      content: '';
+      width: 11px;
+      height: 6px;
+      border-left: 2px solid t.$color-ink;
+      border-bottom: 2px solid t.$color-ink;
+      transform: rotate(-45deg) translate(1px, -2px);
+      opacity: 0;
+      transition: opacity t.$dur-fast t.$ease;
+    }
+
+    &:checked::before {
+      opacity: 1;
+    }
+
+    &:focus-visible {
+      @include m.focus-ring;
+
+      outline-color: t.$color-canvas;
+    }
   }
 
   // Links inside the form (the consent checkbox points at the privacy policy).

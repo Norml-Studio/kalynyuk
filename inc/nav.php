@@ -204,6 +204,59 @@ function ak_language_switcher() {
 }
 
 /**
+ * Inline the language flag as SVG.
+ *
+ * ⚠️ WHY NOT POLYLANG'S FLAG. Polylang (free) ships 16×11 PNG flags. The design
+ * renders them at 32px inside a circle, so they were being upscaled 2× and looked
+ * visibly mushy — Petr flagged it from a screenshot.
+ *
+ * These SVGs are the DESIGNER'S OWN flag components, exported from the Figma UI
+ * kit (nodes 1164:477 UA, 1164:500 PT, 1164:481 GB). Vector, so crisp at any size;
+ * inlined, so no extra request; already circular with a clip-path at rx=12, which
+ * is exactly the design's treatment.
+ *
+ * Deliberately NOT hand-drawn: getting a national flag subtly wrong on a client
+ * site is worse than a blurry correct one, so the assets come from the design file.
+ *
+ * Falls back to Polylang's PNG for any language without an SVG yet (`ru` today),
+ * so adding a language never produces a missing flag.
+ *
+ * @param string $slug     Language slug.
+ * @param string $png_fallback URL of Polylang's flag PNG.
+ * @return string Ready-to-echo markup.
+ */
+function ak_flag_svg( $slug, $png_fallback = '' ) {
+	static $cache = array();
+
+	$slug = preg_replace( '/[^a-z0-9_-]/', '', strtolower( (string) $slug ) );
+
+	if ( isset( $cache[ $slug ] ) ) {
+		return $cache[ $slug ];
+	}
+
+	$file = AK_DIR . '/assets/flags/' . $slug . '.svg';
+
+	if ( $slug && file_exists( $file ) ) {
+		$svg = file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+
+		// Strip the XML prolog if present and mark it decorative — the language
+		// name is already exposed to screen readers in the link text.
+		$svg = preg_replace( '#<\?xml[^>]*\?>\s*#i', '', (string) $svg );
+		$svg = preg_replace( '#<svg\b#i', '<svg aria-hidden="true" focusable="false"', $svg, 1 );
+
+		$cache[ $slug ] = $svg;
+
+		return $svg;
+	}
+
+	$cache[ $slug ] = $png_fallback
+		? sprintf( '<img src="%s" alt="" width="16" height="11" decoding="async" />', esc_url( $png_fallback ) )
+		: '';
+
+	return $cache[ $slug ];
+}
+
+/**
  * Translate a page ID into the current language.
  *
  * Used for the chrome CTA: one ACF field holds the target page, and this resolves

@@ -145,22 +145,27 @@ $border-width-emphasis: 3px;
 $shadow-legacy: 0 1px 4px rgba(18, 25, 97, 0.08);
 
 // ─── Layout ────────────────────── Figma frame 1163:950 + design.md §6
-$container-max: 1600px;  // inner content cap
+// Design canvas is 1440 and the content container is 1376 (Petr, 2026-07-27).
+// v2.0.0 had 1600 here, taken from a Divi section's max_width attribute — that was
+// the old implementation's value, not the design's.
+$container-max: 1376px;  // inner content cap
 $content-max:   1368px;  // measured content column at a 1440 viewport
 $measure-max:    680px;  // hard cap for running prose
 
-// Gutters. DELIBERATE OVERRIDE of vibe-frontend-standards §3 (80/48/20): every
-// section in the design sits at x=32 width=1376 on a 1440 canvas, and the header
-// logotype is at x=32. Two independent sources (Figma + the production
-// measurement in design.md §6) agree on ~32px.
-$pad-inline-desktop: 32px;
+// Gutters — DELIBERATE OVERRIDE of vibe-frontend-standards §3 (80/48/20).
+//
+// Set by Petr, 2026-07-27, as the ONE canonical rule: canvas 1440, container 1376,
+// padding 30 on desktop and 20 on mobile. That supersedes what I derived by
+// measuring frames — which gave 32px from the section grid and 40px from the
+// footer frame. Those were the design file drifting; this is the intent.
+$pad-inline-desktop: 30px;
 $pad-inline-tablet:  24px;  // inferred — no tablet frame in the design yet
-$pad-inline-mobile:  $gutter;
+$pad-inline-mobile:  20px;
 
-// The FOOTER uses a 40px gutter while sections use 32px (Figma 1163:303 — logo,
-// nav column, hairline and bottom row all sit at x=40). An 8px inconsistency in
-// the design file, kept verbatim rather than normalised.
-$footer-pad-inline: 40px;
+// NOTE: the footer's own gutter token is retired. Petr set ONE canonical rule —
+// container 1376, padding 30 desktop / 20 mobile — so the footer uses the shared
+// container() mixin like every other section. The 40px measured off frame 1163:303
+// was the design file drifting, not a second rule to honour.
 
 // ─── Component sizing ───────────────── UI Kit Buttons/Inputs component sets
 $btn-height:       48px;   // 224×48 standard

@@ -42,18 +42,18 @@ $ak_rest    = array_slice( $ak_langs, 1 );
 			);
 			?>
 		</span>
-		<span class="lang-switch__flag" aria-hidden="true">
+		<span class="lang-switch__flag">
 			<?php
 			/*
-			 * ⚠️ With `raw => 1`, Polylang returns 'flag' as a URL STRING, not as a
-			 * ready <img> tag. Echoing it printed a bare URL into the header. Caught
-			 * by rendering the page, not by reading the docs — which is the whole
-			 * argument for the Playwright pass.
+			 * Inline SVG from the design's own flag components. Polylang's bundled
+			 * flags are 16×11 PNGs and were being upscaled 2× into a 32px circle,
+			 * which looked mushy. See ak_flag_svg().
+			 *
+			 * Also note: `raw => 1` makes Polylang return 'flag' as a URL STRING,
+			 * not a ready <img> tag — the first version echoed it straight out and
+			 * printed a bare URL into the header.
 			 */
-			printf(
-				'<img src="%s" alt="" width="16" height="11" decoding="async" />',
-				esc_url( $ak_current['flag'] )
-			);
+			echo ak_flag_svg( $ak_current['slug'], $ak_current['flag'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			?>
 		</span>
 	</button>
@@ -68,7 +68,7 @@ $ak_rest    = array_slice( $ak_langs, 1 );
 					lang="<?php echo esc_attr( $ak_lang['slug'] ); ?>"
 					<?php echo $ak_lang['current'] ? ' aria-current="true"' : ''; ?>
 				>
-					<span class="lang-switch__flag" aria-hidden="true"><?php printf( '<img src="%s" alt="" width="16" height="11" decoding="async" />', esc_url( $ak_lang['flag'] ) ); ?></span>
+					<span class="lang-switch__flag"><?php echo ak_flag_svg( $ak_lang['slug'], $ak_lang['flag'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
 					<span class="u-visually-hidden"><?php echo esc_html( $ak_lang['name'] ); ?></span>
 				</a>
 			</li>
