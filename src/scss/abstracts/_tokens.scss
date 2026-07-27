@@ -157,6 +157,11 @@ $pad-inline-desktop: 32px;
 $pad-inline-tablet:  24px;  // inferred — no tablet frame in the design yet
 $pad-inline-mobile:  $gutter;
 
+// The FOOTER uses a 40px gutter while sections use 32px (Figma 1163:303 — logo,
+// nav column, hairline and bottom row all sit at x=40). An 8px inconsistency in
+// the design file, kept verbatim rather than normalised.
+$footer-pad-inline: 40px;
+
 // ─── Component sizing ───────────────── UI Kit Buttons/Inputs component sets
 $btn-height:       48px;   // 224×48 standard
 $btn-width-min:   224px;

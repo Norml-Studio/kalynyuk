@@ -2,16 +2,23 @@
 @use '../abstracts/mixins' as m;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// .site-footer — Figma Frame 152 (1163:1512)
+// .site-footer — Figma frame 1163:303 (1440×599), measured.
 //
-// ⚠️ STRUCTURALLY FAITHFUL, NOT PIXEL-MEASURED. The Figma bridge disconnected
-// before frame 1163:303 could be read, so paddings and column widths here come
-// from the design.md scale rather than from the file. Re-measure and refine
-// before calling the footer done. Colours, type roles and the radius ARE from the
-// contract, so nothing is invented — only the rhythm is provisional.
+// The footer is a GREEN band. design.md §5 allows exactly two accent bands and
+// the footer is one of them.
 //
-// The footer is a GREEN band (design.md §5 allows exactly two accent bands; the
-// footer is one of them — production renders it #307155).
+// ⚠️ GUTTER: 40px here, while page SECTIONS use 32px. That 8px difference is in
+// the design file, not a mistake on our side. Recorded in design.md §7 and kept
+// verbatim rather than normalised, so the build matches the mockup.
+//
+// Measured geometry (1440 canvas):
+//   logo            40,32   216×32
+//   nav column      40,124  163×258   6 rows → ~43px pitch
+//   contacts column 264,124 369×352   8 rows → ~44px pitch
+//   form            752,124 648×303
+//   hairline        y=508   40→1400
+//   bottom row      y=540
+//   vertical rule   x=720 (between the columns and the form)
 // ─────────────────────────────────────────────────────────────────────────────
 
 // .site-footer
@@ -21,34 +28,39 @@
 }
 
 // .site-footer__inner
+// 1fr for the two link columns, 1fr for the form — the measured split is
+// 40→633 (columns) and 752→1400 (form), i.e. very close to half and half with a
+// 120px channel holding the vertical rule.
 .site-footer__inner {
-  @include m.container;
-
+  width: 100%;
+  max-width: t.$container-max;
+  margin-inline: auto;
+  padding: t.$space-4 t.$gutter 0;
   display: grid;
   gap: t.$space-5;
-  padding-block: t.$space-6;
 
   @include m.bp(desktop) {
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: t.$space-4;
-    padding-block: t.$space-8 t.$space-6;
+    grid-template-columns: 1fr 1fr;
+    column-gap: t.$space-8;
+    padding: t.$space-4 t.$footer-pad-inline 0;
   }
 }
 
 // .site-footer__brand
 .site-footer__brand {
-  display: grid;
-  gap: t.$space-3;
-  justify-items: start;
+  @include m.bp(desktop) {
+    grid-column: 1 / -1;
+  }
 }
 
 // .site-footer__logo
 .site-footer__logo {
   display: inline-flex;
 
-  // The logo is dark ink on cream; on the green band it needs inverting. The mark
-  // is an SVG so a filter is the least-bad option until a light variant exists —
-  // recorded as a gap rather than hidden.
+  // The mark is dark ink on cream; on the green band it has to invert. It is an
+  // SVG served through <img>, so a filter is the only option without a second
+  // asset. ⚠️ A light-variant SVG would be better — recorded as a gap in
+  // design.md §13 rather than left silently as a hack.
   img {
     width: auto;
     height: 32px;
@@ -62,39 +74,23 @@
   }
 }
 
-// .site-footer__nav
-.site-footer__nav {
-  display: block;
+// .site-footer__cols
+// Two link columns: nav (163px measured) then contacts + regulatory (369px).
+.site-footer__cols {
+  display: grid;
+  gap: t.$space-4;
+
+  @include m.bp(tablet) {
+    grid-template-columns: minmax(0, 163px) minmax(0, 1fr);
+    column-gap: t.$space-6;
+  }
 }
 
 // .site-footer__list
+// ~43px row pitch at a 19px line box → 24px gap.
 .site-footer__list {
   display: grid;
-  gap: t.$space-2;
-}
-
-// .site-footer__sublist
-.site-footer__sublist {
-  display: grid;
-  gap: t.$space-2;
-  margin-top: t.$space-2;
-  padding-left: t.$space-2;
-}
-
-// .site-footer__group
-// A parent nav item is not a destination, so in the footer it is a plain label and
-// its children are exposed beneath it — every footer entry navigates somewhere.
-.site-footer__group {
-  @include m.text-ui;
-
-  display: block;
-  color: t.$color-canvas-muted;
-}
-
-// .site-footer__contacts
-.site-footer__contacts {
-  display: grid;
-  gap: t.$space-2;
+  gap: t.$space-3;
   align-content: start;
 }
 
@@ -119,22 +115,82 @@
   }
 }
 
+// .site-footer__text
+// A non-navigating row. Used for the "Portugal" parent (a trigger in the header,
+// so not a destination here) and for regulatory entries whose URL is not set —
+// the LABEL is legally required, the link is not.
+.site-footer__text {
+  @include m.text-body-sm;
+
+  display: inline-flex;
+  align-items: center;
+  min-height: t.$tap-min;
+  color: t.$color-canvas;
+}
+
 // .site-footer__form
+// The vertical rule at x=720 is drawn as this column's left border on desktop.
 .site-footer__form {
   @include m.bp(desktop) {
-    grid-column: 1 / -1;
+    padding-left: t.$space-8;
+    border-left: t.$border-width solid t.$color-accent-light;
   }
+}
+
+// .site-footer__form-head
+.site-footer__form-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: t.$space-3;
+  margin-bottom: t.$space-4;
 }
 
 // .site-footer__form-title
 .site-footer__form-title {
   @include m.text-h2;
 
-  margin: 0 0 t.$space-3;
+  margin: 0;
+}
+
+// .site-footer__top
+// "Вгору" + a circular chevron button, measured at 1319,32 (81×24).
+.site-footer__top {
+  @include m.text-body-sm;
+
+  display: inline-flex;
+  align-items: center;
+  gap: t.$space-1;
+  flex: 0 0 auto;
+  min-height: t.$tap-min;
+  color: t.$color-canvas;
+  transition: opacity t.$dur-base t.$ease;
+
+  &:hover {
+    opacity: 0.72;
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+
+    outline-color: t.$color-canvas;
+  }
+}
+
+// .site-footer__top-icon
+.site-footer__top-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: t.$icon-btn-visual;
+  height: t.$icon-btn-visual;
+  border: t.$border-width solid t.$color-canvas;
+  border-radius: t.$radius-circle;
 }
 
 // .site-footer__bottom
 .site-footer__bottom {
+  margin-top: t.$space-4;
   border-top: t.$border-width solid t.$color-accent-light;
 }
 
@@ -142,16 +198,21 @@
 // Legal + credit live in their own row, never inside the sitemap nav
 // (dev-wp-developer, "Site chrome").
 .site-footer__bottom-inner {
-  @include m.container;
-
+  width: 100%;
+  max-width: t.$container-max;
+  margin-inline: auto;
+  padding: t.$space-3 t.$gutter;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: t.$space-2 t.$space-4;
-  padding-block: t.$space-3;
 
   @include m.bp(tablet) {
     justify-content: space-between;
+  }
+
+  @include m.bp(desktop) {
+    padding-inline: t.$footer-pad-inline;
   }
 }
 
@@ -174,11 +235,195 @@
     color: t.$color-canvas;
     text-decoration: underline;
     text-underline-offset: 2px;
+    transition: opacity t.$dur-base t.$ease;
+
+    &:hover {
+      opacity: 0.72;
+    }
 
     &:focus-visible {
       @include m.focus-ring;
 
       outline-color: t.$color-canvas;
     }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Gravity Forms inside the footer.
+//
+// GF markup is not ours, so these are the minimum overrides needed to make its
+// fields read as the design's: cream-outlined inputs on green, cream submit.
+// Kept to layout + colour only — no !important, no restructuring of GF's DOM.
+// Field specs from design.md §7 (input radius 16, height 57).
+// ─────────────────────────────────────────────────────────────────────────────
+
+// .site-footer__form .gform_wrapper
+.site-footer__form {
+  // ─────────────────────────────────────────────────────────────────────────
+  // Gravity Forms 2.10 "Orbital" theme — ~745 CSS custom properties.
+  //
+  // ⚠️ `!important` IS REQUIRED HERE, and this is the documented reason.
+  //
+  // GF does not ship those variables in a stylesheet — it writes them into an
+  // INLINE `style` attribute on the .gform_wrapper element (verified: our
+  // main.css is at line 120 of the document, in <head>, while `#204ce5` appears
+  // at lines 2356 and 3824 inside <body>, on the wrapper divs). An inline style
+  // attribute beats every stylesheet selector for custom properties, at any
+  // specificity. So the "intended" integration point — redeclaring the vars on
+  // the wrapper — cannot work by construction, which is why the first two
+  // attempts (plain override, then a 4-class high-specificity selector) both
+  // shipped a bright blue submit button inside a green footer.
+  //
+  // `!important` in a stylesheet DOES beat a non-important inline declaration,
+  // so this is the correct and minimal tool. dev-bem-scss permits it as a
+  // documented third-party escape hatch; it is scoped to .site-footer__form and
+  // to GF's own variables, and nothing else in this codebase uses it.
+  //
+  // Variable names were read off the live computed style, not guessed.
+  // ─────────────────────────────────────────────────────────────────────────
+  .gform_wrapper {
+    --ak-gf-border: #{t.$color-accent-light};
+
+    // Submit button → cream fill, ink label (design.md §7, on-accent variant).
+    --gf-color-primary: #{t.$color-canvas} !important;
+    --gf-color-primary-darker: #{t.$color-surface} !important;
+    --gf-color-primary-lighter: #{t.$color-surface} !important;
+    --gf-ctrl-btn-color-primary: #{t.$color-ink} !important;
+    --gf-ctrl-btn-bg-color-primary: #{t.$color-canvas} !important;
+    --gf-ctrl-btn-bg-color-hover-primary: #{t.$color-surface} !important;
+    --gf-ctrl-btn-color-hover-primary: #{t.$color-ink} !important;
+    --gf-ctrl-btn-border-color-primary: #{t.$color-canvas} !important;
+    --gf-ctrl-btn-border-radius: #{t.$radius-lg} !important;
+    --gf-ctrl-btn-size-lg: #{t.$btn-height} !important;
+    --gf-ctrl-btn-padding-y-lg: #{t.$btn-padding} !important;
+
+    // Labels, descriptions and the required marker. GF's default required colour
+    // is #C02B0A — a red that design.md §2 lists under "foreign colours, do not
+    // adopt", and which fails contrast on the green band.
+    --gf-ctrl-label-color-primary: #{t.$color-canvas-muted} !important;
+    --gf-ctrl-label-color-secondary: #{t.$color-canvas-muted} !important;
+    --gf-ctrl-label-color-req: #{t.$color-canvas-muted} !important;
+    --gf-ctrl-desc-color: #{t.$color-canvas-muted} !important;
+
+    // Controls.
+    --gf-ctrl-color: #{t.$color-canvas} !important;
+    --gf-ctrl-bg-color: transparent !important;
+    --gf-ctrl-border-color: #{t.$color-accent-light} !important;
+    --gf-ctrl-border-color-focus: #{t.$color-canvas} !important;
+    --gf-ctrl-placeholder-color: #{t.$color-canvas-muted} !important;
+    --gf-ctrl-checkbox-check-color: #{t.$color-ink} !important;
+    --gf-ctrl-checkbox-bg-color-checked: #{t.$color-canvas} !important;
+    --gf-ctrl-checkbox-border-color-checked: #{t.$color-canvas} !important;
+
+    // ⚠️ --gf-color-danger is deliberately NOT overridden. It carries real
+    // validation errors, and a legible error matters more than palette purity.
+    // If its contrast on green proves too low, pick a lighter warm red, add it to
+    // design.md first, and set it here — do not silence it.
+  }
+
+  // Links inside the form (the consent checkbox points at the privacy policy).
+  // Without this they inherit a dark colour and vanish against the green band —
+  // which is exactly what the first render showed: a visible gap where
+  // "Політикою конфіденційності" should have been.
+  .gform_wrapper a {
+    color: t.$color-canvas;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+
+    &:hover {
+      opacity: 0.72;
+    }
+
+    &:focus-visible {
+      @include m.focus-ring;
+
+      outline-color: t.$color-canvas;
+    }
+  }
+
+  input[type='text'],
+  input[type='email'],
+  input[type='tel'],
+  input[type='url'],
+  textarea {
+    @include m.text-body-sm;
+
+    width: 100%;
+    min-height: t.$input-height;
+    padding: t.$space-2 t.$space-3;
+    background-color: transparent;
+    color: t.$color-canvas;
+    border: t.$border-width solid var(--ak-gf-border);
+    border-radius: t.$radius-md;
+
+    &::placeholder {
+      color: t.$color-canvas-muted;
+    }
+
+    &:focus-visible {
+      @include m.focus-ring;
+
+      outline-color: t.$color-canvas;
+    }
+  }
+
+  textarea {
+    min-height: 180px;
+    resize: vertical;
+  }
+
+  // The submit button needs a HIGH-SPECIFICITY selector. Gravity Forms' Orbital
+  // theme sets `background-color` and `border-radius` on
+  // `.gform_wrapper.gform-theme … input[type=submit]`, which beat a plain
+  // `.site-footer__form .gform_button` — measured: `color` from that rule applied
+  // while `background-color` and `border-radius` did not, which is the signature
+  // of losing on specificity rather than on load order.
+  //
+  // Matching GF's own shape (theme class + footer + attribute + class) is the
+  // right fix. dev-bem-scss permits `!important` as a documented third-party
+  // escape hatch, but it is not needed here and is deliberately not used.
+  .gform-theme .gform_footer input[type='submit'].gform_button,
+  .gform-theme .gform-footer input[type='submit'].gform_button {
+    @include m.btn-base;
+
+    width: 100%;
+    background-color: t.$color-canvas;
+    border: t.$border-width solid t.$color-canvas;
+    border-radius: t.$radius-lg;
+    color: t.$color-ink;
+
+    &:hover,
+    &:focus-visible {
+      background-color: t.$color-surface;
+      border-color: t.$color-surface;
+      color: t.$color-ink;
+    }
+
+    &:focus-visible {
+      outline-color: t.$color-canvas;
+    }
+
+    // The colours come from the variable block above. These three do NOT — GF
+    // sets border-radius and the button height in its own stylesheet rather than
+    // through a variable, and measured against it our 4-class selector still
+    // lost. Same documented escape hatch, same narrow scope.
+    border-radius: t.$radius-lg !important;
+    min-height: t.$btn-height !important;
+    width: 100% !important;
+  }
+
+  .gfield_label,
+  .gform_required_legend {
+    @include m.text-body-xs;
+
+    color: t.$color-canvas-muted;
+  }
+
+  .gfield_consent_label,
+  .gchoice label {
+    @include m.text-body-xs;
+
+    color: t.$color-canvas-muted;
   }
 }

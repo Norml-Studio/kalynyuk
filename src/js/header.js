@@ -163,7 +163,22 @@ function initDrawer() {
   });
 }
 
+/* ─── Back to top ───────────────────────────────────────────────────────────
+ * The footer's "Вгору" control. Deliberately uses a data attribute rather than
+ * the .go-top class: a legacy .go-top handler still lives in Divi Theme Options →
+ * Integration → head and may be used by Divi page content, so a distinct hook
+ * avoids two listeners firing on one click.
+ */
+function initBackToTop() {
+  document.querySelectorAll('[data-ak-top]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: REDUCED() ? 'auto' : 'smooth' });
+    });
+  });
+}
+
 export function initHeader() {
+  initBackToTop();
   initPopovers();
   initDrawer();
 }

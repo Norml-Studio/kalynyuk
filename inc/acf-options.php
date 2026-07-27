@@ -120,7 +120,55 @@ function ak_acf_chrome_fields() {
 					'type'  => 'image',
 					'return_format' => 'array',
 					'mime_types' => 'svg',
-					'instructions' => __( 'Falls back to the Divi Theme Options logo while the migration is in flight.', 'kalynyuk' ),
+					'instructions' => __( 'The full lockup — uploads/2026/05/logotype.svg (216×32). NOT Anna-Kalynyuk.svg, which is the wordmark only.', 'kalynyuk' ),
+				),
+
+				/*
+				 * ─── Regulatory disclosure ────────────────────────────────────
+				 * A credit intermediary operating in Portugal must publish its
+				 * Banco de Portugal registration number and the alternative
+				 * dispute-resolution (RAL) entities it is bound to. This is a
+				 * LEGAL requirement, not footer decoration — do not hide it, do
+				 * not shrink it below the `body-xs` role, and do not remove a
+				 * field because it looks empty.
+				 */
+				array(
+					'key'   => 'field_ak_reg_tab',
+					'label' => __( 'Regulatory disclosure (legally required)', 'kalynyuk' ),
+					'type'  => 'tab',
+				),
+				array(
+					'key'   => 'field_ak_intermediary_no',
+					'label' => __( 'Credit intermediary number', 'kalynyuk' ),
+					'name'  => 'ak_intermediary_no',
+					'type'  => 'text',
+					'instructions' => __( 'Rendered as “Intermediário de crédito n.º {value}”. Required by Banco de Portugal.', 'kalynyuk' ),
+				),
+				array(
+					'key'   => 'field_ak_intermediary_url',
+					'label' => __( 'Banco de Portugal register URL', 'kalynyuk' ),
+					'name'  => 'ak_intermediary_url',
+					'type'  => 'url',
+				),
+				array(
+					'key'   => 'field_ak_complaints_url',
+					'label' => __( 'Livro de Reclamações URL', 'kalynyuk' ),
+					'name'  => 'ak_complaints_url',
+					'type'  => 'url',
+				),
+				array(
+					'key'   => 'field_ak_cniacc_url',
+					'label' => __( 'CNIACC URL', 'kalynyuk' ),
+					'name'  => 'ak_cniacc_url',
+					'type'  => 'url',
+					'instructions' => __( 'Leave empty and the label still renders, as plain text rather than a link.', 'kalynyuk' ),
+				),
+				array(
+					'key'   => 'field_ak_caccl_url',
+					'label' => __( 'CACCL URL', 'kalynyuk' ),
+					'name'  => 'ak_caccl_url',
+					'type'  => 'url',
+					'instructions' => __( 'Leave empty and the label still renders, as plain text rather than a link.', 'kalynyuk' ),
 				),
 			),
 		)
@@ -149,6 +197,8 @@ function ak_register_pll_strings() {
 		'ak_telegram'     => 'Телеграм',
 		'ak_instagram'    => 'Інстаграм',
 		'ak_lang_label'   => 'Мова',
+		'ak_form_title'   => 'Форма для зворотнього зв’язку',
+		'ak_to_top'       => 'Вгору',
 	);
 
 	foreach ( $strings as $name => $default ) {
