@@ -1,0 +1,28 @@
+# ─── Machine-specific / secrets ────────────────────────────────────────────
+# Holds absolute local paths to the WP install + the PHP/wp-cli phar on this
+# machine. Never commit — every teammate's differs. See .claude/CLAUDE.md.
+.claude/wp-config.json
+
+# ─── Build ─────────────────────────────────────────────────────────────────
+node_modules/
+.vite/
+*.log
+npm-debug.log*
+
+# Compiled CSS is committed (production has no build step yet — see
+# .claude/ci-cd.md). Sourcemaps are not.
+*.map
+
+# ─── OS / editor ───────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+*.sublime-*
+# .vscode/ is intentionally NOT ignored — shared editor config is useful here.
+
+# ─── WordPress noise that must never land in a theme repo ──────────────────
+*.sql
+*.sql.gz
+*.zip
+*.tar.gz

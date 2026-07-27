@@ -1,0 +1,23 @@
+# Normalize line endings. Without this, a Windows-authored repo flips every
+# file to CRLF on the next clone and produces a 100% whitespace diff.
+# (dev-ci-cd → local-bitbucket-prod, "Gotchas".)
+* text=auto eol=lf
+
+# Binary — never diff, never normalize
+*.jpeg  binary
+*.jpg   binary
+*.png   binary
+*.gif   binary
+*.webp  binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.otf   binary
+*.pdf   binary
+
+# SVG is text but should not be diffed line-by-line in review
+*.svg   text eol=lf -diff
+
+# Keep .po/.mo translation files sane
+*.po    text eol=lf
+*.mo    binary
