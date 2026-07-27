@@ -459,6 +459,52 @@ On a green band, drop the fill and swap the border to `rgba(247,242,233,0.24)`.
 a green band. Caption below in `body`. Measured once (hero: "реалізованих кейсів"), so
 treat this as a one-off pattern with a defined spec rather than a component library entry.
 
+### Header / navigation — added v2.0.0
+
+Behaviour and a11y are governed by **`vibe-frontend-standards/references/header-standard.md`**
+(a hard rule). The values below are the *look*; that document owns the *mechanics*.
+The design already satisfies its two hardest requirements — mobile drill-down and a
+pinned action bar — so there is no conflict to resolve.
+
+**Desktop** — Figma `1163:952`
+
+| Part | Spec |
+|---|---|
+| Band | 1440×**78**, fill `--canvas`. A bottom stroke exists in the file but is set **invisible** — so: no separator. |
+| Logo | `x=32`, 216×32, vertically centred |
+| Nav | centred, horizontal auto-layout, **gap 24**, 6 items, labels use the `ui` role (16/600/-0.01em) |
+| Right cluster | 288×48, gap **32**: language switcher + primary CTA |
+| Dropdown panel | **548×176** (`1163:1809`), cream, one column of 4 links. Per header-standard §2 this is a **simple dropdown**, not a mega-menu — 4 flat links. |
+
+**Mobile** — Figma `1166:2456` (root) and `1166:2560` (drill-down)
+
+| Part | Spec |
+|---|---|
+| Band | 375×**61**, fill `--canvas` — stays cream even while the drawer is open |
+| Gutters | header row **16px** (logo `x=16`, close right edge 359); drawer content **20px** |
+| Logo | 168×24.9 |
+| Language flag | **32×32** circle |
+| Close button | **42×42**, radius `--radius-sm` (8px), fill `--accent` |
+| Panel | **full-viewport-width**, fill `--accent` (green), cream text |
+| Content top | `y=93` (61 header + 32) |
+| Items | large left-aligned links; `Portugal` carries a **`chevron-right`** → drill-down |
+| Below the divider | Телеграм · Інстаграм · phone · email |
+| Drill-down | sub-panel with a **`‹ Назад`** row, then the 4 guide links |
+| Pinned action bar | **88px** tall, full width, holds the CTA at **335×48** with a 20px inset. The root panel scrolls *under* it. |
+
+⚠️ **Two things to fix while building, not to copy verbatim:**
+
+1. **The flag button is a 32×32 tap target.** header-standard §5 requires **≥40×40**.
+   Keep the 32px visual, pad the hit area to 40. `$icon-btn-visual` / `$tap-min`.
+2. **The close button's fill is `#307156`** — the same one-digit drift as the primary
+   button and `et_divi`'s `footer_bg`. Use `--accent` `#307155`.
+
+Not in the design and therefore decided by header-standard: sticky behaviour, `aria-expanded`
+/ `aria-controls`, chevron **rotation** (not glyph swap), one-open-at-a-time, Escape and
+click-outside close, body-scroll-lock, focus into/out of the drawer, `prefers-reduced-motion`
+fallbacks. **`Portugal` is a `<button>`, not a link** — Petr's decision, 2026-07-27; it may
+become an archive later, and a non-navigating trigger is the more accessible default anyway.
+
 ### Tabs · Tables
 
 **Neither exists on this site.** No `<table>` and no tab component was measured. If one is

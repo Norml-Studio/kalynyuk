@@ -163,9 +163,28 @@ $btn-width-min:   224px;
 $btn-padding:      10px;   // all four sides, autolayout
 $btn-height-wide:  57px;   // the 493×57 wide variant
 $input-height:     57px;   // Input/Default frame is 243×57
-$header-height:    78px;   // Figma 1163:952, the header band
-$header-nav-gap:   24px;   // nav autolayout itemSpacing
-$header-right-gap: 32px;   // lang-switcher ↔ CTA itemSpacing
+
+// ─── Header ───────────────── Figma: desktop 1163:952 · mobile 1166:2456/2486
+$header-height:         78px;  // desktop band
+$header-height-mobile:  61px;  // mobile band
+$header-nav-gap:        24px;  // desktop nav autolayout itemSpacing
+$header-right-gap:      32px;  // desktop lang-switcher ↔ CTA itemSpacing
+$header-pad-mobile:     16px;  // mobile header row gutter — logo x=16, close right edge 359
+$header-dropdown-width: 548px; // desktop "Portugal" panel (1163:1809), 548×176
+
+// Mobile drawer. The menu content uses a 20px gutter while the header row uses
+// 16px — a 4px inconsistency in the design file, recorded rather than smoothed
+// over. We use $gutter (20px) for content because the pinned CTA does too.
+$drawer-content-top:   93px;  // content y — header 61 + 32 gap
+$drawer-actionbar-h:   88px;  // pinned bottom bar (1166:2547), full width
+$drawer-actionbar-pad: 20px;  // inset to the CTA inside that bar
+
+// Round icon-button (the language flag). 32px is the VISUAL size in the design,
+// but header-standard §5 requires a ≥40×40 hit area — so the visual stays 32 and
+// the target is padded out to $tap-min. Do not shrink the target to match the art.
+$icon-btn-visual: 32px;
+$icon-btn-close:  42px;  // the mobile close button, cornerRadius $radius-sm
+$tap-min:         40px;  // header-standard §5 / make-interfaces-feel-better
 
 // ─── Breakpoints ─────────────────────────────────────────────────────────────
 // Three STRUCTURAL breakpoints from vibe-frontend-standards §4 — ≥1025 desktop,
