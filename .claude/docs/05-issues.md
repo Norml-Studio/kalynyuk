@@ -13,6 +13,22 @@
 
 ## Critical
 
+### The primary navigation on PRODUCTION is an auto-generated page list, not the curated menu
+> **Found 2026-07-27 during phase 0**, by rendering production with Playwright and
+> walking the DOM ancestry of a nav link. Present on production AND local — not a
+> local artifact.
+- **What:** the visible header nav is a **Divi `et_pb_menu` module with no menu assigned**, so Divi falls back to `wp_page_menu()`. Its items are `li.page_item`, and the ancestry is `a → li.page_item.page-item-2440 → ul.et-menu.nav → nav.et-menu-nav → div.et_pb_menu__menu → div.et_pb_menu__wrap`. It renders **12 items wrapping onto three lines**: `FAQ · Feedback · Portugal · Блог · Відгуки · Головна · Довіра · Калькулятор · Політика конфіденційності · Послуги · Про мене · Іпотека`.
+- **Where:** Divi header layouts 284 / 2213 / 2214 (the `et_pb_menu` module inside them); visible on `https://www.kalynyuk.com/`
+- **Why it matters:** three of those entries should never be in primary nav — `Feedback` (150 B, orphaned), `Portugal` (448 B, orphaned) and `Політика конфіденційності`. A twelfth entry, `Іпотека → /category/ipoteka/`, is a **category archive**, not a page. The curated 8-item menu (`Меню`, term 2, assigned to `primary-menu`) is not what visitors see. The IA the client signed off on is not the IA that shipped, and the nav is visibly broken across three lines at 1440px.
+- **Compounding:** `[vertical_menu]` **does** render the correct 8-item menu (`ul.vertical-menu`, 16 `li.menu-item` = 8 × desktop+mobile), but its output has **no CSS anywhere in the project** (see the related Warning below), so the correct menu is on the page, unstyled and orphaned, while the wrong one is the one that displays.
+- **Fix scope:** phase 1 (custom header) resolves all of this at once. Do not patch the Divi module — it is being deleted.
+
+### No language switcher is rendered anywhere
+> Found 2026-07-27 during phase 0, same render pass.
+- **What:** zero elements matching `.lang-item`, `.pll-switcher` or `[class*=lang-item]` on the production homepage.
+- **Where:** production front end; Polylang is active with 4 languages configured
+- **Why it matters:** the Portuguese homepage (page 2483) is a real 195 KB translation and is **unreachable from the UI** — a visitor can only get there by typing the URL. Combined with `polylang.nav_menus` being empty (see Warning), the multilingual setup is configured in the admin but not wired into the front end at all.
+
 ### Two published pages are completely empty and indexable
 - **What:** `Головна - English` (ID 2484, `en`) and `Головна - Русский` (ID 2485, `ru`) have `post_content` of **0 bytes**, `_et_pb_use_builder` off, and status `publish`.
 - **Where:** pages 2484, 2485
