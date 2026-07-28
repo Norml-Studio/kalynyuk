@@ -23,7 +23,11 @@
 .site-header {
   position: sticky;
   top: 0;
-  z-index: t.$z-header;
+  // ABOVE the drawer, deliberately. The drawer opens below the header band, so the
+  // logo, the language switcher and the close button must stay clickable while it
+  // is open — Petr's requirement. With the drawer on top they were dead: its scrim
+  // spanned inset:0 and swallowed the clicks.
+  z-index: t.$z-header-above-drawer;
   background-color: t.$color-canvas;
 
   // .site-header__inner

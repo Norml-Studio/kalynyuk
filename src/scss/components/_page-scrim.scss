@@ -1,0 +1,46 @@
+@use '../abstracts/tokens' as t;
+@use '../abstracts/mixins' as m;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// .page-scrim — the page dim shown while a DESKTOP dropdown is open (Petr).
+//
+// Two things make it work:
+//
+//   · z-index $z-scrim (150) sits BELOW $z-header. So the header band and the open
+//     panel stay bright and fully interactive while everything behind them dims.
+//     Putting it above the header would dim the very thing the user is reading.
+//   · pointer-events: none. Closing is already handled by Escape, outside-click and
+//     the trigger itself; making the scrim clickable would add a second, competing
+//     close path and swallow clicks on page content.
+//
+// DESKTOP ONLY. On mobile the drawer covers the full viewport, so there is nothing
+// behind it left to dim — and dimming there is exactly what Petr asked to remove.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// .page-scrim
+.page-scrim {
+  display: none;
+
+  @include m.bp(desktop) {
+    position: fixed;
+    inset: 0;
+    z-index: t.$z-scrim;
+    display: block;
+    background-color: t.$color-ink;
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    transition:
+      opacity t.$dur-base t.$ease,
+      visibility t.$dur-base t.$ease;
+  }
+
+  // .page-scrim.is-visible
+  &.is-visible {
+    @include m.bp(desktop) {
+      // Light touch — the point is to push the page back, not to black it out.
+      opacity: 0.28;
+      visibility: visible;
+    }
+  }
+}

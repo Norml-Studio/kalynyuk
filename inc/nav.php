@@ -153,11 +153,28 @@ function ak_nav_tree( $location = 'primary-menu' ) {
 /**
  * Language switcher data.
  *
- * `hide_if_no_translation` is the whole trick for "leave room for a future
- * language": a language only appears once it actually has a published translation
- * of the current object. So `ru` is absent today (its only page is a draft) and
- * will appear by itself when it is built — with no code change and no hardcoded
- * language list anywhere.
+ * ⚠️ TWO CORRECTIONS TO WHAT I ORIGINALLY WROTE HERE, both found by testing rather
+ * than reasoning:
+ *
+ * 1. `hide_if_no_translation => 1` WAS A BUG. It hides a language when the CURRENT
+ *    page has no translation in it — and `pt` has only 2 translated objects, so the
+ *    switcher fell to a single language and the template's `count < 2` guard removed
+ *    it entirely. Measured: the switcher was GONE on /pro-mene/, /blog/ and every
+ *    guide page, and present only on / and /faq/. A language switcher is persistent
+ *    chrome; it must not vanish. Now 0 — Polylang links an untranslated language to
+ *    that language's home page instead, which exists and is published.
+ *
+ * 2. It was never the reason `en` / `ru` are absent. Polylang's `hide_if_empty`
+ *    (default 1) drops a language with NO published content at all, and both have
+ *    zero — their only pages are drafts. Verified: with hide_if_no_translation => 0
+ *    the list is still just uk + pt.
+ *
+ * `hide_if_empty` is deliberately left at its default. Forcing all four visible
+ * makes `en` and `ru` link to `/en/golovna-english/` and `/ru/golovna-russkij/`,
+ * both of which return **404** because those pages are drafts. Two flags that work
+ * beat four where half are broken. Publish real content in a language and it appears
+ * on its own — that is the "room for a future language" design, and it needs no code
+ * change and no hardcoded language list.
  *
  * @return array<int, array{slug:string,name:string,url:string,flag:string,current:bool}>
  */
@@ -169,7 +186,7 @@ function ak_language_switcher() {
 	$langs = pll_the_languages(
 		array(
 			'raw'                    => 1,
-			'hide_if_no_translation' => 1,
+			'hide_if_no_translation' => 0,
 			'hide_current'           => 0,
 			'display_names_as'       => 'slug',
 		)

@@ -29,16 +29,14 @@
   }
 
   // .nav-drawer__scrim
+  // NO dim on mobile (Petr). The dialog is full-viewport-width, so a scrim behind
+  // it can never be seen — it only ever darkened the header band above it, which is
+  // the one part that must stay legible and clickable. Kept as a transparent
+  // click-target so the JS close handler needs no change.
   &__scrim {
     position: absolute;
     inset: 0;
-    background-color: rgba(42, 32, 17, 0.4);
-    opacity: 0;
-    transition: opacity t.$dur-slow t.$ease;
-
-    .nav-drawer.is-open & {
-      opacity: 1;
-    }
+    background-color: transparent;
   }
   // .nav-drawer__dialog
   // Sits below the sticky header so the logo, flag and close button stay usable.

@@ -59,6 +59,19 @@ wp_head();
 
 <div id="page-container">
 
+	<?php
+	/*
+	 * Page dim for open desktop dropdowns. Sits BELOW the header in the stacking
+	 * order, so the header and its open panel stay bright and interactive while
+	 * everything behind them dims. Hidden entirely on mobile — the drawer is
+	 * full-viewport there, so there is nothing left to dim.
+	 *
+	 * aria-hidden + no focusable content: it is decoration, and closing is already
+	 * handled by Escape / outside-click / the trigger.
+	 */
+	?>
+	<div class="page-scrim" aria-hidden="true" data-ak-page-scrim></div>
+
 	<header class="site-header" data-ak-header>
 		<div class="site-header__inner">
 

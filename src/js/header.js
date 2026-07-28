@@ -34,12 +34,22 @@ function initPopovers() {
 
   if (!pairs.length) return;
 
+  // The page dim. Reflects state rather than being toggled at each call site, so
+  // it cannot drift out of sync with the panels.
+  const scrim = document.querySelector('[data-ak-page-scrim]');
+  const syncScrim = () => {
+    if (!scrim) return;
+    const anyOpen = pairs.some(({ btn }) => btn.getAttribute('aria-expanded') === 'true');
+    scrim.classList.toggle('is-visible', anyOpen);
+  };
+
   const closeAll = (except) => {
     pairs.forEach(({ btn, pnl }) => {
       if (btn === except) return;
       btn.setAttribute('aria-expanded', 'false');
       pnl.hidden = true;
     });
+    syncScrim();
   };
 
   pairs.forEach(({ btn, pnl }) => {
@@ -49,6 +59,7 @@ function initPopovers() {
       closeAll(open ? null : btn);
       btn.setAttribute('aria-expanded', open ? 'false' : 'true');
       pnl.hidden = open;
+      syncScrim();
     });
   });
 

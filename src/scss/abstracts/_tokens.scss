@@ -231,7 +231,9 @@ $ease-out:   ease-out;
 // Not a design decision — declared so no raw z-index is ever written.
 $z-base:      1;
 $z-sticky:  100;
+$z-scrim:   150;  // page dim — BELOW the header, above content
 $z-header:  200;
 $z-dropdown: 250;
 $z-drawer:  300;
+$z-header-above-drawer: 350;  // see _site-header.scss
 $z-overlay: 400;

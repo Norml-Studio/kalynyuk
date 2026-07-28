@@ -16,6 +16,11 @@
 
   // .lang-switch__trigger
   &__trigger {
+    // The trigger always displays the CURRENT language, so it wears the same ring.
+    .lang-switch__flag {
+      box-shadow: 0 0 0 3px t.$color-surface-sunken;
+    }
+
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -88,8 +93,11 @@
       @include m.focus-ring;
     }
 
-    &.is-current {
-      background-color: t.$color-surface-sunken;
+    // Active language: a RING around the flag (Petr), not a filled pill. Drawn as
+    // a box-shadow on the flag itself so it hugs the circle exactly and costs no
+    // extra element or layout.
+    &.is-current .lang-switch__flag {
+      box-shadow: 0 0 0 3px t.$color-surface-sunken;
     }
   }
 }
