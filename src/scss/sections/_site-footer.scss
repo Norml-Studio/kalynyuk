@@ -34,6 +34,8 @@
   &__inner {
     @include m.container;
 
+    // No bottom padding: the mid-rule is the form column's left border, so any gap
+    // here leaves it hanging above the horizontal hairline.
     padding-block: t.$space-4 0;
     display: grid;
     gap: t.$space-5;
@@ -103,12 +105,21 @@
   }
 
   // .site-footer__link
+  // ⚠️ min-height is 24px, NOT $tap-min (40). Petr is right that $tap-min was the
+  // problem: 40px + a 24px gap gave a 64px pitch, while the design's measured pitch
+  // is ~44px (nav column 163×258 for 6 rows, contacts 369×352 for 8).
+  //
+  // 24px is not arbitrary — it is the WCAG 2.1 AA minimum for target size
+  // (SC 2.5.8). Going to 0 would match the design pitch exactly but drop the target
+  // to the ~20px line box, below that floor. 24 + 24 gap = 48px pitch: 4px wider
+  // than the design, and compliant. The stricter 40px floor from header-standard §5
+  // is for primary nav and controls, not a footer link list.
   &__link {
     @include m.text-body-sm;
 
     display: inline-flex;
     align-items: center;
-    min-height: t.$tap-min;
+    min-height: 24px;
     color: t.$color-canvas;
     transition: opacity t.$dur-base t.$ease;
 
@@ -127,12 +138,13 @@
   // A non-navigating row. Used for the "Portugal" parent (a trigger in the header,
   // so not a destination here) and for regulatory entries whose URL is not set —
   // the LABEL is legally required, the link is not.
+  // Matches __link so the two columns keep the same rhythm.
   &__text {
     @include m.text-body-sm;
 
     display: inline-flex;
     align-items: center;
-    min-height: t.$tap-min;
+    min-height: 24px;
     color: t.$color-canvas;
   }
 
@@ -343,11 +355,23 @@
       width: 100% !important;
     }
 
+    // Field labels are hidden VISUALLY, not removed (Petr: keep the placeholders).
+    // The design shows placeholder-only fields, but a placeholder is not an
+    // accessible label — it vanishes on input and screen readers treat it
+    // inconsistently — so the <label> stays in the DOM and is only clipped from view.
+    //
+    // Safe to apply to ALL .gfield_label, including the consent field's. Verified in
+    // the rendered page: the consent text the user must actually read
+    // ("Я погоджуюсь з Політикою конфіденційності…") is a SEPARATE element, and it
+    // plus its privacy-policy link and the checkbox all stay visible. Only the
+    // redundant field title ("Згода") disappears.
+    //
+    // An earlier revision carried a `:not(.gfield--type-consent)` guard for this.
+    // That class does not exist in GF 2.10 — the selector was dead weight built on
+    // an assumption, so it is gone.
     .gfield_label,
     .gform_required_legend {
-      @include m.text-body-xs;
-
-      color: t.$color-canvas-muted;
+      @include m.visually-hidden;
     }
 
     .gfield_consent_label,
@@ -369,10 +393,14 @@
   }
 
   // .site-footer__form-title
+  // ⚠️ The colour MUST be explicit. .site-footer sets color: --canvas and the title
+  // should inherit it, but Divi's own h2 rule wins and rendered it ink-dark —
+  // measured rgb(42,32,17). 24px, not the h3/h2 role, is what Petr specified.
   &__form-title {
-    @include m.text-h2;
+    @include m.text-h3;
 
     margin: 0;
+    color: t.$color-canvas;
   }
 
   // .site-footer__top
@@ -400,20 +428,34 @@
   }
 
   // .site-footer__top-icon
+  // FILLED cream circle with a dark chevron, per the design. The first pass drew a
+  // transparent circle with a cream outline, which read as a completely different
+  // control.
   &__top-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: t.$icon-btn-visual;
     height: t.$icon-btn-visual;
-    border: t.$border-width solid t.$color-canvas;
+    background-color: t.$color-canvas;
+    color: t.$color-ink;
     border-radius: t.$radius-circle;
+    transition: background-color t.$dur-base t.$ease;
+
+    .site-footer__top:hover & {
+      background-color: t.$color-surface;
+    }
   }
 
   // .site-footer__bottom
+  // NO border here — this element is full-viewport-width, so a border-top on it
+  // drew a 1440px line while the container is 1376. The rule now lives on
+  // __bottom-inner, which is inside the container.
+  //
+  // margin-top removed as well: it pushed the hairline 32px below the content, so
+  // the vertical mid-rule visibly stopped short of it. They now meet.
   &__bottom {
-    margin-top: t.$space-4;
-    border-top: t.$border-width solid t.$color-accent-light;
+    margin-top: 0;
   }
 
   // .site-footer__bottom-inner
@@ -422,6 +464,7 @@
   &__bottom-inner {
     @include m.container;
 
+    border-top: t.$border-width solid t.$color-accent-light;
     display: flex;
     flex-wrap: wrap;
     align-items: center;

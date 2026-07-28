@@ -208,17 +208,38 @@ $ak_row = static function ( $label, $url = '' ) {
 					<p class="site-footer__credit">
 						<?php
 						/*
-						 * dev-wp-developer, "Site chrome": "by " is plain text and
-						 * "Norml Studio" itself is the link. Lower-case b, no "Concept
-						 * by" / "Made by" framing, no bare URL after the name, and
-						 * never text-only.
+						 * ⚠️ DELIBERATE DEVIATION from dev-wp-developer's "Site chrome"
+						 * rule, on Petr's explicit instruction (2026-07-28).
+						 *
+						 * That rule prescribes `by {Norml Studio}` — "by " as plain text
+						 * with the NAME as the link — so the credit is byte-identical on
+						 * every Norml client site. This footer instead uses the
+						 * "Made by" + signature lockup drawn in the design (Figma
+						 * 1163:349, 190×43, cream #F7F2E9), because Petr wants the
+						 * mark rather than the text form here.
+						 *
+						 * Recorded rather than silently resolved: if the house rule is
+						 * meant to win, revert this block — nothing else depends on it.
+						 *
+						 * Accessibility: it is an image of text, so the alt carries the
+						 * full credit. The whole lockup is the link, so there is exactly
+						 * one target, as the rule intends.
 						 */
-						printf(
-							/* translators: %s: Norml Studio, linked. */
-							esc_html__( 'by %s', 'kalynyuk' ),
-							'<a href="https://norml.studio" target="_blank" rel="noopener">Norml Studio</a>'
-						);
 						?>
+						<a
+							class="site-footer__credit-link"
+							href="https://norml.studio"
+							target="_blank"
+							rel="noopener"
+						>
+							<img
+								src="<?php echo esc_url( AK_URI . '/assets/norml-credit.svg' ); ?>"
+								alt="<?php esc_attr_e( 'Made by Norml Studio', 'kalynyuk' ); ?>"
+								width="190"
+								height="43"
+								decoding="async"
+							/>
+						</a>
 					</p>
 				</div>
 			</div>
