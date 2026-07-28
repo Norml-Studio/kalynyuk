@@ -45,10 +45,24 @@ When you need to connect to production / staging:
 2. From that file, read `~/.config/norml-studio/credentials/servers/{server-slug}.json` for SSH details.
 3. For password-style secrets (WP REST API app passwords, DB), read them from **Windows Credential Manager** at runtime.
 
-⚠️ **`projects/anna-kalynyuk.json` does not exist yet.** Production access is
-therefore unresolvable. Hard stop and ask Petr before attempting any remote work —
-never improvise or interactively prompt for credentials. See
-`~/.config/norml-studio/credentials/README.md` for the schema.
+✅ **Resolved 2026-07-28.** `projects/anna-kalynyuk.json` and
+`servers/admtools-anna-kalynyuk.json` both exist, and key-based SSH is verified
+working. Connect with the config alias:
+
+```
+ssh anna-kalynyuk          # nu538012@nu538012.ftp.tools, key ~/.ssh/anna-kalynyuk-admtools
+```
+
+Production docroot: `/home/nu538012/kalynyuk.com/www`.
+
+⚠️ Two standing constraints on this host, both recorded in the credentials files:
+- **The SSH account hosts three sites** — `hresko.com.ua`, `kalynyuk.com`,
+  `s1904672.bolila.pt`. Scope every command to `~/kalynyuk.com/www`; never run
+  recursive operations from `~`.
+- **Access is delegated from the site owner** and the panel marks it *temporary* —
+  it is not a Norml-owned account, and it can lapse. Confirm scope with Petr before
+  anything destructive.
+
 **Never paste credentials into this CLAUDE.md or any committed file.**
 
 ## WP-CLI access
@@ -62,6 +76,18 @@ on this machine — it runs as a phar through OpenServer's PHP:
 
 Use `eval-file <script.php>` rather than inline `eval` — PowerShell mangles `$` and
 quoting when passing PHP to a native executable.
+
+**On production**, WP-CLI *is* installed (`/usr/local/bin/wp`) but its `env php`
+shebang resolves to the host default PHP **5.6.40**, so bare `wp` fatals on a
+Composer platform check. Always pass a modern PHP explicitly:
+
+```
+ssh anna-kalynyuk 'cd ~/kalynyuk.com/www && php8.2 /usr/local/bin/wp <command>'
+```
+
+`/usr/bin/php5.2` … `/usr/bin/php8.5` are all present (CloudLinux alt-php). Don't
+change `~/.cl.selector/defaults.cfg` — it's account-wide and would affect the two
+other sites.
 
 ## CI/CD pipeline
 
@@ -134,6 +160,78 @@ For everything else, use the global Norml skills:
 
 Read `Norml Drive/.claude/docs/standards.md` before doing any work — naming,
 changelog, code review, WP standard, and skill versioning rules.
+
+## SCSS conventions — LOCKED (Petr, 2026-07-27)
+
+The project follows `dev-bem-scss`, with two project-specific rules that override or
+sharpen it. Both were set by Petr and are not up for re-litigation.
+
+### 1. Nest elements with `&__`, one level, mirror-commented
+
+```scss
+// .site-nav
+.site-nav {
+  display: none;
+
+  // .site-nav__list
+  &__list {
+    display: flex;
+  }
+
+  // .site-nav__item--has-children
+  &__item--has-children {
+  }
+
+  // .site-nav__panel
+  &__panel {
+    // media queries stay INSIDE the element they affect
+    @include m.bp(desktop) {
+      padding: t.$space-3;
+    }
+  }
+}
+```
+
+- The block opens once; every element and modifier is `&__…` inside it.
+- **The `// .full-class-name` mirror comment above each rule is mandatory** — it is
+  what makes `grep .site-nav__panel` find the SCSS, since `&__panel` alone is
+  ungreppable. `dev-bem-scss` requires this and the nested style makes it
+  load-bearing rather than decorative.
+- One level of `&__` only. No `&__a &__b` chains — re-block instead.
+- Media queries live inside the element, never in a trailing block.
+- Compiled output is identical to the flat form; this is purely how it is authored.
+
+### 2. Divi selectors live in exactly one file
+
+`src/scss/base/_divi-compat.scss` is the **only** file allowed to contain
+`#page-container`, `#et-main-area` or `.et_*`. Everything else styles our own BEM
+classes. Phase 4 then deletes one partial and one `@use` line instead of hunting Divi
+bleed across every section.
+
+Page-specific third-party overrides (e.g. the Review Wall on page 2133) go in a
+`sections/` partial, not in `base/`.
+
+### 3. The container rule
+
+Canvas 1440 · container **1376** · padding **30 desktop / 20 mobile**. The band is
+full-bleed and owns the background; `&__inner` gets `@include m.container`. Never put
+a `max-width` on the band. Full rationale and the superseded measurements are in
+`design.md` §6.
+
+## Build
+
+Vite. From the theme folder:
+
+```bash
+npm run dev      # watch — rebuilds on save
+npm run build    # one-off production build
+npm run clean    # wipe dist/
+```
+
+`dist/` is committed (production has no build step), so **run `npm run build` before
+committing** or the repo ships stale CSS against new SCSS. Editing `src/` alone changes
+nothing on the site — the browser loads `dist/`. PHP edits need no build. Cache-busting
+is `filemtime()`, so a rebuild is picked up on the next load with no purge.
 
 ## Key rules
 - **Never edit the Divi parent theme, `wp-includes/`, `wp-admin/`, or any plugin folder.** Updates overwrite the changes.

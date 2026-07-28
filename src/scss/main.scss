@@ -16,6 +16,9 @@
 @use 'base/base';
 @use 'base/typography';
 
+// Divi bleed, isolated so phase 4 is a one-line delete.
+@use 'base/divi-compat';
+
 // ─── components/ ─────────────────────────────────────────────────────────────
 @use 'components/button';
 @use 'components/lang-switch';
@@ -24,6 +27,7 @@
 @use 'sections/site-header';
 @use 'sections/nav-drawer';
 @use 'sections/site-footer';
+@use 'sections/reviews';
 
 // ─── pages/ ──────────────────────────────────────────────────────────────────
 // (empty — phase 3)

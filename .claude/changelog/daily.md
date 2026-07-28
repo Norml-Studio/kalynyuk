@@ -54,3 +54,32 @@ starts, this file is compressed into weekly.md. See README.md for the protocol. 
 **Verification:** 34/34 Playwright assertions pass — dropdown open/close on click, `aria-expanded`, chevron rotation, Escape + focus return, outside-click, one-open-at-a-time across nav and language switcher, ≥40px hit areas, drawer open/close, scroll lock and release, drill-down, Back, reset-to-root, and zero horizontal overflow at 375/768/1024/1440/1900. Remaining console error is `b.map` from `review-wall/assets/js/libs/remodal.min.js` — pre-existing, confirmed on the untouched baseline.
 
 **Not done:** the menu still holds the old 8-item flat IA, not the design's 6 items with the `Portugal` dropdown, and the four `guide` posts do not exist yet. Footer paddings are from the design.md scale, not measured — the Figma bridge dropped before frame `1163:303` could be read.
+
+## 2026-07-28
+
+### Production SSH access — resolved
+
+- Generated an ed25519 key for this project, `~/.ssh/anna-kalynyuk-admtools` (no passphrase, matching the other Norml deploy keys), fingerprint `SHA256:rAyJCKItH4+TkYWRcrlBXlPlbv8Xdef9VGI8tUjxo84`. Added `~/.ssh/config` alias `anna-kalynyuk` → `nu538012@nu538012.ftp.tools`. The client added the public key in the adm.tools panel; **key-based SSH verified working** (uid=2368, home `/home/nu538012`).
+- Created the two credentials files that `.claude/CLAUDE.md` flagged as missing: `credentials/projects/anna-kalynyuk.json` and `credentials/servers/admtools-anna-kalynyuk.json`. Production docroot confirmed `/home/nu538012/kalynyuk.com/www`; `siteurl` = `home` = `https://www.kalynyuk.com`; active theme + Divi 4.27.7 match local exactly. **This clears one of the two `ci-cd.md` prerequisites** — the missing git repo is still open, so deploys stay blocked.
+- No password stored anywhere. The panel only exposes "Change password", SSH is key-only, and there is still no WP REST application password.
+
+**Two host constraints worth not rediscovering:**
+
+- **Bare `wp` on production fatals.** WP-CLI is installed at `/usr/local/bin/wp`, but its `#!/usr/bin/env php` shebang resolves to the host default PHP **5.6.40** and dies on a Composer platform check (`requires >= 7.2.24`). Correct invocation is `php8.2 /usr/local/bin/wp` from inside the docroot; `/usr/bin/php5.2` … `php8.5` all exist (CloudLinux alt-php). `~/.cl.selector/defaults.cfg` is `php=native` and was **deliberately left alone** — it is account-wide. `/opt/alt/php-internal/usr/bin/php` is Permission-denied under CageFS.
+- **The SSH account is not single-tenant.** `~` holds three sites — `hresko.com.ua`, `kalynyuk.com`, `s1904672.bolila.pt`. Anything recursive from the home directory reaches two unrelated projects. Scope to `~/kalynyuk.com/www`.
+
+- Recorded both constraints in the credentials files and in `.claude/CLAUDE.md` (Production access + WP-CLI sections rewritten; the old "hard stop, credentials do not exist" warning replaced).
+- ⚠️ Standing risk: the panel describes this access as *temporary delegated access* from the owner (granted to `vova.hresko@gmail.com`, ID 492271). It is not a Norml-owned hosting account and can lapse without notice.
+
+### De-Divi migration — CodeKit retired, conventions locked
+
+- Petr moved the CodeKit `custom-code` CSS into `_base.scss` and deactivated the plugin. Verified: `1907-scss-output.css` no longer loads and no `fonts.googleapis.com` reference is left in the HTML — which incidentally closes the "Nunito Sans loaded twice" issue in `docs/05-issues.md`.
+- The migrated `@import url(…)` for Nunito Sans **was valid** (Vite hoists it to position 0 of the bundle, so the browser honoured it), but it serialises two round trips — the font CSS cannot start until `main.css` is fetched and parsed. Moved to `wp_enqueue_style` + two `preconnect` hints, and dropped weight **300**, which the UI Kit does not use.
+- The page-specific Review Wall override moved out of `base/` into `sections/_reviews.scss`; per `dev-bem-scss`, page-scoped third-party CSS is not a base-layer concern.
+- **Fixed the 80px gap above the header at its source.** Divi's dynamic CSS ships `.et_fixed_nav.et_show_nav #page-container { padding-top: 80px }` to reserve room for its own `position: fixed` header; ours is `position: sticky`, so the reserve became a visible empty band. Rather than out-specifying two classes + an id on every Divi cache regeneration, `ak_remove_divi_fixed_nav_classes()` strips both body classes and the selector stops matching. Divi's JS-written inline `margin-top: -1px` is zeroed in the new compat layer.
+- [DECISION] New file `src/scss/base/_divi-compat.scss` is the **only** place Divi selectors may live. Phase 4 becomes "delete one partial and one `@use` line".
+- Header CTA now supports an external URL — added `ak_cta_url`, which takes precedence over the page field, set to `https://tally.so/r/w2oW8A`. `ak_link_target_attrs()` decides target/rel by host, so it got `target="_blank" rel="noopener noreferrer"` with nothing hardcoded.
+- [DECISION] **Container rule locked** (Petr): canvas 1440 · container **1376** · padding **30 desktop / 20 mobile**, band full-bleed and `&__inner` capped by `container()`. Applies to every section. The header was hand-rolling `padding-inline` without the cap; now fixed. `design.md` §6 records the rule and, in a collapsed block, the three superseded measurements (1600 from a Divi attribute, 32px from the section grid, 40px from the footer frame) so nobody re-derives them.
+- [DECISION] **SCSS authoring style locked** (Petr): block opens once, elements nested as `&__element`, mandatory `// .full-class-name` mirror comment above each rule — the comment is what keeps `&__panel` greppable. Recorded in `.claude/CLAUDE.md`. All five partials converted; **0** flat `.block__el` selectors remain. Merged a duplicate `&__form` block in the footer that the conversion exposed.
+- `.claude/CLAUDE.md` also documents the build commands, since `dist/` is committed and stale CSS is otherwise easy to ship.
+- Verified: 34/34 Playwright assertions; `#page-container` padding 0; header and footer inner both 1376 with 30px padding; footer halves 658/658; submit cream at radius 24; Review Wall transparent on page 2133 only. Only remaining console error is the pre-existing `b.map` from `review-wall/assets/js/libs/remodal.min.js`.

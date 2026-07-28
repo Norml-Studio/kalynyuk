@@ -1,0 +1,28 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// DIVI COMPATIBILITY LAYER — temporary, deleted in phase 4.
+//
+// The ONLY file allowed to contain Divi selectors (#page-container, #et-main-area,
+// .et_*). Everything else in src/scss/ styles our own BEM classes. Keeping the
+// Divi bleed in one file means phase 4 is "delete this partial and its @use line"
+// rather than a hunt through every section.
+//
+// Anything added here must say WHY, and what removes the need for it.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// #page-container
+// Divi's dynamic CSS ships `.et_fixed_nav.et_show_nav #page-container
+// { padding-top: 80px; }` to reserve room for its own position:fixed header. Our
+// header is position:sticky, so it takes up layout space itself and that reserve
+// showed as an empty 80px band at the top of every page.
+//
+// The REAL fix is in PHP: ak_remove_divi_fixed_nav_classes() in inc/setup.php
+// strips the `et_fixed_nav` / `et_show_nav` body classes, so the selector stops
+// matching at the source rather than being out-specified here.
+//
+// This rule stays as a belt-and-braces guard: Divi's JS also writes an inline
+// `margin-top: -1px` on #page-container for the same mechanism, and regenerating
+// Divi's cache can reintroduce padding variants. Both are zeroed explicitly.
+#page-container {
+  padding-top: 0;
+  margin-top: 0 !important; // beats Divi's JS-written inline style
+}

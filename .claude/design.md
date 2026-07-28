@@ -332,19 +332,46 @@ is the correct one — a cream fill on green would read as a hole.
 
 ## 6. Layout
 
-### Container
+### Container 🔒 — THE canonical rule, applies to every section
 
-Measured: sections cap at **`max-width: 1600px`**; the content column measures **1368px at
-a 1440px viewport** (95%), and the mobile gutter is **20px**. Most wrappers report
-`max-width: none` because Divi caps at the section, not the row.
+> **Set by Petr, 2026-07-27. This supersedes every measured value below it.**
+> Canvas **1440** · container **1376** · padding **30 desktop / 20 mobile**.
 
-```css
-.section {
-  max-width: 1600px;
-  margin-inline: auto;
-  padding-inline: clamp(20px, 3.5vw, 36px);
+```scss
+// The BAND is full-bleed and owns the background.
+// The __inner is capped. Never put a max-width on the band itself.
+.some-section {
+  background-color: …;
+
+  &__inner {
+    @include m.container;   // max-width 1376 + padding 30 / 24 / 20
+  }
 }
 ```
+
+**Every** section follows this — header, footer and all future ones. The footer and
+header both use `container()`; a new section that hand-rolls its own `padding-inline`
+is a defect.
+
+<details>
+<summary>What was measured before this rule, and why it is superseded</summary>
+
+Three different numbers turned up while reverse-engineering, and all three were the
+old implementation or the design file drifting rather than the intent:
+
+| Source | Value | Verdict |
+|---|---|---|
+| Divi section `max_width` attribute | 1600px | the old build's number — **not** the design's |
+| Figma section grid (`x=32, w=1376`) | 32px gutters | close, but the intent is 30 |
+| Figma footer frame `1163:303` | 40px gutters | design-file drift |
+| Production content column at 1440 | 1368px | the same 1376 measured through Divi's box model |
+
+`$container-max` was 1600 in tokens v2.0.0 for exactly this reason. Corrected.
+</details>
+
+- **Content column:** ~1376px at 1440. Wide — treat it as the outer bound, not the reading measure.
+- **Measure cap:** running prose must be capped separately. Measured half-column widths cluster at **604–663px**, which at 16px/1.625 is ~72 characters. **Cap long-form text at 680px.** Do not let body copy run the full width.
+- **`--wp--style--global--content-size`** is `823px` and `wide-size` `1080px` — core block-editor defaults, governing only the two Gutenberg-only pages. Not this system's values.
 
 - **Content column:** 1368px at 1440. This is wide — treat 1368px as the outer bound, not the reading measure.
 - **Measure cap:** running prose must be capped separately. Measured half-column widths cluster at **604–663px**, which at 16px/1.625 is ~72 characters. **Cap long-form text at 680px.** Do not let body copy run the full 1368px.

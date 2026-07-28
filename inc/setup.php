@@ -67,3 +67,34 @@ function ak_remove_divi_viewport_meta() {
 	remove_action( 'wp_head', 'et_add_viewport_meta' );
 }
 add_action( 'wp_head', 'ak_remove_divi_viewport_meta', 1 );
+
+/**
+ * Drop the Divi body classes that reserve space for a fixed header we no longer have.
+ *
+ * THE 80px GAP ABOVE THE HEADER. Divi's dynamic CSS ships:
+ *
+ *   .et_fixed_nav.et_show_nav #page-container { padding-top: 80px; }
+ *
+ * That padding exists to stop page content sliding under Divi's own
+ * position:fixed `#main-header`. Our header is `position: sticky`, so it occupies
+ * layout space by itself and the reserved 80px became a visible empty band at the
+ * top of every page. Divi's JS also writes an inline `margin-top: -1px` on
+ * `#page-container` for the same mechanism.
+ *
+ * Fixing it in CSS means out-specifying `.et_fixed_nav.et_show_nav #page-container`
+ * (two classes + an id) on every future Divi CSS regeneration. Removing the classes
+ * kills the rule AND the JS at the source — the selector simply stops matching.
+ *
+ * Safe because nothing of ours depends on them: they only ever drove Divi's fixed
+ * navigation, which no longer renders. Both classes go in phase 4 with the rest of
+ * the Divi compatibility layer.
+ *
+ * @param string[] $classes Body classes.
+ * @return string[]
+ */
+function ak_remove_divi_fixed_nav_classes( $classes ) {
+	return array_values(
+		array_diff( $classes, array( 'et_fixed_nav', 'et_show_nav' ) )
+	);
+}
+add_filter( 'body_class', 'ak_remove_divi_fixed_nav_classes', 20 );

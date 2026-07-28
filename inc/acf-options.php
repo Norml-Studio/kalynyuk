@@ -79,14 +79,21 @@ function ak_acf_chrome_fields() {
 			'fields'   => array(
 				array(
 					'key'     => 'field_ak_cta_page',
-					'label'   => __( 'Primary CTA target', 'kalynyuk' ),
+					'label'   => __( 'Primary CTA target — page', 'kalynyuk' ),
 					'name'    => 'ak_cta_page',
 					'type'    => 'post_object',
 					'post_type' => array( 'page' ),
 					'return_format' => 'id',
 					'allow_null' => 1,
 					'ui'      => 1,
-					'instructions' => __( 'One CTA, shared by the header and the footer — header-standard requires they mirror each other. The page is translated automatically per language, so pick the Ukrainian one.', 'kalynyuk' ),
+					'instructions' => __( 'One CTA, shared by the header and the footer — header-standard requires they mirror each other. The page is translated automatically per language, so pick the Ukrainian one. Ignored if the external URL below is set.', 'kalynyuk' ),
+				),
+				array(
+					'key'   => 'field_ak_cta_url',
+					'label' => __( 'Primary CTA target — external URL', 'kalynyuk' ),
+					'name'  => 'ak_cta_url',
+					'type'  => 'url',
+					'instructions' => __( 'Takes precedence over the page. Use for an off-site form (e.g. Tally). External links open in a new tab automatically — the decision is made by host, never hardcoded.', 'kalynyuk' ),
 				),
 				array(
 					'key'   => 'field_ak_phone',
@@ -305,8 +312,22 @@ function ak_logo_html() {
  * @return array{label:string,url:string}|null
  */
 function ak_primary_cta() {
+	$label = ak_str( 'ak_cta_label', 'Отримати консультацію' );
+
+	// An external URL wins over the page. The site's primary CTA currently points
+	// at a Tally form, which is off-site, so a page field alone cannot express it.
+	// ak_link_target_attrs() decides target/rel by HOST, so nothing here needs to
+	// know or hardcode that it is external.
+	$external = ak_chrome( 'ak_cta_url' );
+
+	if ( $external ) {
+		return array(
+			'label' => $label,
+			'url'   => $external,
+		);
+	}
+
 	$page_id = (int) ak_chrome( 'ak_cta_page', 0 );
-	$label   = ak_str( 'ak_cta_label', 'Отримати консультацію' );
 
 	if ( ! $page_id ) {
 		return null;

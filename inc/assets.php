@@ -24,6 +24,19 @@ function ak_asset_version( $relative_path ) {
 }
 
 /**
+ * Preconnect to the Google Fonts hosts.
+ *
+ * Two hosts are needed: fonts.googleapis.com serves the CSS, fonts.gstatic.com
+ * serves the font files. The second needs `crossorigin` because fonts are fetched
+ * in CORS mode.
+ */
+function ak_font_preconnect() {
+	echo '<link rel="preconnect" href="https://fonts.googleapis.com">' . "\n";
+	echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' . "\n";
+}
+add_action( 'wp_head', 'ak_font_preconnect', 1 );
+
+/**
  * Enqueue the theme's built CSS and JS.
  *
  * Two things here are deliberate and easy to get wrong later:
@@ -47,6 +60,30 @@ function ak_asset_version( $relative_path ) {
 function ak_enqueue_assets() {
 	$css = 'dist/css/main.css';
 	$js  = 'dist/js/main.js';
+
+	/*
+	 * Nunito Sans, enqueued rather than @import-ed.
+	 *
+	 * It arrived in _base.scss as `@import url(...)` when the CodeKit CSS was
+	 * migrated into the theme. That was VALID — Vite hoists it to position 0 of the
+	 * bundle, so the browser did honour it — but it serialises two round trips: the
+	 * font CSS cannot start downloading until main.css has been fetched AND parsed.
+	 * A <link> starts both in parallel, and lets us preconnect.
+	 *
+	 * Weights: 400 / 600 / 700 only. The UI Kit contains no Medium(500) and no
+	 * Light(300) text style (design.md v2.0.0), and the migrated @import was still
+	 * requesting 300 — a weight nothing on the site uses.
+	 *
+	 * This is now the site's ONLY font request: after the CodeKit plugin was
+	 * deactivated there is no `fonts.googleapis.com` reference left in the HTML,
+	 * which also closes the "Nunito Sans loaded twice" issue in docs/05-issues.md.
+	 */
+	wp_enqueue_style(
+		'ak-fonts',
+		'https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700&display=swap',
+		array(),
+		null // Google versions the URL itself; a ?ver= would break their cache.
+	);
 
 	$deps = array();
 	if ( wp_style_is( 'divi-style', 'enqueued' ) || wp_style_is( 'divi-style', 'registered' ) ) {

@@ -1,0 +1,25 @@
+@use '../abstracts/tokens' as t;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Відгуки (page 2133) — the Review Wall widget.
+//
+// Migrated out of the CodeKit `custom-code` post when that plugin was retired.
+// It lived in base/_base.scss for one commit; it is page-specific third-party
+// markup, so per dev-bem-scss it belongs in a section partial, not in base/.
+//
+// The widget is not ours and exposes its own custom property, so overriding that
+// property is the intended integration point. `!important` is the widget's own
+// doing — it sets the background inline with !important, which nothing but
+// !important can beat. Scoped to the one page that renders it.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// .page-id-2133
+.page-id-2133 {
+  // .rw-google-widget__top
+  .rw-google-widget__top {
+    // Let the cream canvas show through instead of the widget's white card.
+    --widget-bg-color: transparent !important;
+
+    background: transparent !important;
+  }
+}

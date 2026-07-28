@@ -13,87 +13,83 @@
 .lang-switch {
   position: relative;
   flex: 0 0 auto;
-}
 
-// .lang-switch__trigger
-.lang-switch__trigger {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: t.$tap-min;
-  height: t.$tap-min;
-  border-radius: t.$radius-circle;
-  transition: background-color t.$dur-base t.$ease;
+  // .lang-switch__trigger
+  &__trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: t.$tap-min;
+    height: t.$tap-min;
+    border-radius: t.$radius-circle;
+    transition: background-color t.$dur-base t.$ease;
 
-  &:hover {
-    background-color: t.$color-surface-sunken;
+    &:hover {
+      background-color: t.$color-surface-sunken;
+    }
+
+    &:focus-visible {
+      @include m.focus-ring;
+    }
   }
+  // .lang-switch__flag
+  // The circular mask. Polylang emits a plain <img> of the flag; this crops it to a
+  // circle at the design's visual size.
+  &__flag {
+    display: block;
+    width: t.$icon-btn-visual;
+    height: t.$icon-btn-visual;
+    overflow: hidden;
+    border-radius: t.$radius-circle;
 
-  &:focus-visible {
-    @include m.focus-ring;
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
   }
-}
+  // .lang-switch__list
+  &__list {
+    position: absolute;
+    top: calc(100% + #{t.$space-1});
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: t.$z-dropdown;
+    display: grid;
+    gap: t.$space-1;
+    padding: t.$space-1;
+    background-color: t.$color-surface;
+    border-radius: t.$radius-lg;
+    box-shadow: t.$shadow-legacy;
 
-// .lang-switch__flag
-// The circular mask. Polylang emits a plain <img> of the flag; this crops it to a
-// circle at the design's visual size.
-.lang-switch__flag {
-  display: block;
-  width: t.$icon-btn-visual;
-  height: t.$icon-btn-visual;
-  overflow: hidden;
-  border-radius: t.$radius-circle;
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    &[hidden] {
+      display: none;
+    }
   }
-}
-
-// .lang-switch__list
-.lang-switch__list {
-  position: absolute;
-  top: calc(100% + #{t.$space-1});
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: t.$z-dropdown;
-  display: grid;
-  gap: t.$space-1;
-  padding: t.$space-1;
-  background-color: t.$color-surface;
-  border-radius: t.$radius-lg;
-  box-shadow: t.$shadow-legacy;
-
-  &[hidden] {
-    display: none;
+  // .lang-switch__item
+  &__item {
+    display: flex;
   }
-}
+  // .lang-switch__link
+  &__link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: t.$tap-min;
+    height: t.$tap-min;
+    border-radius: t.$radius-circle;
+    transition: background-color t.$dur-base t.$ease;
 
-// .lang-switch__item
-.lang-switch__item {
-  display: flex;
-}
+    &:hover {
+      background-color: t.$color-surface-sunken;
+    }
 
-// .lang-switch__link
-.lang-switch__link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: t.$tap-min;
-  height: t.$tap-min;
-  border-radius: t.$radius-circle;
-  transition: background-color t.$dur-base t.$ease;
+    &:focus-visible {
+      @include m.focus-ring;
+    }
 
-  &:hover {
-    background-color: t.$color-surface-sunken;
-  }
-
-  &:focus-visible {
-    @include m.focus-ring;
-  }
-
-  &.is-current {
-    background-color: t.$color-surface-sunken;
+    &.is-current {
+      background-color: t.$color-surface-sunken;
+    }
   }
 }
