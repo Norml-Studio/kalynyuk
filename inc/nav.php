@@ -221,56 +221,47 @@ function ak_language_switcher() {
 }
 
 /**
- * Inline the language flag as SVG.
+ * The language flag, as an <img> pointing at the SVG file in the theme.
  *
  * ⚠️ WHY NOT POLYLANG'S FLAG. Polylang (free) ships 16×11 PNG flags. The design
  * renders them at 32px inside a circle, so they were being upscaled 2× and looked
- * visibly mushy — Petr flagged it from a screenshot.
+ * visibly mushy — Petr spotted it from a screenshot.
  *
- * These SVGs are the DESIGNER'S OWN flag components, exported from the Figma UI
- * kit (nodes 1164:477 UA, 1164:500 PT, 1164:481 GB). Vector, so crisp at any size;
- * inlined, so no extra request; already circular with a clip-path at rx=12, which
- * is exactly the design's treatment.
+ * These SVGs are the DESIGNER'S OWN flag components, exported from the Figma UI kit
+ * (nodes 1164:477 UA, 1164:500 PT, 1164:481 GB). Vector, so crisp at any size, and
+ * already circular with a clip-path at rx=12 — exactly the design's treatment.
  *
- * Deliberately NOT hand-drawn: getting a national flag subtly wrong on a client
- * site is worse than a blurry correct one, so the assets come from the design file.
+ * REFERENCED, NOT INLINED (Petr's call, and the better trade-off): the browser
+ * caches the file once and reuses it across every page, and the HTML stays clean
+ * instead of carrying ~2 KB of flag markup on every request. The cost is one small
+ * cacheable request per flag. An earlier revision inlined the file contents.
  *
- * Falls back to Polylang's PNG for any language without an SVG yet (`ru` today),
- * so adding a language never produces a missing flag.
+ * Deliberately NOT hand-drawn: getting a national flag subtly wrong on a client site
+ * is worse than a soft correct one, so the assets come from the design file.
  *
- * @param string $slug     Language slug.
+ * Falls back to Polylang's PNG for any language without an SVG yet (`ru` today — the
+ * design has no RU component), so adding a language never yields a missing flag.
+ *
+ * @param string $slug         Language slug.
  * @param string $png_fallback URL of Polylang's flag PNG.
- * @return string Ready-to-echo markup.
+ * @return string Ready-to-echo, already-escaped markup.
  */
-function ak_flag_svg( $slug, $png_fallback = '' ) {
-	static $cache = array();
-
+function ak_flag_html( $slug, $png_fallback = '' ) {
 	$slug = preg_replace( '/[^a-z0-9_-]/', '', strtolower( (string) $slug ) );
-
-	if ( isset( $cache[ $slug ] ) ) {
-		return $cache[ $slug ];
-	}
-
 	$file = AK_DIR . '/assets/flags/' . $slug . '.svg';
 
+	// alt="" is correct: these are decorative. The language name is already in the
+	// link, exposed to screen readers via .u-visually-hidden.
 	if ( $slug && file_exists( $file ) ) {
-		$svg = file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions
-
-		// Strip the XML prolog if present and mark it decorative — the language
-		// name is already exposed to screen readers in the link text.
-		$svg = preg_replace( '#<\?xml[^>]*\?>\s*#i', '', (string) $svg );
-		$svg = preg_replace( '#<svg\b#i', '<svg aria-hidden="true" focusable="false"', $svg, 1 );
-
-		$cache[ $slug ] = $svg;
-
-		return $svg;
+		return sprintf(
+			'<img src="%s" alt="" width="24" height="24" decoding="async" />',
+			esc_url( AK_URI . '/assets/flags/' . $slug . '.svg' )
+		);
 	}
 
-	$cache[ $slug ] = $png_fallback
+	return $png_fallback
 		? sprintf( '<img src="%s" alt="" width="16" height="11" decoding="async" />', esc_url( $png_fallback ) )
 		: '';
-
-	return $cache[ $slug ];
 }
 
 /**
