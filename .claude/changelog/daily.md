@@ -116,3 +116,21 @@ Verified: 11/12 targeted assertions plus 34/34 header regressions. The one "fail
 - One-time migration (`ak_migrate_socials`, guarded by an option) carries the two existing values into the repeater and bails if a human has already added rows. The legacy fields are still read as a fallback, so an install that has not been re-saved keeps rendering. Verified: both values migrated, drawer and footer render identically from the repeater.
 - New **`ak_show_lang` toggle** in Site chrome — hides the switcher in the header and the drawer without deactivating Polylang, for the period while a language is still being translated. Guarded at both the include site and inside the template part, since `get_template_part()` is reachable from anywhere. Defaults to ON when never saved, so existing installs do not silently lose the switcher. Verified in raw HTML: OFF → 0 occurrences of `data-ak-lang`, ON → 3.
 - 34/34 header regressions still pass.
+
+### 🚀 PRODUCTION CUTOVER — phase 1 chrome is live
+
+First deploy to `https://www.kalynyuk.com`. Single-window cutover (Petr's call): files + DB together, because a files-only push would have **broken the live header** — see below.
+
+**Why files-only was not an option.** Probing production first showed Divi TB `override = TRUE` on all four templates, so our `header.php` / `footer.php` would not have rendered at all. But the rest of the theme *would* have applied — `ak_remove_divi_fixed_nav_classes()` strips `et_fixed_nav` / `et_show_nav`, and `_divi-compat.scss` zeroes `#page-container` padding. Those are exactly the compensation Divi's still-active fixed header depends on. We would have removed the prop without installing the replacement, and content would have slid under the live site's header.
+
+**Order executed:**
+1. Backup → `~/kalynyuk.com/_backup-20260729-101013/` (db.sql.gz 57 MB + theme.tar.gz), **outside the docroot**. Path also written to `~/kalynyuk.com/.last-backup-path`.
+2. Files via tar+ssh (no rsync on the Windows side): 37 files, 91 KB. Prod theme held only the original 3 files, all overwritten — no stale files left behind.
+3. DB cutover in one idempotent script: TB detach (id=0 + enabled=1, originals backed up to `_ak_orig_*` meta) → `polylang.nav_menus` uk→menu 2 → ACF chrome options → 4 `guide` posts + menu rebuilt to the 6-item design IA → CodeKit deactivated → empty `en`/`ru` stubs to draft → rewrites + WP Rocket + Divi caches flushed.
+4. Cleaned the dead `#mobileMenuToggle` script from Divi → Integration → head (2308 → 358 bytes, `.go-top` kept, original in the `ak_backup_divi_integration_head` option).
+
+**⚠️ `.claude/` was deliberately excluded from the deploy.** `docs/05-issues.md` enumerates this site's security issues; shipping it into a web-accessible directory would publish them. Verified absent on the server after extraction.
+
+**Verified on production:** 14/14 assertions — HTTP 200, no fatals, our header and footer render, Divi's `#main-header` gone, nav is the 6-item design IA, Portugal dropdown has its 4 links, switcher shows 2 languages, CTA points at Tally, no 80px gap, container 1376, Made-by lockup present, regulatory block intact, no horizontal scroll. Five URLs smoke-tested (`/`, `/faq/`, `/blog/`, `/pro-mene/`, a guide single) — all 200, header+footer+switcher on each, **zero page errors**. Mobile drawer opens with 10 items, 4 contacts and the pinned CTA.
+
+Rollback if needed: restore `_backup-20260729-101013/db.sql.gz`, or re-enable the TB layouts from the `_ak_orig_*` meta and re-activate CodeKit.
