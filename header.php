@@ -184,5 +184,14 @@ wp_head();
 	<div id="et-main-area">
 		<div id="ak-content" tabindex="-1"></div>
 <?php
+/*
+ * Theme-built sections, printed here rather than injected into `the_content`.
+ * `wpautop` runs on that filter and auto-paragraphs anything prepended to it — it
+ * appended a stray empty <p> into the hero and broke the layout. See
+ * ak_render_native_sections().
+ */
+ak_render_native_sections();
+?>
+<?php
 /** Divi's pre-content hook — Theme Builder body layouts and plugins use it. */
 do_action( 'et_before_main_content' );

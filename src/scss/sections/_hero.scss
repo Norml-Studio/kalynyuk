@@ -1,0 +1,188 @@
+@use '../abstracts/tokens' as t;
+@use '../abstracts/mixins' as m;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// .hero — Figma 1130:3907, 1440×812 (photo area 734).
+//
+// 🔒 CONTAINER RULE: the band is full-bleed and owns the background; __inner is
+// capped by container() at 1376 / 30-20 padding (design.md §6).
+//
+// The section is a GREEN band with rounded BOTTOM corners only — the green shows
+// through wherever the photo does not reach, and the rounding is what visually
+// separates the hero from the cream page beneath it.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// .hero
+.hero {
+  position: relative;
+  display: flex;
+  background-color: t.$color-accent;
+  border-bottom-left-radius: t.$radius-lg;
+  border-bottom-right-radius: t.$radius-lg;
+  overflow: hidden;
+
+  // Measured 734 at a 1440 canvas — a 1.96:1 band. Expressed as a ratio with a
+  // floor so it keeps its proportion on wide screens and never collapses on tall
+  // narrow ones. min() rather than a fixed height so it cannot exceed the viewport.
+  min-height: min(72vh, 734px);
+
+  @include m.bp(desktop) {
+    min-height: 734px;
+  }
+
+  // .hero__media
+  // ⚠️ THIS SELECTOR MAY LAND ON A <picture>, NOT AN <img>. Imagify rewrites
+  // images into `<picture><source type="image/webp">…<img></picture>` for WebP
+  // delivery, and it moves the class onto the WRAPPER. `object-fit` does nothing on
+  // a <picture>, so styling only this element left the inner <img> unsized and the
+  // photo effectively invisible. Caught by reading the rendered HTML — the template
+  // and wp_get_attachment_image() were both correct.
+  //
+  // Both levels are styled so it behaves identically whether Imagify wraps it or
+  // not. Do not "simplify" this to one rule.
+  &__media {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+
+    // Applies when the class is on the <img> itself (Imagify off / no WebP).
+    &,
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      // The subject sits centre-right in the source photo; a plain `center` crop
+      // cuts her out of frame on narrow viewports.
+      object-position: 60% center;
+
+      @include m.bp(desktop) {
+        object-position: center;
+      }
+    }
+  }
+
+  // .hero__overlay
+  // Figma `shadow`: #0D0D0D → transparent, bottom-to-top, stops 0/18/39/73%.
+  // Its 64px LAYER_BLUR is deliberately not reproduced — blurring a linear
+  // gradient yields the same gradient for a repaint cost.
+  &__overlay {
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(
+      to top,
+      rgba(13, 13, 13, 1) 0%,
+      rgba(13, 13, 13, 0.878) 18%,
+      rgba(13, 13, 13, 0.666) 39%,
+      rgba(13, 13, 13, 0) 73%
+    );
+  }
+
+  // .hero__inner
+  &__inner {
+    @include m.container;
+
+    position: relative; // above the overlay
+    z-index: t.$z-base;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding-block: t.$space-5 t.$space-4;
+
+    @include m.bp(desktop) {
+      // 40px from the photo top to the H1, 32px from the caption to the bottom.
+      padding-block: t.$space-5 t.$space-4;
+    }
+  }
+
+  // .hero__heading
+  &__heading {
+    @include m.text-h1;
+
+    margin: 0;
+    color: t.$color-canvas;
+    text-wrap: balance;
+
+    @include m.bp(desktop) {
+      // Measured 502px — roughly a third of the canvas, which is what keeps the
+      // subject's face clear of the type.
+      max-width: 502px;
+    }
+  }
+
+  // .hero__actions
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: t.$space-1; // itemSpacing 8 in Figma 1130:3926
+    margin-top: t.$space-5;
+
+    // The two buttons are 224 wide in the design; let them shrink on small
+    // screens rather than overflow, but never below a tappable width.
+    .btn {
+      flex: 0 1 auto;
+      min-width: 0;
+
+      @include m.bp(tablet) {
+        min-width: t.$btn-width-min;
+      }
+    }
+  }
+
+  // .hero__foot
+  // Caption and stat share a baseline 32px above the section bottom. `margin-top:
+  // auto` pins them there regardless of how tall the heading wraps.
+  &__foot {
+    display: flex;
+    flex-direction: column;
+    gap: t.$space-3;
+    margin-top: auto;
+    padding-top: t.$space-8;
+
+    @include m.bp(tablet) {
+      flex-direction: row;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: t.$space-4;
+    }
+  }
+
+  // .hero__caption
+  &__caption {
+    @include m.text-body;
+
+    margin: 0;
+    color: t.$color-canvas;
+
+    @include m.bp(desktop) {
+      max-width: 371px; // measured
+    }
+  }
+
+  // .hero__stat
+  // 32px SemiBold — the h2 role. The Figma node reports `fills: null`, i.e. MIXED
+  // fills: the first line is full-strength cream and the second is dimmed. Two
+  // spans rather than one string, so the two colours are addressable and the copy
+  // stays editable.
+  &__stat {
+    @include m.text-h2;
+
+    margin: 0;
+
+    @include m.bp(tablet) {
+      max-width: 288px; // measured
+      text-align: left;
+    }
+  }
+
+  // .hero__stat-strong
+  &__stat-strong {
+    color: t.$color-canvas;
+  }
+
+  // .hero__stat-muted
+  &__stat-muted {
+    color: t.$color-canvas-muted;
+  }
+}

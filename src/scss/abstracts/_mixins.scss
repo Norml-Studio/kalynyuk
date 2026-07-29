@@ -27,17 +27,30 @@
 // Caps INNER content only. The section's own background stays full-bleed —
 // vibe-frontend-standards §3 bans a max-width on the page canvas, because a boxed
 // background leaves visible gutters on wide screens.
+// ⚠️ `$container-max` is the CONTENT width, so the padding is ADDED to the box.
+//
+// The first version set `max-width: 1376` and `padding-inline: 30`, which put
+// content at x=62 on a 1440 canvas. Every section in the design sits at x=32 with
+// content 1376 wide — measured across the header, the hero and every homepage
+// section — so that was a systematic 30px error in all of them.
+//
+// Adding the padding to the cap satisfies both halves of the rule at once: content
+// is 1376 wide AND inset 30 from the container edge, which lands it at x=32 on a
+// 1440 viewport, exactly as drawn. Below that width the container goes full-bleed
+// and the 30/24/20 padding becomes the viewport gutter, which is its real job.
 @mixin container($max: t.$container-max) {
   width: 100%;
-  max-width: $max;
   margin-inline: auto;
+  max-width: calc(#{$max} + 2 * #{t.$pad-inline-mobile});
   padding-inline: t.$pad-inline-mobile;
 
   @include bp(tablet) {
+    max-width: calc(#{$max} + 2 * #{t.$pad-inline-tablet});
     padding-inline: t.$pad-inline-tablet;
   }
 
   @include bp(desktop) {
+    max-width: calc(#{$max} + 2 * #{t.$pad-inline-desktop});
     padding-inline: t.$pad-inline-desktop;
   }
 }
