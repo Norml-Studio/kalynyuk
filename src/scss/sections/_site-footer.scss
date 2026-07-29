@@ -153,6 +153,7 @@
   &__form {
     @include m.bp(desktop) {
       padding-left: t.$space-6;
+      padding-bottom: 35px;
       border-left: t.$border-width solid t.$color-accent-light;
     }
   

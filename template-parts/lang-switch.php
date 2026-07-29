@@ -18,7 +18,9 @@ defined( 'ABSPATH' ) || exit;
 
 $ak_langs = ak_language_switcher();
 
-if ( count( $ak_langs ) < 2 ) {
+// Guarded here as well as at the include site: this part is also reachable via
+// get_template_part() from anywhere, and the toggle must hold in every path.
+if ( ! ak_show_lang_switcher() || count( $ak_langs ) < 2 ) {
 	return;
 }
 

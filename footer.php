@@ -45,8 +45,8 @@ do_action( 'et_after_main_content' );
 $ak_nav       = ak_nav_tree( 'primary-menu' );
 $ak_phone     = ak_chrome( 'ak_phone' );
 $ak_email     = ak_chrome( 'ak_email' );
-$ak_telegram  = ak_chrome( 'ak_telegram' );
-$ak_instagram = ak_chrome( 'ak_instagram' );
+// One source, shared with the mobile drawer — see ak_socials().
+$ak_socials   = ak_socials();
 $ak_privacy   = get_option( 'wp_page_for_privacy_policy' );
 
 // Regulatory disclosure.
@@ -129,12 +129,9 @@ $ak_row = static function ( $label, $url = '' ) {
 					<?php endif; ?>
 
 					<ul class="site-footer__list site-footer__list--contacts">
-						<?php if ( $ak_telegram ) : ?>
-							<li><?php $ak_row( ak_str( 'ak_telegram', 'Телеграм' ), $ak_telegram ); ?></li>
-						<?php endif; ?>
-						<?php if ( $ak_instagram ) : ?>
-							<li><?php $ak_row( ak_str( 'ak_instagram', 'Інстаграм' ), $ak_instagram ); ?></li>
-						<?php endif; ?>
+						<?php foreach ( $ak_socials as $ak_social ) : ?>
+							<li><?php $ak_row( $ak_social['label'], $ak_social['url'] ); ?></li>
+						<?php endforeach; ?>
 						<?php if ( $ak_phone ) : ?>
 							<li><a class="site-footer__link" href="tel:<?php echo esc_attr( preg_replace( '/[^\d+]/', '', $ak_phone ) ); ?>"><?php echo esc_html( $ak_phone ); ?></a></li>
 						<?php endif; ?>

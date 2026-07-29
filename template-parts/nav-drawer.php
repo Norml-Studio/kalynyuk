@@ -28,10 +28,10 @@ if ( ! $ak_nav ) {
 	return;
 }
 
-$ak_phone     = ak_chrome( 'ak_phone' );
-$ak_email     = ak_chrome( 'ak_email' );
-$ak_telegram  = ak_chrome( 'ak_telegram' );
-$ak_instagram = ak_chrome( 'ak_instagram' );
+$ak_phone   = ak_chrome( 'ak_phone' );
+$ak_email   = ak_chrome( 'ak_email' );
+// One source, shared with the footer — see ak_socials().
+$ak_socials = ak_socials();
 ?>
 <div class="nav-drawer" id="ak-drawer" hidden data-ak-drawer>
 	<div class="nav-drawer__scrim" data-ak-drawer-scrim></div>
@@ -70,16 +70,17 @@ $ak_instagram = ak_chrome( 'ak_instagram' );
 					<?php endforeach; ?>
 				</ul>
 
-				<?php if ( $ak_telegram || $ak_instagram || $ak_phone || $ak_email ) : ?>
+				<?php if ( $ak_socials || $ak_phone || $ak_email ) : ?>
 					<hr class="nav-drawer__rule" />
 
 					<ul class="nav-drawer__contacts">
-						<?php if ( $ak_telegram ) : ?>
-							<li><a class="nav-drawer__contact" href="<?php echo esc_url( $ak_telegram ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( ak_str( 'ak_telegram', 'Телеграм' ) ); ?></a></li>
-						<?php endif; ?>
-						<?php if ( $ak_instagram ) : ?>
-							<li><a class="nav-drawer__contact" href="<?php echo esc_url( $ak_instagram ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( ak_str( 'ak_instagram', 'Інстаграм' ) ); ?></a></li>
-						<?php endif; ?>
+						<?php foreach ( $ak_socials as $ak_social ) : ?>
+							<li>
+								<a class="nav-drawer__contact" href="<?php echo esc_url( $ak_social['url'] ); ?>"
+									<?php echo ak_link_target_attrs( $ak_social['url'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+								><?php echo esc_html( $ak_social['label'] ); ?></a>
+							</li>
+						<?php endforeach; ?>
 						<?php if ( $ak_phone ) : ?>
 							<li><a class="nav-drawer__contact" href="tel:<?php echo esc_attr( preg_replace( '/[^\d+]/', '', $ak_phone ) ); ?>"><?php echo esc_html( $ak_phone ); ?></a></li>
 						<?php endif; ?>

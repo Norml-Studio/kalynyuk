@@ -143,7 +143,8 @@ wp_head();
 
 			<div class="site-header__actions">
 
-				<?php if ( count( $ak_langs ) > 1 ) : ?>
+				<?php // Editor-controlled toggle, plus the "more than one language" guard. ?>
+				<?php if ( ak_show_lang_switcher() && count( $ak_langs ) > 1 ) : ?>
 					<?php get_template_part( 'template-parts/lang-switch' ); ?>
 				<?php endif; ?>
 

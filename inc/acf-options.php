@@ -108,17 +108,52 @@ function ak_acf_chrome_fields() {
 					'name'  => 'ak_email',
 					'type'  => 'email',
 				),
+				/*
+				 * Social links as a REPEATER, not one field per network.
+				 *
+				 * The old shape hardcoded `ak_telegram` and `ak_instagram`, which meant
+				 * adding Facebook or YouTube was a code change in three places (the
+				 * field group, the drawer and the footer). A repeater makes it an
+				 * admin action. Existing values are migrated automatically — see
+				 * ak_migrate_socials().
+				 *
+				 * Label is a plain text field rather than a fixed list: the drawer and
+				 * footer render the label verbatim, and it needs to be writable in
+				 * Ukrainian ("Телеграм", not "Telegram").
+				 */
 				array(
-					'key'   => 'field_ak_telegram',
-					'label' => __( 'Telegram URL', 'kalynyuk' ),
-					'name'  => 'ak_telegram',
-					'type'  => 'url',
+					'key'          => 'field_ak_socials',
+					'label'        => __( 'Social links', 'kalynyuk' ),
+					'name'         => 'ak_socials',
+					'type'         => 'repeater',
+					'layout'       => 'table',
+					'button_label' => __( 'Add link', 'kalynyuk' ),
+					'instructions' => __( 'Rendered in the mobile menu and the footer, in this order. One source — edit here and both update.', 'kalynyuk' ),
+					'sub_fields'   => array(
+						array(
+							'key'      => 'field_ak_social_label',
+							'label'    => __( 'Label', 'kalynyuk' ),
+							'name'     => 'label',
+							'type'     => 'text',
+							'required' => 1,
+						),
+						array(
+							'key'      => 'field_ak_social_url',
+							'label'    => __( 'URL', 'kalynyuk' ),
+							'name'     => 'url',
+							'type'     => 'url',
+							'required' => 1,
+						),
+					),
 				),
 				array(
-					'key'   => 'field_ak_instagram',
-					'label' => __( 'Instagram URL', 'kalynyuk' ),
-					'name'  => 'ak_instagram',
-					'type'  => 'url',
+					'key'          => 'field_ak_show_lang',
+					'label'        => __( 'Show the language switcher', 'kalynyuk' ),
+					'name'         => 'ak_show_lang',
+					'type'         => 'true_false',
+					'default_value' => 1,
+					'ui'           => 1,
+					'instructions' => __( 'Hides the switcher in the header and the mobile menu without deactivating Polylang. Useful while a second language is still being translated.', 'kalynyuk' ),
 				),
 				array(
 					'key'   => 'field_ak_logo',
@@ -304,6 +339,117 @@ function ak_logo_html() {
 		esc_attr( $alt ),
 		$dims // Built from ints above.
 	);
+}
+
+/**
+ * Social links, as a flat list of `{label, url}`.
+ *
+ * ⚠️ THE ONE SOURCE. The mobile drawer and the footer both render this — the SAME
+ * array, read once from options. They are two placements of one dataset, not two
+ * copies: change a link here and both update. Nothing is duplicated in the data
+ * layer, and no template holds its own list.
+ *
+ * Falls back to the retired `ak_telegram` / `ak_instagram` fields so an install
+ * that has not been re-saved yet keeps rendering. See ak_migrate_socials().
+ *
+ * @return array<int, array{label:string,url:string}>
+ */
+function ak_socials() {
+	$rows = ak_chrome( 'ak_socials', array() );
+	$out  = array();
+
+	if ( is_array( $rows ) ) {
+		foreach ( $rows as $row ) {
+			if ( ! empty( $row['url'] ) && ! empty( $row['label'] ) ) {
+				$out[] = array(
+					'label' => (string) $row['label'],
+					'url'   => (string) $row['url'],
+				);
+			}
+		}
+	}
+
+	if ( $out ) {
+		return $out;
+	}
+
+	// Legacy shape, kept only as a read fallback.
+	foreach ( array(
+		'ak_telegram'  => ak_str( 'ak_telegram', 'Телеграм' ),
+		'ak_instagram' => ak_str( 'ak_instagram', 'Інстаграм' ),
+	) as $field => $label ) {
+		$url = ak_chrome( $field );
+
+		if ( $url ) {
+			$out[] = array(
+				'label' => $label,
+				'url'   => $url,
+			);
+		}
+	}
+
+	return $out;
+}
+
+/**
+ * One-time migration of the two hardcoded social fields into the repeater.
+ *
+ * Runs once, guarded by an option, so it neither repeats nor overwrites anything a
+ * human has since edited: it bails the moment the repeater already has rows.
+ */
+function ak_migrate_socials() {
+	if ( ! ak_has_acf() || get_option( 'ak_socials_migrated' ) ) {
+		return;
+	}
+
+	$existing = get_field( 'ak_socials', 'option' );
+
+	if ( ! empty( $existing ) ) {
+		update_option( 'ak_socials_migrated', 1, false );
+
+		return;
+	}
+
+	$rows = array();
+
+	foreach ( array(
+		'ak_telegram'  => 'Телеграм',
+		'ak_instagram' => 'Інстаграм',
+	) as $field => $label ) {
+		$url = get_field( $field, 'option' );
+
+		if ( $url ) {
+			$rows[] = array(
+				'label' => $label,
+				'url'   => $url,
+			);
+		}
+	}
+
+	if ( $rows ) {
+		update_field( 'ak_socials', $rows, 'option' );
+	}
+
+	update_option( 'ak_socials_migrated', 1, false );
+}
+add_action( 'admin_init', 'ak_migrate_socials' );
+
+/**
+ * Should the language switcher render?
+ *
+ * Defaults to TRUE when the field has never been saved, so an install that predates
+ * the toggle keeps its current behaviour rather than silently losing the switcher.
+ *
+ * @return bool
+ */
+function ak_show_lang_switcher() {
+	if ( ! ak_has_acf() ) {
+		return true;
+	}
+
+	$value = get_field( 'ak_show_lang', 'option' );
+
+	return ( null === $value || '' === $value ) ? true : (bool) $value;
 }
 
 /**
