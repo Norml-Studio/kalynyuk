@@ -233,6 +233,10 @@ Also: the hero image is now an attachment ID rather than ACF's image array (work
 
 Verified on local: `/pt/` renders `lang="pt-PT"`, native hero with Portuguese copy, Divi sections 9 → 8 (so the strip is inheriting), image loaded, CTA "Obter consultoria", drawer "Voltar", back-to-top "Voltar ao topo". Ukrainian unchanged — hero geometry re-measured at 1440 and 375 with no regression.
 
+**🚀 Deployed to production the same day** (backup `_backup-20260730-172634/`, 40 files, then the two data scripts). Production now matches local field for field: `/pt/` 200 with the Portuguese native hero, `/pt/golovna-portugues/` **301 → `/pt/`**, `/en/` and `/ru/` clean too, FAQ nav item self-translated, Ukrainian hero geometry unchanged (x=32, buttons y=295, baseline 780).
+
+⚠️ **Standing item: the language switcher is still toggled OFF on production** (`options_ak_show_lang = '0'`), so nothing in the UI links to `/pt/` — the Portuguese site is now correct but unreachable by clicking. Left off because it is an editorial setting; flagged to Petr. Local has it on, so the two environments still differ here.
+
 ### ✅ Repo moved to the Norml-Studio org
 
 - `petyasavenok-dev/kalynyuk` → **`Norml-Studio/kalynyuk`**, done via GitHub **Transfer ownership** rather than a re-push. Transfer keeps commits, branches, tags, issues and PRs and installs a permanent redirect; a fresh push would have kept only commits and left two repos that both looked canonical.
