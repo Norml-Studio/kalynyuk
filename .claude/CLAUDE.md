@@ -10,10 +10,10 @@
 - **Project:** Anna Kalynyuk
 - **Theme slug:** `anna-kalynyuk---norml-studio-theme`
 - **Parent theme:** Divi 4.27.7 (stock, vendored — never edit)
-- **Source hosting:** Bitbucket — client production code (per `dev-ci-cd` + Source Hosting Policy in root CLAUDE.md)
+- **Source hosting:** GitHub — the repo root is the THEME folder, not the WP install
 - **Production:** https://www.kalynyuk.com
 - **Staging:** [fill in URL — none known]
-- **Repo:** [fill in Bitbucket URL — **no git repo exists locally yet**]
+- **Repo:** `git@github.com:Norml-Studio/kalynyuk.git` — ⏳ *pending transfer.* It was created as the personal `petyasavenok-dev/kalynyuk` and is being moved to the org with GitHub's **Transfer ownership** (keeps history, issues, PRs, and installs a permanent redirect from the old URL). Until the transfer runs, `origin` still points at the personal remote. Do not pre-create an empty `Norml-Studio/kalynyuk` — a name collision is the one thing that blocks a transfer.
 - **Local environment:** OpenServer (Apache + PHP 8.1 + MySQL 5.7) at `f:\localsites\kalynyuk.loc`, served on `http://kalynyuk.loc`
 - **Drive folder:** [fill in Norml Drive path]
 - **Project slug:** `anna-kalynyuk`
