@@ -34,17 +34,22 @@ if ( ! $ak_hero ) {
 	return;
 }
 
-$ak_img = $ak_hero['image'];
+$ak_img = (int) $ak_hero['image'];
 ?>
 <section class="hero">
-	<?php if ( is_array( $ak_img ) && ! empty( $ak_img['url'] ) ) : ?>
+	<?php if ( $ak_img ) : ?>
 		<?php
 		/*
 		 * fetchpriority="high" + eager: this is the LCP element on the homepage, so
 		 * it must not be lazy-loaded. sizes="100vw" because the image is full-bleed.
+		 *
+		 * No explicit `alt`: wp_get_attachment_image() reads the attachment's own alt
+		 * text, which is where an editor sets it and which Polylang translates with
+		 * the media. Passing ACF's copy would have frozen one language's alt onto
+		 * every language.
 		 */
 		echo wp_get_attachment_image(
-			(int) $ak_img['ID'],
+			$ak_img,
 			'full',
 			false,
 			array(
@@ -53,7 +58,6 @@ $ak_img = $ak_hero['image'];
 				'loading'       => 'eager',
 				'fetchpriority' => 'high',
 				'decoding'      => 'sync',
-				'alt'           => $ak_img['alt'] ? $ak_img['alt'] : '',
 			)
 		);
 		?>

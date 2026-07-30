@@ -227,6 +227,55 @@ photograph* — today `.hero` alone — also caps at `$canvas-max` (1440) and ce
 a wide viewport does not recrop the photo. Colour bands never do. See `design.md` §6
 → "The one exception".
 
+## Multilingual — LOCKED (Petr, 2026-07-30)
+
+Three rules. They exist so that **adding a language is an admin action with no code
+change**, which is the standing requirement on this project.
+
+### 1. Section fields go through `ak_section_field()`, always
+
+```php
+$heading = ak_section_field( 'ak_hero_heading', $id );   // ✅
+$heading = get_field( 'ak_hero_heading', $id );          // ❌ breaks on translations
+```
+
+Section content is per-post meta and a translation is a *different post*, so a new
+language starts with every field empty. Without the fallback that is not merely
+"untranslated" — the rebuilt-section count reads 0, **Divi's original section renders
+again**, and that language silently keeps the old design. With it, a new language
+gets the native section on day one carrying the default language's text, and the
+editor replaces the text field by field. An explicit `0` still opts out (`''` means
+unset, `'0'` is a decision). Full reasoning is in the docblock in
+`inc/native-sections.php`.
+
+### 2. The nav is ONE menu, resolved per language at render time
+
+`ak_translate_menu_item()` swaps each item's URL — and its title, unless the menu
+label was customised — to the current language's translation, and recomputes the
+"current" flag against the translated ID. Do **not** build per-language menus: only
+2 of 10 destinations have a Portuguese translation, so a hand-built menu would be
+eight items hard-wired to Ukrainian posts *and would stay hard-wired* after those
+pages are translated. Assigning a real menu in Polylang still overrides this if
+genuinely different labels are ever wanted.
+
+### 3. UI strings go through `ak_str()` / `pll_register_string()`
+
+Not ACF options — an ACF options page is global, one value for all languages. Strings
+are editable per language in **Polylang → Translations → Strings**, so a new language
+appears there on its own. `pt` / `en` / `ru` values are already filled in.
+
+### The front-page URL setting
+
+`polylang.redirect_lang` **must stay ON**. Polylang's `set_language_home_url()` uses
+the translated front page's full permalink as that language's home URL unless this is
+set — which is what produced `/pt/golovna-portugues/` instead of `/pt/`. In wp-admin
+it is *Settings → Languages → URL modifications → "The front page URL contains the
+language code instead of the page name"*. It also 301s the old slug URLs.
+
+⚠️ Changing it needs the languages cache **hard-cleared** — `delete_transient(
+'pll_languages_list' )` in a separate request. `clean_languages_cache()` inside the
+same request re-populates from the already-loaded objects and looks like a no-op.
+
 ## Build
 
 Vite. From the theme folder:

@@ -31,19 +31,88 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
+ * The default-language twin of a post, or 0 when there isn't one.
+ *
+ * @param int $post_id Post ID in any language.
+ * @return int
+ */
+function ak_default_language_post( $post_id ) {
+	$post_id = (int) $post_id;
+
+	if ( ! $post_id || ! function_exists( 'pll_get_post' ) || ! function_exists( 'pll_default_language' ) ) {
+		return 0;
+	}
+
+	$default = pll_default_language( 'slug' );
+
+	if ( ! $default || pll_get_post_language( $post_id ) === $default ) {
+		return 0;
+	}
+
+	$source = pll_get_post( $post_id, $default );
+
+	return $source ? (int) $source : 0;
+}
+
+/**
+ * Read a section field, falling back to the DEFAULT LANGUAGE's copy of the page.
+ *
+ * ⚠️ EVERY NATIVE SECTION MUST READ ITS FIELDS THROUGH THIS, not through get_field()
+ * or get_post_meta() directly. It is the whole answer to "what happens when a new
+ * language is added".
+ *
+ * THE PROBLEM IT SOLVES. Section content is per-post meta, and a translation is a
+ * different post. So a Portuguese page starts with every field empty, and without a
+ * fallback that produces the WORST possible state — not "untranslated", but broken:
+ * the rebuilt-section count reads 0, so Divi's original section renders again, and
+ * that page silently keeps the old design while the default language has the new
+ * one. Add a fourth language and it happens again. Whoever adds the language has no
+ * reason to suspect any of this.
+ *
+ * With the fallback, a new language renders the native section on day one, carrying
+ * the default language's text, and the editor replaces the text field by field. The
+ * layout is never wrong; only the wording is behind. That is the honest trade —
+ * default-language text on a translated page is visible and self-correcting, whereas
+ * a silently un-migrated section is neither.
+ *
+ * An EXPLICIT 0 does not fall back: get_post_meta() returns '0' for it and '' for
+ * unset, so a translation can deliberately opt out of a section and keep Divi's.
+ *
+ * @param string   $key     Meta key.
+ * @param int|null $post_id Defaults to the queried object.
+ * @return mixed Empty string when neither the post nor its source has a value.
+ */
+function ak_section_field( $key, $post_id = null ) {
+	$post_id = $post_id ? (int) $post_id : (int) get_queried_object_id();
+
+	if ( ! $post_id ) {
+		return '';
+	}
+
+	$value = get_post_meta( $post_id, $key, true );
+
+	// '' means "never set". '0' / 0 / '[]' are deliberate values and must NOT fall back.
+	if ( '' !== $value && null !== $value ) {
+		return $value;
+	}
+
+	$source = ak_default_language_post( $post_id );
+
+	return $source ? get_post_meta( $source, $key, true ) : '';
+}
+
+/**
  * How many leading Divi sections this page has already had rebuilt natively.
+ *
+ * Reads raw meta rather than get_field() so the count still works if ACF is ever
+ * deactivated — a page whose Divi hero has been stripped must not come back with
+ * neither hero just because a plugin is off.
  *
  * @param int|null $post_id Defaults to the queried object.
  * @return int
  */
 function ak_native_section_count( $post_id = null ) {
-	$post_id = $post_id ? (int) $post_id : (int) get_queried_object_id();
-
-	if ( ! $post_id || ! function_exists( 'get_field' ) ) {
-		return 0;
-	}
-
-	return max( 0, (int) get_field( 'ak_native_sections', $post_id ) );
+	return max( 0, (int) ak_section_field( 'ak_native_sections', $post_id ) );
 }
 
 /**
@@ -284,11 +353,11 @@ add_action( 'acf/init', 'ak_acf_page_sections_fields' );
 function ak_hero_data() {
 	$id = (int) get_queried_object_id();
 
-	if ( ! $id || ! function_exists( 'get_field' ) ) {
+	if ( ! $id ) {
 		return null;
 	}
 
-	$heading = (string) get_field( 'ak_hero_heading', $id );
+	$heading = (string) ak_section_field( 'ak_hero_heading', $id );
 
 	// No heading means the page has no native hero — render nothing rather than an
 	// empty green band.
@@ -296,15 +365,22 @@ function ak_hero_data() {
 		return null;
 	}
 
-	$cta2_id  = (int) get_field( 'ak_hero_cta2_page', $id );
-	$cta2_lbl = (string) get_field( 'ak_hero_cta2_label', $id );
+	$cta2_id  = (int) ak_section_field( 'ak_hero_cta2_page', $id );
+	$cta2_lbl = (string) ak_section_field( 'ak_hero_cta2_label', $id );
 
 	return array(
-		'heading'     => $heading,
-		'image'       => get_field( 'ak_hero_image', $id ),
-		'caption'     => (string) get_field( 'ak_hero_caption', $id ),
-		'stat_strong' => (string) get_field( 'ak_hero_stat_strong', $id ),
-		'stat_muted'  => (string) get_field( 'ak_hero_stat_muted', $id ),
+		'heading' => $heading,
+		/*
+		 * An attachment ID, not ACF's image array. Two reasons: the array shape only
+		 * exists when ACF is active and ak_section_field() returns raw meta either
+		 * way, and running it through ak_translate_id() picks up a per-language
+		 * media item when one exists (Polylang's media translation is on) while
+		 * returning the same ID when it does not.
+		 */
+		'image'       => ak_translate_id( (int) ak_section_field( 'ak_hero_image', $id ) ),
+		'caption'     => (string) ak_section_field( 'ak_hero_caption', $id ),
+		'stat_strong' => (string) ak_section_field( 'ak_hero_stat_strong', $id ),
+		'stat_muted'  => (string) ak_section_field( 'ak_hero_stat_muted', $id ),
 		'cta'         => ak_primary_cta(),
 		'cta2'        => ( $cta2_id && $cta2_lbl )
 			? array(

@@ -129,18 +129,18 @@ function ak_nav_tree( $location = 'primary-menu' ) {
 		$by_parent[ (int) $item->menu_item_parent ][] = $item;
 	}
 
-	$build = static function ( $parent_id ) use ( &$build, $by_parent ) {
+	$queried = (int) get_queried_object_id();
+
+	$build = static function ( $parent_id ) use ( &$build, $by_parent, $queried ) {
 		$out = array();
 
 		foreach ( $by_parent[ $parent_id ] ?? array() as $item ) {
-			$out[] = array(
-				'id'       => (int) $item->ID,
-				'title'    => $item->title,
-				'url'      => $item->url,
-				'current'  => in_array( 'current-menu-item', (array) $item->classes, true )
-					|| in_array( 'current-menu-ancestor', (array) $item->classes, true )
-					|| in_array( 'current-menu-parent', (array) $item->classes, true ),
-				'children' => $build( (int) $item->ID ),
+			$out[] = array_merge(
+				ak_translate_menu_item( $item, $queried ),
+				array(
+					'id'       => (int) $item->ID,
+					'children' => $build( (int) $item->ID ),
+				)
 			);
 		}
 
@@ -262,6 +262,77 @@ function ak_flag_html( $slug, $png_fallback = '' ) {
 	return $png_fallback
 		? sprintf( '<img src="%s" alt="" width="16" height="11" decoding="async" />', esc_url( $png_fallback ) )
 		: '';
+}
+
+/**
+ * Resolve ONE menu item into the current language.
+ *
+ * ⚠️ THIS IS WHY THERE IS NO PER-LANGUAGE MENU, and the reasoning is worth keeping.
+ *
+ * Polylang's normal answer is one menu per language. Here that would be actively
+ * harmful: only 2 of the 10 nav destinations have a Portuguese translation today, so
+ * a hand-built Portuguese menu would be nine items hard-wired to Ukrainian posts —
+ * and, crucially, it would STAY hard-wired. Translate `/calc/` next month and the
+ * Portuguese menu keeps pointing at the Ukrainian page until someone remembers to
+ * repoint it by hand. That is a maintenance debt that grows with every language.
+ *
+ * So we keep ONE menu and resolve each item at render time:
+ *
+ *   · URL   — the item's target, translated. Untranslated stays on the default
+ *             language rather than vanishing: a nav that loses items per language is
+ *             worse than one that occasionally crosses into Ukrainian.
+ *   · TITLE — the TRANSLATED post's own title, but ONLY when the menu item is not
+ *             custom-labelled. An editor who typed a label in the menu meant it, so
+ *             it must survive; a label that merely mirrors the post title is not a
+ *             decision and should follow the translation.
+ *   · CURRENT — recomputed against the translated ID. WordPress marks the current
+ *             item by comparing the queried object to the item's ORIGINAL object, so
+ *             on a translated page nothing would ever highlight.
+ *
+ * The result: the nav is exactly as translated as the content is, it improves by
+ * itself the moment a translation is published, and adding a language needs no menu
+ * and no code. If genuinely different per-language labels are ever wanted, assigning
+ * a real menu in Polylang still takes over — ak_nav_menu_location_fallback() only
+ * fills in where there is no assignment.
+ *
+ * @param WP_Post $item    Nav menu item.
+ * @param int     $queried Currently queried object ID.
+ * @return array{title:string,url:string,current:bool}
+ */
+function ak_translate_menu_item( $item, $queried ) {
+	$title   = (string) $item->title;
+	$url     = (string) $item->url;
+	$current = in_array( 'current-menu-item', (array) $item->classes, true )
+		|| in_array( 'current-menu-ancestor', (array) $item->classes, true )
+		|| in_array( 'current-menu-parent', (array) $item->classes, true );
+
+	$object_id = (int) $item->object_id;
+
+	// Custom links ("Portugal") have no post behind them — nothing to translate.
+	if ( 'post_type' !== $item->type || ! $object_id ) {
+		return compact( 'title', 'url', 'current' );
+	}
+
+	$translated = ak_translate_id( $object_id );
+
+	if ( ! $translated || $translated === $object_id ) {
+		return compact( 'title', 'url', 'current' );
+	}
+
+	$permalink = get_permalink( $translated );
+
+	if ( $permalink ) {
+		$url = $permalink;
+	}
+
+	// Only follow the translation's title when the menu label was NOT customised.
+	if ( $title === get_the_title( $object_id ) ) {
+		$title = get_the_title( $translated );
+	}
+
+	$current = $current || ( $queried && $translated === $queried );
+
+	return compact( 'title', 'url', 'current' );
 }
 
 /**

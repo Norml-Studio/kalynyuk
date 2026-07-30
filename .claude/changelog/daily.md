@@ -202,6 +202,37 @@ Second deploy to `https://www.kalynyuk.com`. Smaller and lower-risk than the pha
 
 Rollback: restore `_backup-20260730-164728/db.sql.gz`, or — far cheaper — set `ak_native_sections` back to `0` on page 11, which restores Divi's original hero instantly with nothing destroyed. That reversibility is the whole point of the render-time mechanism.
 
+### Multilingual: `/pt/` URLs, sections in every language, translated chrome
+
+Three problems Petr raised, with three different kinds of cause.
+
+**1. `/pt/golovna-portugues/` should be `/pt/` — a Polylang setting, not our code and not a broken translation link.** The translations were wired correctly (11 ↔ 2483 ↔ 2484 ↔ 2485) and Polylang knew each language's `page_on_front`. Read the plugin source rather than guessing — `src/links-model.php::set_language_home_url()`:
+
+```php
+if ( empty( $language['page_on_front'] ) || $this->options['redirect_lang'] ) {
+    return $this->home_url( $language['slug'] );   // → /pt/
+}
+return $this->front_page_url( $language );          // → /pt/golovna-portugues/
+```
+
+So when a language *has* a translated front page and `redirect_lang` is off, Polylang deliberately uses that page's full permalink. Turned the option on (*Settings → Languages → URL modifications → "The front page URL contains the language code instead of the page name"*). Now `/pt/` 200s and `/pt/golovna-portugues/` **301s** to it. Applies to every language present and future.
+
+- ⚠️ Gotcha worth keeping: the change needs the languages cache **hard-cleared in a separate request** — `delete_transient( 'pll_languages_list' )`. `clean_languages_cache()` in the same request re-populates from the already-loaded language objects, and the URLs look unchanged, which reads exactly like the setting not working.
+
+**2. [DECISION] Native sections now inherit from the default language — `ak_section_field()`.** Section content is per-post meta and a translation is a different post, so a new language started with every field empty. That failure mode was worse than "untranslated": the rebuilt-section count read 0, so **Divi's original section rendered again** and that language silently kept the old design. Add a fourth language and it happens again, with nothing to hint at it.
+
+Now every section field falls back to the default-language twin. A new language renders the native section on day one with Ukrainian text, and the editor replaces it field by field — the layout is never wrong, only the wording is behind. That trade is deliberate: default-language text is visible and self-correcting, a silently un-migrated section is neither. An explicit `0` does not fall back (`''` = unset, `'0'` = a decision), so a translation can still opt out. **Every future section must read through this** — recorded in `.claude/CLAUDE.md`.
+
+Also: the hero image is now an attachment ID rather than ACF's image array (works without ACF, and `ak_translate_id()` picks up a per-language media item), and `alt` comes from the attachment instead of being frozen from one language's ACF copy.
+
+**3. [DECISION] The nav is ONE menu translated at render time, not a menu per language.** Polylang's normal answer is per-language menus; here that would be actively harmful. Only **2 of 10** nav destinations have a Portuguese translation, so a hand-built Portuguese menu would be eight items hard-wired to Ukrainian posts — and would *stay* hard-wired after those pages are translated. `ak_translate_menu_item()` instead resolves each item at render: URL → the translation when it exists, title → the translated post's title *unless the menu label was customised* (a typed label is a decision and must survive), and `current` recomputed against the translated ID, since WordPress compares the queried object to the item's original and would never highlight anything on a translated page. Verified: on `/pt/` the FAQ item switched itself to `/pt/perguntas-frequentes/` while the untranslated items stayed Ukrainian.
+
+**Chrome strings** filled in for `pt`, `en` and `ru` via the existing `pll_register_string()` layer — 11 strings each, editable in Polylang → Translations → Strings without a deploy. ⚠️ The Portuguese (and English/Russian) wording is **mine, for review** — Petr asked for a translation where none existed. "Отримати консультацію" → "Obter consultoria" is the one most worth a second opinion.
+
+**Hero copy** written for pt/en/ru on the three front-page translations — *text only*. The image, the secondary CTA target and the section count were left empty on purpose so they inherit, which both avoids duplicating four values per language and exercises the fallback in production.
+
+Verified on local: `/pt/` renders `lang="pt-PT"`, native hero with Portuguese copy, Divi sections 9 → 8 (so the strip is inheriting), image loaded, CTA "Obter consultoria", drawer "Voltar", back-to-top "Voltar ao topo". Ukrainian unchanged — hero geometry re-measured at 1440 and 375 with no regression.
+
 ### ✅ Repo moved to the Norml-Studio org
 
 - `petyasavenok-dev/kalynyuk` → **`Norml-Studio/kalynyuk`**, done via GitHub **Transfer ownership** rather than a re-push. Transfer keeps commits, branches, tags, issues and PRs and installs a permanent redirect; a fresh push would have kept only commits and left two repos that both looked canonical.
