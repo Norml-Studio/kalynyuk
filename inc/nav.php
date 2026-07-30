@@ -306,9 +306,26 @@ function ak_translate_menu_item( $item, $queried ) {
 		|| in_array( 'current-menu-ancestor', (array) $item->classes, true )
 		|| in_array( 'current-menu-parent', (array) $item->classes, true );
 
+	/*
+	 * Precedence step 1 — an explicit string translation always wins, and applies to
+	 * custom links too ("Portugal" has no post behind it but still needs a label
+	 * that can be changed per language). pll__() returns the input unchanged when
+	 * there is no translation, so `$labelled` tells us whether a decision was made.
+	 */
+	$labelled = false;
+
+	if ( function_exists( 'pll__' ) ) {
+		$translated_label = pll__( $title );
+
+		if ( $translated_label !== $title ) {
+			$title    = $translated_label;
+			$labelled = true;
+		}
+	}
+
 	$object_id = (int) $item->object_id;
 
-	// Custom links ("Portugal") have no post behind them — nothing to translate.
+	// Custom links have no post behind them — the label above is all there is.
 	if ( 'post_type' !== $item->type || ! $object_id ) {
 		return compact( 'title', 'url', 'current' );
 	}
@@ -325,8 +342,12 @@ function ak_translate_menu_item( $item, $queried ) {
 		$url = $permalink;
 	}
 
-	// Only follow the translation's title when the menu label was NOT customised.
-	if ( $title === get_the_title( $object_id ) ) {
+	/*
+	 * Precedence step 2 — the translated post's own title, but only when no string
+	 * translation claimed the label AND the menu label was not customised. A label
+	 * an editor typed by hand is a decision and must survive the translation.
+	 */
+	if ( ! $labelled && $title === get_the_title( $object_id ) ) {
 		$title = get_the_title( $translated );
 	}
 
@@ -334,6 +355,53 @@ function ak_translate_menu_item( $item, $queried ) {
 
 	return compact( 'title', 'url', 'current' );
 }
+
+/**
+ * Register every menu label as a translatable string.
+ *
+ * ⚠️ WHY THIS EXISTS ON TOP OF ak_translate_menu_item(). That function translates a
+ * label by following the TARGET POST's translation — which only works once the page
+ * itself is translated. Today 8 of the 10 nav destinations are Ukrainian-only, and
+ * translating a whole Divi page is a content project, so the header would sit in
+ * Ukrainian on `/pt/` for as long as that takes. A visitor reading Portuguese should
+ * not have to wait for `/pro-mene/` to be rewritten before the word "About" appears.
+ *
+ * So the LABEL and the DESTINATION are decoupled. Precedence, highest first:
+ *
+ *   1. a string translation typed in Polylang → Strings — an explicit decision;
+ *   2. the translated post's own title, when the page IS translated;
+ *   3. the original label.
+ *
+ * Registering by VALUE (`pll_register_string( $title, $title )`) rather than by menu
+ * item id is what keeps it stable: rebuild the menu, reorder it, or add a fourth
+ * language, and the translations survive because they are keyed to the words, not to
+ * a database row that a re-save can renumber.
+ */
+function ak_register_menu_strings() {
+	if ( ! function_exists( 'pll_register_string' ) ) {
+		return;
+	}
+
+	$locations = get_option( 'polylang' )['nav_menus'][ get_option( 'stylesheet' ) ] ?? array();
+	$menu_ids  = array();
+
+	foreach ( $locations as $per_language ) {
+		foreach ( (array) $per_language as $menu_id ) {
+			if ( $menu_id ) {
+				$menu_ids[ (int) $menu_id ] = true;
+			}
+		}
+	}
+
+	foreach ( array_keys( $menu_ids ) as $menu_id ) {
+		foreach ( (array) wp_get_nav_menu_items( $menu_id ) as $item ) {
+			if ( '' !== trim( (string) $item->title ) ) {
+				pll_register_string( 'menu: ' . $item->title, $item->title, 'kalynyuk menu' );
+			}
+		}
+	}
+}
+add_action( 'init', 'ak_register_menu_strings', 20 );
 
 /**
  * Translate a page ID into the current language.

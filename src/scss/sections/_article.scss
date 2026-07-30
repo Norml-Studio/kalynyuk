@@ -1,0 +1,633 @@
+@use '../abstracts/tokens' as t;
+@use '../abstracts/mixins' as m;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// .article — "Single article", Figma 1139:10037.
+//
+// 🔒 CONTAINER RULE: bands are full-bleed, the __inner is capped by container()
+// (design.md §6). This page is a colour-less canvas band, so no max-width on it.
+//
+// THE LAYOUT DECISION WORTH KNOWING. The prose column is 680 wide and sits at
+// x=380 inside the 1376 container — it is NOT centred. The 348px to its left is
+// the sticky table of contents. So the desktop grid is `348px 680px` with the
+// remainder left empty on the right, exactly as drawn: an asymmetric measure that
+// keeps the reading line short while the masthead above it still runs full width.
+//
+// Below desktop the rail collapses and the TOC becomes a normal block above the
+// prose — a 348px sidebar does not survive a phone, and a horizontally scrolling
+// TOC would be worse than an inline one.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// .article
+.article {
+  padding-block-end: t.$space-5;
+
+  // .article__masthead
+  &__masthead {
+    padding-block-start: t.$space-4;
+
+    @include m.bp(desktop) {
+      // 134 from the header bottom to the breadcrumb, measured on the frame.
+      padding-block-start: t.$space-6;
+    }
+  }
+
+  // .article__masthead-inner
+  &__masthead-inner {
+    @include m.container;
+  }
+
+  // .article__back
+  // The breadcrumb. 16 SemiBold 128% -1% with a leading chevron (Figma 1139:11970).
+  &__back {
+    @include m.text-ui;
+
+    display: inline-flex;
+    align-items: center;
+    gap: t.$space-1;
+    min-height: t.$tap-min;
+    color: t.$color-ink;
+    transition: color t.$dur-base t.$ease;
+
+    &:hover {
+      color: t.$color-accent;
+    }
+
+    &:focus-visible {
+      @include m.focus-ring;
+    }
+  }
+
+  // .article__topic
+  // The chip. 12px radius is its own step — not $radius-sm (8) and not
+  // $radius-md (16); measured on 1166:611 and added to tokens rather than rounded
+  // to the nearest existing value.
+  &__topic {
+    @include m.text-ui;
+
+    // `display: block` + `width: fit-content`, NOT `inline-block`. The chip follows
+    // the breadcrumb link, and an inline-block joins the preceding inline element's
+    // line box — it rendered sitting next to "Блог" instead of on its own line, as
+    // the design has it (y=0 breadcrumb, y=40 chip). Caught by looking at the render.
+    display: block;
+    width: fit-content;
+    margin: t.$space-2 0 0;
+    padding: 6px t.$space-1;
+    color: t.$color-ink;
+    background-color: t.$color-canvas;
+    border: t.$border-width solid t.$color-ink;
+    border-radius: t.$radius-chip;
+  }
+
+  // .article__head
+  &__head {
+    display: flex;
+    flex-direction: column;
+    gap: t.$space-3;
+    margin-top: t.$space-3;
+
+    @include m.bp(desktop) {
+      // SPACE_BETWEEN with the two blocks bottom-aligned — the author card's
+      // baseline meets the meta line's, which is what makes the row read as one
+      // band rather than two stacked objects.
+      flex-direction: row;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: t.$space-5;
+      margin-top: t.$space-5;
+    }
+  }
+
+  // .article__headings
+  &__headings {
+    @include m.bp(desktop) {
+      max-width: 791px; // measured
+    }
+  }
+
+  // .article__title
+  &__title {
+    @include m.text-h1;
+
+    margin: 0;
+    // Divi's critical inline CSS pads every heading by 10px — see the same line in
+    // sections/_hero.scss for the full account. Repeat per native section until
+    // phase 4 removes Divi, then hoist into the reset.
+    padding-bottom: 0;
+    color: t.$color-ink;
+    text-wrap: balance;
+  }
+
+  // .article__meta
+  &__meta {
+    @include m.text-body-sm;
+
+    display: flex;
+    align-items: center;
+    gap: t.$space-1;
+    margin: t.$space-2 0 0;
+    color: t.$color-ink;
+
+    @include m.bp(desktop) {
+      margin-top: t.$space-4;
+    }
+  }
+
+  // .article__meta-dot
+  &__meta-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: t.$radius-circle;
+    background-color: t.$color-ink;
+    opacity: 0.4;
+  }
+
+  // .article__author
+  &__author {
+    display: flex;
+    align-items: center;
+    gap: t.$space-3;
+    padding: t.$space-2;
+    background-color: t.$color-surface;
+    border-radius: t.$radius-lg;
+
+    @include m.bp(desktop) {
+      flex: 0 0 auto;
+      max-width: 358px; // measured
+      padding-inline: t.$space-3 t.$space-2;
+    }
+  }
+
+  // .article__author-photo
+  &__author-photo {
+    flex: 0 0 auto;
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    border-radius: t.$radius-circle;
+  }
+
+  // .article__author-name
+  // The Figma layer uses "NaN Fiasco TRIAL" here. Not reproduced: it is a TRIAL
+  // font, it is not licensed for this site, and it appears nowhere else in the kit
+  // — design-file drift, not a type decision. Rendered in the project face at the
+  // same size and weight.
+  &__author-name {
+    @include m.text-body-strong;
+
+    margin: 0;
+    color: t.$color-ink;
+  }
+
+  // .article__author-role
+  &__author-role {
+    @include m.text-body-sm;
+
+    margin: 0;
+    color: t.$color-ink;
+    opacity: 0.8; // measured on 1139:11987
+  }
+
+  // .article__figure
+  &__figure {
+    @include m.container;
+
+    margin-top: t.$space-4;
+
+    @include m.bp(desktop) {
+      margin-top: t.$space-5;
+    }
+  }
+
+  // .article__image
+  // 1376×600 in the design — a 2.29:1 band. Held as a ratio so a portrait upload
+  // cannot blow the masthead open.
+  &__image {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1376 / 600;
+    object-fit: cover;
+    border-radius: t.$radius-lg;
+  }
+
+  // .article__body
+  &__body {
+    margin-top: t.$space-5;
+
+    @include m.bp(desktop) {
+      margin-top: t.$space-6;
+    }
+  }
+
+  // .article__inner
+  &__inner {
+    @include m.container;
+
+    display: grid;
+    gap: t.$space-4;
+
+    @include m.bp(desktop) {
+      grid-template-columns: 348px 680px; // measured, and deliberately not 1fr
+      gap: 0;
+      align-items: start;
+    }
+  }
+
+  // .article__column
+  &__column {
+    min-width: 0; // a long <pre> or table must not widen the grid track
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// .article__toc — the sticky left rail
+// ─────────────────────────────────────────────────────────────────────────────
+
+// .article__toc
+.article__toc {
+  // .article__toc-sticky
+  &-sticky {
+    @include m.bp(desktop) {
+      position: sticky;
+      // Clear of the sticky header, plus a breath.
+      top: calc(#{t.$header-height} + #{t.$space-3});
+      padding-right: t.$space-4;
+    }
+  }
+
+  // .article__toc-title
+  &-title {
+    @include m.text-body-strong;
+
+    margin: 0 0 t.$space-2;
+    color: t.$color-ink;
+  }
+
+  // .article__toc-list
+  &-list {
+    display: grid;
+    gap: t.$space-2;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: ak-toc;
+  }
+
+  // .article__toc-item
+  &-item {
+    counter-increment: ak-toc;
+  }
+
+  // .article__toc-link
+  &-link {
+    @include m.text-body-sm;
+
+    display: block;
+    color: t.$color-ink;
+    opacity: 0.8;
+    transition: opacity t.$dur-base t.$ease, color t.$dur-base t.$ease;
+
+    &:hover {
+      opacity: 1;
+      color: t.$color-accent;
+    }
+
+    &:focus-visible {
+      @include m.focus-ring;
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// .article__prose — the EDITOR'S output. Styled by element, not by class, because
+// nothing in the block editor will ever emit our BEM names.
+//
+// This is the one place in the codebase where bare element selectors are correct,
+// and it is scoped to .article__prose so it cannot leak into Divi content.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// .article__prose
+.article__prose {
+  color: t.$color-ink;
+
+  /*
+   * ⚠️ THE MARGIN RESET USES :where() ON PURPOSE — do not "simplify" it to a plain
+   * element list.
+   *
+   * A plain `p, ul, ol { margin: 0 }` here is `.article__prose p` = (0,1,1), which
+   * OUTRANKS the flow rule `.article__prose > * + *` = (0,1,0). Every paragraph then
+   * silently keeps margin 0 and the article renders as one undifferentiated slab —
+   * which is exactly what it did, with the paragraph after each H2 glued to it.
+   * `:where()` contributes zero specificity, so the reset lands at (0,1,0), the flow
+   * rule matches it, and source order decides — which is what was intended.
+   */
+  :where(p, ul, ol, h2, h3, h4, blockquote, figure, table, pre) {
+    margin: 0;
+  }
+
+  /*
+   * Flow spacing, declared once at the top level.
+   *
+   * ⚠️ Do NOT write `* + &` inside a nested `h2 { }` block to do this. `&` expands to
+   * the WHOLE compound selector, so `* + &` becomes `* + .article__prose h2` — "an h2
+   * anywhere inside a .article__prose that itself follows something" — which is not
+   * the rule anyone means and silently never matches. That was the first version and
+   * it left every heading glued to the paragraph after it.
+   */
+  > * + * {
+    margin-top: t.$space-3;
+  }
+
+  // A heading opens a new movement and gets far more air above than the flow rhythm.
+  > * + h2 {
+    margin-top: t.$space-5;
+  }
+
+  > * + h3 {
+    margin-top: t.$space-4;
+  }
+
+  p,
+  ul,
+  ol {
+    @include m.text-body;
+  }
+
+  // A LEAD paragraph — 24 Bold 116% -1% in the design (1139:12017), i.e. the H3
+  // role. Opt-in, so a normal first paragraph is not silently promoted.
+  //
+  // ⚠️ DO NOT hook this to `.has-large-font-size`. That was the first attempt and it
+  // measured 36px instead of 24: WordPress emits its font-size preset classes with
+  // `font-size: var(--wp--preset--font-size--large) !important`, which no stylesheet
+  // rule can beat without an !important war over a value core considers the user's.
+  // A theme-owned class has no such fight.
+  p.ak-lead,
+  .is-style-lead {
+    @include m.text-h3;
+  }
+
+  h2 {
+    @include m.text-h2;
+
+    padding-bottom: 0; // Divi's inline heading padding, as above
+    color: t.$color-ink;
+    // Anchor targets must clear the sticky header when the TOC jumps to them.
+    scroll-margin-top: calc(#{t.$header-height} + #{t.$space-3});
+  }
+
+  h3 {
+    @include m.text-h3;
+
+    padding-bottom: 0;
+    color: t.$color-ink;
+    scroll-margin-top: calc(#{t.$header-height} + #{t.$space-3});
+  }
+
+  ul,
+  ol {
+    padding-left: t.$space-3;
+  }
+
+  li + li {
+    margin-top: t.$space-1;
+  }
+
+  a {
+    color: t.$color-accent;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+
+    &:focus-visible {
+      @include m.focus-ring;
+    }
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: t.$radius-lg;
+  }
+
+  // The "Порада:" callout — Figma 1142:12028. Surface fill, radius 24, padding 24.
+  // Mapped onto the editor's Group block with the "Callout" style so an editor can
+  // produce it without writing HTML.
+  //
+  // ⚠️ design-anti-slop calls the generic tinted "callout box" a slop pattern. It is
+  // kept here because it is an explicit, measured decision in the client's own
+  // design — a per-project override, which design.md §5 permits — and because it
+  // carries a real semantic role in this content (advice, distinct from narration).
+  .is-style-callout,
+  .ak-callout {
+    padding: t.$space-3;
+    background-color: t.$color-surface;
+    border-radius: t.$radius-lg;
+
+    > * + * {
+      margin-top: t.$space-3;
+    }
+
+    strong:first-child {
+      @include m.text-body-strong;
+    }
+  }
+
+  blockquote {
+    margin: 0;
+    padding: t.$space-3;
+    background-color: t.$color-surface;
+    border-radius: t.$radius-lg;
+
+    p {
+      margin: 0;
+    }
+  }
+
+  // Wide content scrolls inside its own box — the page body must never scroll
+  // horizontally (vibe-frontend-standards).
+  table,
+  pre {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// .article__share — Figma 1144:12374
+// ─────────────────────────────────────────────────────────────────────────────
+
+// .article__share
+.article__share {
+  margin-top: t.$space-5;
+
+  // .article__share-title
+  &-title {
+    @include m.text-body-strong;
+
+    margin: 0 0 t.$space-2;
+    color: t.$color-ink;
+  }
+
+  // .article__share-list
+  &-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: t.$space-2;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  // .article__share-link
+  &-link {
+    @include m.text-body-sm;
+
+    display: inline-flex;
+    align-items: center;
+    min-height: t.$tap-min;
+    padding-inline: t.$space-2;
+    color: t.$color-ink;
+    background-color: t.$color-surface;
+    border-radius: t.$radius-lg;
+    transition: background-color t.$dur-base t.$ease, color t.$dur-base t.$ease;
+
+    &:hover {
+      background-color: t.$color-surface-sunken;
+    }
+
+    &:focus-visible {
+      @include m.focus-ring;
+    }
+
+    &.is-copied {
+      color: t.$color-accent;
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// .article-related — "Інші статті", Figma 1144:12475. Its own block, not an
+// element of .article: it is a sibling section with its own container, and making
+// it .article__related would imply a containment that does not exist.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// .article-related
+.article-related {
+  margin-top: t.$space-6;
+
+  // .article-related__inner
+  &__inner {
+    @include m.container;
+  }
+
+  // .article-related__title
+  &__title {
+    @include m.text-h1;
+
+    margin: 0 0 t.$space-4;
+    padding-bottom: 0; // Divi's inline heading padding, as above
+    color: t.$color-ink;
+
+    @include m.bp(desktop) {
+      margin-bottom: t.$space-5;
+    }
+  }
+
+  // .article-related__list
+  &__list {
+    display: grid;
+    gap: t.$space-4;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    @include m.bp(tablet) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @include m.bp(desktop) {
+      // 3 × 448 + 2 × 16 = 1376, the container exactly.
+      grid-template-columns: repeat(3, 1fr);
+      gap: t.$space-2;
+    }
+  }
+
+  // .article-related__card
+  &__card {
+    display: grid;
+    gap: t.$space-4;
+    color: t.$color-ink;
+
+    &:focus-visible {
+      @include m.focus-ring;
+    }
+
+    &:hover .article-related__heading {
+      color: t.$color-accent;
+    }
+  }
+
+  // .article-related__figure
+  &__figure {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    border-radius: t.$radius-lg;
+  }
+
+  // .article-related__image
+  &__image {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 448 / 300;
+    object-fit: cover;
+    transition: transform t.$dur-slow t.$ease;
+
+    .article-related__card:hover & {
+      transform: scale(1.03);
+    }
+  }
+
+  // .article-related__topic
+  &__topic {
+    @include m.text-ui;
+
+    position: absolute;
+    top: t.$space-2;
+    left: t.$space-2;
+    padding: 6px t.$space-1;
+    color: t.$color-ink;
+    background-color: t.$color-canvas;
+    border-radius: t.$radius-chip;
+  }
+
+  // .article-related__body
+  &__body {
+    display: grid;
+    gap: t.$space-1;
+  }
+
+  // .article-related__author
+  &__author {
+    @include m.text-body-sm;
+
+    opacity: 0.8;
+  }
+
+  // .article-related__heading
+  &__heading {
+    @include m.text-h4;
+
+    transition: color t.$dur-base t.$ease;
+    text-wrap: balance;
+  }
+
+  // .article-related__date
+  &__date {
+    @include m.text-body-sm;
+
+    opacity: 0.8;
+  }
+}

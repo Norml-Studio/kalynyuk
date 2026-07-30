@@ -32,6 +32,7 @@ require_once AK_DIR . '/inc/assets.php';
 require_once AK_DIR . '/inc/post-types.php';
 require_once AK_DIR . '/inc/nav.php';
 require_once AK_DIR . '/inc/native-sections.php';
+require_once AK_DIR . '/inc/article.php';
 require_once AK_DIR . '/inc/acf-options.php';
 require_once AK_DIR . '/inc/shortcodes.php';
 require_once AK_DIR . '/inc/integrations.php';

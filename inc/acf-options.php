@@ -164,6 +164,15 @@ function ak_acf_chrome_fields() {
 					'mime_types' => 'svg',
 					'instructions' => __( 'The full lockup — uploads/2026/05/logotype.svg (216×32). NOT Anna-Kalynyuk.svg, which is the wordmark only.', 'kalynyuk' ),
 				),
+				array(
+					'key'           => 'field_ak_author_photo',
+					'label'         => __( 'Author photo', 'kalynyuk' ),
+					'name'          => 'ak_author_photo',
+					'type'          => 'image',
+					'return_format' => 'id',
+					'preview_size'  => 'thumbnail',
+					'instructions'  => __( 'Shown in the author card on article pages. An option rather than a user avatar so it needs no Gravatar account and no external request from an EU visitor.', 'kalynyuk' ),
+				),
 
 				/*
 				 * ─── Regulatory disclosure ────────────────────────────────────
@@ -241,6 +250,22 @@ function ak_register_pll_strings() {
 		'ak_lang_label'   => 'Мова',
 		'ak_form_title'   => 'Форма для зворотнього зв’язку',
 		'ak_to_top'       => 'Вгору',
+	);
+
+	// Article chrome — Figma 1139:10037.
+	$strings += array(
+		'ak_author_name'      => 'Анна Калинюк',
+		'ak_author_role'      => 'Засновниця Anna Kalynyuk Mortgage',
+		'ak_read_minutes_one' => '%d хвилина',
+		'ak_read_minutes_few' => '%d хвилини',
+		'ak_read_minutes_many' => '%d хвилин',
+		'ak_toc_title'      => 'Зміст:',
+		'ak_share_title'    => 'Поширити статтю',
+		'ak_share_facebook' => 'Фейсбук',
+		'ak_share_linkedin' => 'Лінкедин',
+		'ak_share_copy'     => 'Скопіювати посилання',
+		'ak_share_copied'   => 'Скопійовано',
+		'ak_related_title'  => 'Інші статті',
 	);
 
 	foreach ( $strings as $name => $default ) {

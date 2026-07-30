@@ -10,9 +10,11 @@
  */
 import '../scss/main.scss';
 import { initHeader } from './header.js';
+import { initArticle } from './article.js';
 
 const boot = () => {
   initHeader();
+  initArticle();
   // Marker so a Playwright run can confirm the built bundle actually executed,
   // rather than inferring it from styles Divi might also be providing.
   document.documentElement.dataset.akTheme = 'ready';
