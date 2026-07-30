@@ -13,7 +13,11 @@
 - **Source hosting:** GitHub — the repo root is the THEME folder, not the WP install
 - **Production:** https://www.kalynyuk.com
 - **Staging:** [fill in URL — none known]
-- **Repo:** `git@github.com:Norml-Studio/kalynyuk.git` — ⏳ *pending transfer.* It was created as the personal `petyasavenok-dev/kalynyuk` and is being moved to the org with GitHub's **Transfer ownership** (keeps history, issues, PRs, and installs a permanent redirect from the old URL). Until the transfer runs, `origin` still points at the personal remote. Do not pre-create an empty `Norml-Studio/kalynyuk` — a name collision is the one thing that blocks a transfer.
+- **Repo:** `git@github.com:Norml-Studio/kalynyuk.git` — ✅ transferred to the org 2026-07-30 (from the personal `petyasavenok-dev/kalynyuk`, via GitHub **Transfer ownership**, so history / issues / PRs survived). GitHub keeps a permanent redirect from the old URL: `git@github.com:petyasavenok-dev/kalynyuk.git` still resolves to the same refs, so a teammate's stale clone keeps working and does not silently diverge. **Do not rely on that** — set the remote properly on any existing clone:
+
+  ```bash
+  git remote set-url origin git@github.com:Norml-Studio/kalynyuk.git
+  ```
 - **Local environment:** OpenServer (Apache + PHP 8.1 + MySQL 5.7) at `f:\localsites\kalynyuk.loc`, served on `http://kalynyuk.loc`
 - **Drive folder:** [fill in Norml Drive path]
 - **Project slug:** `anna-kalynyuk`

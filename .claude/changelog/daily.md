@@ -180,9 +180,10 @@ Also: `object-position` corrected to `center` at every width. The 60% I had assu
 - Verified at 375: band 375×576, H1 x=20 y=20 w=305 h=91 (design 90), stat x=20 w=182 h=46 above the caption, caption x=20 w=293 with its bottom at 484 — *exactly* the frame's value, button x=20 w=335 h=48 at y=508 with a 20px foot gap, ghost CTA `display:none`, visual order H1 → foot → actions, foot order stat → caption, no horizontal scroll.
 - Verified no regression at 768 (order restored, foot back to a row, ghost visible) and at 1440 (buttons now y=295 vs the frame's 296; caption and stat still share the y=780 baseline).
 
-### Repo → Norml-Studio org (in progress)
+### ✅ Repo moved to the Norml-Studio org
 
-- Moving `petyasavenok-dev/kalynyuk` → `Norml-Studio/kalynyuk` via GitHub **Transfer ownership**, not a re-push: transfer keeps commits, branches, tags, issues, PRs and installs a permanent redirect, so stale clones and the old remote keep working. A fresh push would keep only commits and leave two repos that both look canonical.
-- ⚠️ **Do not pre-create `Norml-Studio/kalynyuk`** — a name collision in the target org is the one thing that blocks a transfer.
-- After the transfer: `git remote set-url origin git@github.com:Norml-Studio/kalynyuk.git`. Repo access does not come with org membership — team permissions must be granted on the repo afterwards.
+- `petyasavenok-dev/kalynyuk` → **`Norml-Studio/kalynyuk`**, done via GitHub **Transfer ownership** rather than a re-push. Transfer keeps commits, branches, tags, issues and PRs and installs a permanent redirect; a fresh push would have kept only commits and left two repos that both looked canonical.
+- ⚠️ The precondition, for next time: **do not pre-create the repo in the target org** — a name collision is the one thing that blocks a transfer.
+- `origin` re-pointed locally. Verified after the switch: 23 commits intact, `main` tracking `origin/main` at the same SHA `71adadc`, push clean. Also confirmed the redirect is live — `git ls-remote` against the **old** URL still returns the same ref, so a teammate's stale clone keeps working instead of silently diverging.
+- Repo access does not come with org membership; team permissions still need granting on the repo itself.
 - Corrected two stale rows in `.claude/CLAUDE.md`: source hosting said Bitbucket (it has always been GitHub) and the repo URL was still a `[fill in]` placeholder.
