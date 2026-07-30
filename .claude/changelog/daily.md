@@ -166,6 +166,20 @@ Rollback if needed: restore `_backup-20260729-101013/db.sql.gz`, or re-enable th
 - Verified at 1440 and 1900: 0 overlays, band 1440×734 centred, content at x=32 / x=262 matching the header logo, caption 2 lines with one `<br>`, `.hero__foot` with exactly 2 children, caption and stat sharing the y=780 baseline, one `h1`.
 - Housekeeping: Imagify and WP Rocket are currently **deactivated on both local and production** (Petr, temporary). `.hero__media` is therefore a plain `<img>`; the dual `<picture>`/`<img>` rule stays in the SCSS so re-enabling Imagify needs no change.
 
+### Hero — mobile layout (Figma `1166:2480`, 375×576)
+
+Mobile is **not** the desktop layout narrowed. Three things genuinely differ, all measured off the frame:
+
+- **Order.** Desktop is H1 → buttons → (caption | stat) side by side. Mobile is H1 → **stat → caption** → button: the stat moves *above* the caption and the CTA drops to the foot of the band (measured y: H1 20, stat 365, caption 427, button 508). Implemented with `order`, keeping the DOM in desktop order (heading → action → supporting copy). That direction is the safer one for the only thing `order` can break — tab sequence — because the CTAs are the section's sole focusable elements, so nothing can be tabbed out of turn relative to anything else.
+- **Kit ROLES change, not just sizes.** Caption is Body Regular (20) on desktop but Body **Small** Regular (16) on mobile; stat is H2 (32) on desktop but **H5** (20) on mobile. Two mixins each, one per breakpoint — never a hand-written `font-size`.
+- **One button.** The mobile frame carries only the primary CTA, full-width (335×48). The secondary is hidden below tablet. Safe because its destination ("Калькулятор") is a top-level nav item present in the mobile drawer — this removes a shortcut, not access. Noted in the SCSS that the rule has to go if that stops being true.
+
+Also: `object-position` corrected to `center` at every width. The 60% I had assumed the subject sits centre-right — she does not. The mobile frame's photo rect is 867 wide at x=-255, so the visible 375 window centres on 51% of the image, and her face measures ~51% across in the source. Centre is both the design's crop and the photograph's.
+
+- [BUG] **Divi's critical INLINE CSS sets `h1, h2, h3, h4, h5, h6 { padding-bottom: 10px }`** and, being inline in `<head>`, it applies to our headings too. That is where the hero H1's extra 10px came from — 101 tall against the design's 90 on mobile, and on desktop it had been pushing the buttons to y=305 where the frame says 296. Found by measuring; the type mixin was correct throughout. **Zeroed on `.hero__heading` only, deliberately not in the reset:** a global `h1..h6 { padding: 0 }` would win on load order, but it would also retighten every heading in the eight Divi sections still rendering on this page and across the whole site. That is a site-wide visual change and not this section's to make. Repeat the line per native section; hoist it into the reset in phase 4. **Worth a decision from Petr** — a one-line global fix is available the moment Divi content stops mattering.
+- Verified at 375: band 375×576, H1 x=20 y=20 w=305 h=91 (design 90), stat x=20 w=182 h=46 above the caption, caption x=20 w=293 with its bottom at 484 — *exactly* the frame's value, button x=20 w=335 h=48 at y=508 with a 20px foot gap, ghost CTA `display:none`, visual order H1 → foot → actions, foot order stat → caption, no horizontal scroll.
+- Verified no regression at 768 (order restored, foot back to a row, ghost visible) and at 1440 (buttons now y=295 vs the frame's 296; caption and stat still share the y=780 baseline).
+
 ### Repo → Norml-Studio org (in progress)
 
 - Moving `petyasavenok-dev/kalynyuk` → `Norml-Studio/kalynyuk` via GitHub **Transfer ownership**, not a re-push: transfer keeps commits, branches, tags, issues, PRs and installs a permanent redirect, so stale clones and the old remote keep working. A fresh push would keep only commits and leave two repos that both look canonical.

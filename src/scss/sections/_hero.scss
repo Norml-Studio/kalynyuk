@@ -2,7 +2,24 @@
 @use '../abstracts/mixins' as m;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// .hero — Figma 1130:3907, 1440×812 (photo area 734).
+// .hero — Figma 1130:3907 (desktop, 1440×812, photo area 734)
+//                1166:2480 (mobile,  375×576)
+//
+// ⚠️ MOBILE IS NOT THE DESKTOP LAYOUT NARROWED. Three things genuinely differ, and
+// all three are in the design, not interpretation:
+//
+//   1. ORDER. Desktop is H1 → buttons → (caption | stat) side by side. Mobile is
+//      H1 → stat → caption → button, i.e. the stat moves ABOVE the caption and the
+//      CTA drops to the bottom of the band. Measured y: H1 20, stat 365, caption
+//      427, button 508.
+//   2. TYPE ROLES CHANGE, not just sizes. The caption is Body Regular (20) on
+//      desktop but Body SMALL Regular (16) on mobile; the stat is H2 (32) on
+//      desktop but H5 (20) on mobile. So each takes two kit mixins, one per
+//      breakpoint — never a hand-written font-size.
+//   3. ONE BUTTON. The mobile frame has only the primary CTA, full-width (335×48).
+//      The secondary is hidden below tablet. Safe because "Калькулятор" — its
+//      destination — is a top-level nav item present in the mobile drawer, so this
+//      removes a shortcut, not access.
 //
 // 🔒 CONTAINER RULE: the band is full-bleed and owns the background; __inner is
 // capped by container() at 1376 / 30-20 padding (design.md §6).
@@ -37,10 +54,10 @@
   max-width: t.$canvas-max;
   margin-inline: auto;
 
-  // Measured 734 at a 1440 canvas — a 1.96:1 band. Expressed as a ratio with a
-  // floor so it keeps its proportion on wide screens and never collapses on tall
-  // narrow ones. min() rather than a fixed height so it cannot exceed the viewport.
-  min-height: min(72vh, 734px);
+  // Both heights are measured off their own frame: 576 on mobile (1166:2480), 734 on
+  // desktop (1130:3907). `min-height` rather than `height` so a longer heading — a
+  // near certainty once Portuguese lands — grows the band instead of overflowing it.
+  min-height: 576px;
 
   @include m.bp(desktop) {
     min-height: 734px;
@@ -69,13 +86,12 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      // The subject sits centre-right in the source photo; a plain `center` crop
-      // cuts her out of frame on narrow viewports.
-      object-position: 60% center;
-
-      @include m.bp(desktop) {
-        object-position: center;
-      }
+      // Centre, at every width. I had 60% here on the assumption that the subject
+      // sits centre-right — she does not. In the mobile frame the photo rect is
+      // 867 wide at x=-255, so the visible 375 window is centred on 51% of the
+      // image, and in the source file her face measures ~51% across. Centre is both
+      // the design's crop and the photograph's.
+      object-position: center;
     }
   }
 
@@ -97,7 +113,11 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    padding-block: t.$space-5 t.$space-4;
+    // The mobile frame insets by the SAME 20 on all four sides — H1 at y=20, button
+    // bottom 20 above the band. That is why the gutter token is reused for the block
+    // axis here: it is one number by design, not a coincidence, and duplicating it
+    // as a second 20px token would just create two values to keep in sync.
+    padding-block: t.$pad-inline-mobile;
 
     @include m.bp(desktop) {
       // 40px from the photo top to the H1, 32px from the caption to the bottom.
@@ -110,8 +130,21 @@
     @include m.text-h1;
 
     margin: 0;
+    // Divi's critical INLINE CSS carries `h1, h2, h3, h4, h5, h6 { padding-bottom:
+    // 10px }`, and being inline in <head> it applies to our headings too. That is
+    // where the H1's extra 10px came from: rendered 101 tall against the design's 90,
+    // and on desktop it pushed the buttons to y=305 when the frame says 296. Found by
+    // measuring, not reading — the type mixin was correct all along.
+    //
+    // Zeroed HERE and not in the reset ON PURPOSE. A global `h1..h6 { padding: 0 }`
+    // would win on load order, but it would also retighten every heading in the eight
+    // Divi sections still rendering on this page and on every other page of the site.
+    // That is a site-wide visual change and it is not this section's to make. Repeat
+    // this line per native section until phase 4 removes Divi, then hoist it.
+    padding-bottom: 0;
     color: t.$color-canvas;
     text-wrap: balance;
+    max-width: 305px; // measured, 1166:2480
 
     @include m.bp(desktop) {
       // Measured 502px — roughly a third of the canvas, which is what keeps the
@@ -121,20 +154,48 @@
   }
 
   // .hero__actions
+  // ORDER 3 on mobile — the CTA sits BELOW the caption, at the foot of the band
+  // (measured y=508, under the caption's 427). On desktop it returns to its DOM
+  // position directly under the H1.
+  //
+  // The DOM keeps the desktop order (heading → action → supporting copy) and mobile
+  // reorders visually. That is the safer direction for the one thing `order` can
+  // break — tab sequence — because the CTAs are the section's ONLY focusable
+  // elements, so nothing can be tabbed out of turn relative to anything else.
   &__actions {
+    order: 3;
     display: flex;
     flex-wrap: wrap;
     gap: t.$space-1; // itemSpacing 8 in Figma 1130:3926
-    margin-top: t.$space-5;
+    margin-top: t.$space-3; // 24 from the caption — measured 484 → 508
 
-    // The two buttons are 224 wide in the design; let them shrink on small
-    // screens rather than overflow, but never below a tappable width.
+    @include m.bp(tablet) {
+      order: 0;
+      margin-top: t.$space-5; // 40 from the H1 — measured 265 → 305
+    }
+
+    // Mobile: ONE button, full width (335 in a 375 frame = the container width).
+    // Desktop: two 224-wide buttons that may shrink but never below a tappable width.
     .btn {
       flex: 0 1 auto;
+      width: 100%;
       min-width: 0;
 
       @include m.bp(tablet) {
+        width: auto;
         min-width: t.$btn-width-min;
+      }
+    }
+
+    // The secondary CTA is absent from the mobile frame. Hidden rather than removed
+    // in PHP so it stays one template — and hiding it costs nothing, because its
+    // destination ("Калькулятор") is a top-level nav item carried by the mobile
+    // drawer. If that ever stops being true, this rule has to go.
+    .btn--ghost {
+      display: none;
+
+      @include m.bp(tablet) {
+        display: inline-flex;
       }
     }
   }
@@ -143,28 +204,41 @@
   // Caption and stat share a baseline 32px above the section bottom. `margin-top:
   // auto` pins them there regardless of how tall the heading wraps.
   &__foot {
+    order: 2;
     display: flex;
     flex-direction: column;
-    gap: t.$space-3;
+    gap: t.$space-2; // 16 between stat and caption — measured 411 → 427
     margin-top: auto;
-    padding-top: t.$space-8;
 
     @include m.bp(tablet) {
       flex-direction: row;
       align-items: flex-end;
       justify-content: space-between;
       gap: t.$space-4;
+      padding-top: t.$space-8;
     }
   }
 
   // .hero__caption
+  // The kit role CHANGES across breakpoints — Body Small Regular (16) on mobile,
+  // Body Regular (20) on desktop — so this takes two mixins rather than a
+  // hand-written font-size. Both are verbatim kit styles; see mixins.scss.
   &__caption {
-    @include m.text-body;
+    @include m.text-body-sm;
 
+    order: 2; // BELOW the stat on mobile — measured 427 vs the stat's 365
     margin: 0;
+    max-width: 293px; // measured, 1166:2480
     color: t.$color-canvas;
 
+    @include m.bp(tablet) {
+      order: 0;
+      max-width: none;
+    }
+
     @include m.bp(desktop) {
+      @include m.text-body;
+
       max-width: 371px; // measured
     }
   }
@@ -175,13 +249,22 @@
   // spans rather than one string, so the two colours are addressable and the copy
   // stays editable.
   &__stat {
-    @include m.text-h2;
+    @include m.text-h5;
 
+    order: 1; // ABOVE the caption on mobile — measured 365 vs the caption's 427
     margin: 0;
+    max-width: 182px; // measured, 1166:2480
 
     @include m.bp(tablet) {
+      order: 0;
       max-width: 288px; // measured
       text-align: left;
+    }
+
+    // H5 (20) on mobile → H2 (32) on desktop. Same reasoning as the caption: the
+    // kit role itself changes, so it is two mixins, not one size override.
+    @include m.bp(desktop) {
+      @include m.text-h2;
     }
   }
 
