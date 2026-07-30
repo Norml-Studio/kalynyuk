@@ -59,8 +59,6 @@ $ak_img = $ak_hero['image'];
 		?>
 	<?php endif; ?>
 
-	<div class="hero__overlay" aria-hidden="true"></div>
-
 	<div class="hero__inner">
 		<h1 class="hero__heading"><?php echo esc_html( $ak_hero['heading'] ); ?></h1>
 
@@ -86,7 +84,18 @@ $ak_img = $ak_hero['image'];
 
 		<div class="hero__foot">
 			<?php if ( $ak_hero['caption'] ) : ?>
-				<p class="hero__caption"><?php echo esc_html( $ak_hero['caption'] ); ?></p>
+				<?php
+				/*
+				 * The caption honours the line breaks typed in the ACF textarea, so the
+				 * editor controls where it wraps instead of leaving it to the measure.
+				 *
+				 * ESCAPE FIRST, THEN nl2br — never the other way round. nl2br() on raw
+				 * input emits <br> tags that a later esc_html() would print as literal
+				 * text, and skipping the escape entirely would make the field an XSS
+				 * hole. This order yields escaped text with real <br> tags.
+				 */
+				?>
+				<p class="hero__caption"><?php echo nl2br( esc_html( $ak_hero['caption'] ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped above. ?></p>
 			<?php endif; ?>
 
 			<?php if ( $ak_hero['stat_strong'] || $ak_hero['stat_muted'] ) : ?>

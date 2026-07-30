@@ -218,6 +218,11 @@ full-bleed and owns the background; `&__inner` gets `@include m.container`. Neve
 a `max-width` on the band. Full rationale and the superseded measurements are in
 `design.md` §6.
 
+**One exception, added 2026-07-30:** a band whose background is a *fixed-composition
+photograph* — today `.hero` alone — also caps at `$canvas-max` (1440) and centres, so
+a wide viewport does not recrop the photo. Colour bands never do. See `design.md` §6
+→ "The one exception".
+
 ## Build
 
 Vite. From the theme folder:

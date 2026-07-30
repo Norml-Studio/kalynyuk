@@ -21,6 +21,22 @@
   border-bottom-right-radius: t.$radius-lg;
   overflow: hidden;
 
+  // 🔒 DELIBERATE EXCEPTION to "never put a max-width on the band" (design.md §6),
+  // set by Petr 2026-07-30 and justified by the asset: the photo is 2880×1468, i.e.
+  // exactly 2× the 1440×734 band, so its composition is fixed. Full-bleed past 1440
+  // makes `object-fit: cover` recrop it — on a wide monitor it eats the top and
+  // bottom of the frame, which is where the subject and the baked-in gradient live.
+  // Capping keeps the photograph as shot.
+  //
+  // This changes NOTHING about where the text sits: __inner still uses container(),
+  // whose cap (1376 + 2×30 = 1436) is narrower than 1440, so the content lands in
+  // the same place at every viewport width either way. Only the green/photo band
+  // stops stretching.
+  //
+  // Applies to a fixed-composition IMAGE band only. Colour bands stay full-bleed.
+  max-width: t.$canvas-max;
+  margin-inline: auto;
+
   // Measured 734 at a 1440 canvas — a 1.96:1 band. Expressed as a ratio with a
   // floor so it keeps its proportion on wide screens and never collapses on tall
   // narrow ones. min() rather than a fixed height so it cannot exceed the viewport.
@@ -63,27 +79,20 @@
     }
   }
 
-  // .hero__overlay
-  // Figma `shadow`: #0D0D0D → transparent, bottom-to-top, stops 0/18/39/73%.
-  // Its 64px LAYER_BLUR is deliberately not reproduced — blurring a linear
-  // gradient yields the same gradient for a repaint cost.
-  &__overlay {
-    position: absolute;
-    inset: 0;
-    background-image: linear-gradient(
-      to top,
-      rgba(13, 13, 13, 1) 0%,
-      rgba(13, 13, 13, 0.878) 18%,
-      rgba(13, 13, 13, 0.666) 39%,
-      rgba(13, 13, 13, 0) 73%
-    );
-  }
+  // ⚠️ THERE IS NO .hero__overlay ANY MORE — and do not re-add one.
+  // The Figma frame carries a `shadow` layer (#0D0D0D → transparent, bottom-to-top)
+  // and I reproduced it as a gradient element. Wrong: that gradient is ALREADY BAKED
+  // INTO the exported photograph. Rendering it again darkened the frame twice.
+  // Removed by Petr 2026-07-30; verified against the source file, which shows the
+  // vignette in the pixels. Legibility of the cream type is unaffected — the baked-in
+  // gradient is what provides it. If a future photo ships without one, add the
+  // gradient to `.hero__media` rather than reintroducing an element.
 
   // .hero__inner
   &__inner {
     @include m.container;
 
-    position: relative; // above the overlay
+    position: relative; // above the photo
     z-index: t.$z-base;
     display: flex;
     flex-direction: column;

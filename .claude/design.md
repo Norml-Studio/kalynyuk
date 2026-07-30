@@ -353,6 +353,27 @@ is the correct one — a cream fill on green would read as a hole.
 header both use `container()`; a new section that hand-rolls its own `padding-inline`
 is a defect.
 
+#### The one exception: a band carrying a fixed-composition photograph
+
+> **Set by Petr, 2026-07-30.** `.hero` — and only `.hero` today — also gets
+> `max-width: $canvas-max` (1440) and `margin-inline: auto`.
+
+The hero's background is not a colour, it is a photograph exported at 2880×1468 —
+exactly 2× the 1440×734 band, so the crop is part of the design. Left full-bleed, a
+wider viewport makes `object-fit: cover` recrop it and eat the top and bottom of the
+frame, which is where the subject and the baked-in gradient are.
+
+This does **not** weaken the rule for anything else, and it moves no text: the
+`__inner` still uses `container()`, whose cap (1376 + 2×30 = 1436) is under 1440, so
+content sits in the same place at every viewport width either way. Only the band stops
+stretching. A **colour** band never gets this treatment — reach for `$canvas-max` only
+when a fixed image composition is the reason.
+
+**Related:** the hero has **no gradient overlay element**. The Figma frame shows a
+`shadow` layer, but that gradient is already baked into the exported photograph;
+rendering it again darkened the frame twice. Removed 2026-07-30. If a future photo
+ships without one, put the gradient on `.hero__media`, not on a new element.
+
 <details>
 <summary>What was measured before this rule, and why it is superseded</summary>
 

@@ -148,9 +148,18 @@ $shadow-legacy: 0 1px 4px rgba(18, 25, 97, 0.08);
 // Design canvas is 1440 and the content container is 1376 (Petr, 2026-07-27).
 // v2.0.0 had 1600 here, taken from a Divi section's max_width attribute — that was
 // the old implementation's value, not the design's.
+$canvas-max:    1440px;  // the design canvas itself — see the caveat below
 $container-max: 1376px;  // inner content cap
 $content-max:   1368px;  // measured content column at a 1440 viewport
 $measure-max:    680px;  // hard cap for running prose
+
+// ⚠️ $canvas-max IS NOT A GENERAL PAGE CAP. Bands stay full-bleed — that is the
+// locked rule (design.md §6), and vibe-frontend-standards §3 bans a boxed canvas.
+// It exists for the one case where a band carries a FIXED-COMPOSITION IMAGE rather
+// than a colour, and stretching it past the canvas would recrop the photograph.
+// Today that is `.hero` alone (Petr, 2026-07-30). Do not reach for it to "centre a
+// section" — use container() on the __inner, which already lands content in the
+// same place at every width.
 
 // Gutters — DELIBERATE OVERRIDE of vibe-frontend-standards §3 (80/48/20).
 //
