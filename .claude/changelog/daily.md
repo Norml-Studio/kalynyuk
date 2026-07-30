@@ -157,3 +157,18 @@ Rollback if needed: restore `_backup-20260729-101013/db.sql.gz`, or re-enable th
 - Also fixed: `.hero__media` may be a `<picture>`, not an `<img>` — Imagify rewrites images for WebP and moves the class to the wrapper, where `object-fit` does nothing, leaving the photo unsized. Both levels are styled now.
 - Verified: 10/10 targeted assertions + 34/34 header regressions. Divi sections 9 → 8, exactly one h1 on the page, hero 1440×734.
 - **Not deployed.** Production still has the old container padding and no hero; that is a separate cutover step (files + `ak_native_sections=1` + the hero fields on page 11).
+
+### Hero corrections (Petr review)
+
+- **`.hero__overlay` deleted — it was a real defect, not just redundancy.** I had reproduced the Figma `shadow` layer as a CSS gradient element. That gradient is **already baked into the exported photograph** (confirmed by opening `2026/03/Anna-Kalynyuk.jpg` — the vignette is in the pixels), so the frame was being darkened twice. Legibility of the cream type is unaffected: the baked-in gradient is what provides it. The SCSS now carries a note not to re-add the element — a future photo shipped without a gradient should get one on `.hero__media`.
+- [DECISION] **`.hero` caps at `$canvas-max` (1440) and centres** — a deliberate, documented exception to the locked "never put a max-width on the band" rule (Petr, 2026-07-30). Justified by the asset, not by taste: the photo is 2880×1468, exactly 2× the 1440×734 band, so its crop is part of the design, and full-bleed made `object-fit: cover` recrop it on a wide monitor and eat the top and bottom of the frame. **It moves no text** — `container()`'s cap is 1376 + 2×30 = 1436, under 1440, so content lands identically at every width; only the band stops stretching. Scoped in `_tokens.scss`, `design.md` §6 and `.claude/CLAUDE.md` to bands carrying a **fixed-composition image**; colour bands stay full-bleed.
+- `hero__caption` now honours the line breaks typed into its ACF textarea: `nl2br( esc_html() )`, in that order. `nl2br` first would emit `<br>` tags that `esc_html` then prints as literal text; skipping the escape would make the field an XSS hole.
+- Verified at 1440 and 1900: 0 overlays, band 1440×734 centred, content at x=32 / x=262 matching the header logo, caption 2 lines with one `<br>`, `.hero__foot` with exactly 2 children, caption and stat sharing the y=780 baseline, one `h1`.
+- Housekeeping: Imagify and WP Rocket are currently **deactivated on both local and production** (Petr, temporary). `.hero__media` is therefore a plain `<img>`; the dual `<picture>`/`<img>` rule stays in the SCSS so re-enabling Imagify needs no change.
+
+### Repo → Norml-Studio org (in progress)
+
+- Moving `petyasavenok-dev/kalynyuk` → `Norml-Studio/kalynyuk` via GitHub **Transfer ownership**, not a re-push: transfer keeps commits, branches, tags, issues, PRs and installs a permanent redirect, so stale clones and the old remote keep working. A fresh push would keep only commits and leave two repos that both look canonical.
+- ⚠️ **Do not pre-create `Norml-Studio/kalynyuk`** — a name collision in the target org is the one thing that blocks a transfer.
+- After the transfer: `git remote set-url origin git@github.com:Norml-Studio/kalynyuk.git`. Repo access does not come with org membership — team permissions must be granted on the repo afterwards.
+- Corrected two stale rows in `.claude/CLAUDE.md`: source hosting said Bitbucket (it has always been GitHub) and the repo URL was still a `[fill in]` placeholder.
