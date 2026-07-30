@@ -180,6 +180,28 @@ Also: `object-position` corrected to `center` at every width. The 60% I had assu
 - Verified at 375: band 375×576, H1 x=20 y=20 w=305 h=91 (design 90), stat x=20 w=182 h=46 above the caption, caption x=20 w=293 with its bottom at 484 — *exactly* the frame's value, button x=20 w=335 h=48 at y=508 with a 20px foot gap, ghost CTA `display:none`, visual order H1 → foot → actions, foot order stat → caption, no horizontal scroll.
 - Verified no regression at 768 (order restored, foot back to a row, ghost visible) and at 1440 (buttons now y=295 vs the frame's 296; caption and stat still share the y=780 baseline).
 
+### 🚀 PRODUCTION CUTOVER #2 — the hero + the container fix are live
+
+Second deploy to `https://www.kalynyuk.com`. Smaller and lower-risk than the phase-1 cutover: no Theme Builder surgery, no menu rebuild, no plugin state changed.
+
+**Pre-flight.** Probed production before touching it. Every ID needed turned out identical to local — front page **11**, hero attachment **1785** (`2026/03/Anna-Kalynyuk.jpg`, 2880×1468, present), calculator page **566** — because local is a clone of prod. The field script still asserts all three at runtime rather than trusting that, and aborts on any mismatch.
+
+**Order executed:**
+1. Backup → `~/kalynyuk.com/_backup-20260730-164728/` (db.sql.gz 57 MB + theme.tar.gz 93 KB), **outside the docroot**; path written to `~/kalynyuk.com/.last-backup-path`.
+2. Files: 40 via tar+ssh. Three are new (`inc/native-sections.php`, `template-parts/sections/hero.php`, `src/scss/sections/_hero.scss`), the rest overwrites. **No deletions**, so no stale-file risk. `.claude/` excluded again and verified absent on the server.
+3. DB: the eight hero metas on page 11, each with its ACF `_key` reference so the admin UI resolves them as fields rather than orphaned custom fields. **`ak_native_sections` written LAST on purpose** — it is the switch that stops Divi drawing its own first section, so flipping it first and then failing halfway would have left the page with *neither* hero.
+4. Caches: `wp cache flush`, `et-cache` and `cache/et` emptied. WP Rocket is deactivated at the moment, so nothing to purge there.
+
+**Verified on production: 27/29 automated assertions.** Hero band 1440×734 and capped/centred at 1900; no overlay element; one `h1`; H1 and header logo at x=32 (the container fix is live); buttons at y=295 against the frame's 296; caption keeps its line break; caption and stat on the y=780 baseline; stat right edge 1408; photo loaded; **Divi sections 9 → 8**; header CTA on Tally; 6 nav items; no horizontal scroll. Mobile 375: band 375×576, H1 x20/y20/w305, stat above caption, CTA last and full-width 335 with a 20px foot gap, secondary hidden, drawer toggle present. `/faq/`, `/blog/`, `/pro-mene/`, `/calc/` all 200 with header + footer and no stray hero.
+
+**The two non-passes were not defects:**
+
+- *"footer inner at x=32"* — **my assertion was wrong**, not the footer. `.site-footer__inner` is the container BOX (x=2, w=1436); its first child sits at x=32, which is the rule. Same shape as `.hero__inner`. Corrected understanding, nothing to fix.
+- *"language switcher has 2 languages" → 0* — **not a regression: the toggle is off on production.** `options_ak_show_lang = '0'`, while Polylang is fine and `ak_language_switcher()` still returns both uk and pt with correct URLs. It was on at the phase-1 cutover, so it was turned off in Site chrome since. Left alone — it is an editorial setting, not a bug. ⚠️ **Local and production now differ on this option.**
+- Also caught and cleared: a `b.map is not a function` page error on every production URL. **Pre-existing and not ours** — reproduced identically on local, thrown from `plugins/review-wall/assets/js/libs/remodal.min.js` line 10. Third-party, unrelated to the deploy.
+
+Rollback: restore `_backup-20260730-164728/db.sql.gz`, or — far cheaper — set `ak_native_sections` back to `0` on page 11, which restores Divi's original hero instantly with nothing destroyed. That reversibility is the whole point of the render-time mechanism.
+
 ### ✅ Repo moved to the Norml-Studio org
 
 - `petyasavenok-dev/kalynyuk` → **`Norml-Studio/kalynyuk`**, done via GitHub **Transfer ownership** rather than a re-push. Transfer keeps commits, branches, tags, issues and PRs and installs a permanent redirect; a fresh push would have kept only commits and left two repos that both looked canonical.
