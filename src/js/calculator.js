@@ -23,7 +23,19 @@
  */
 
 export function initCalculator() {
-  if (!document.querySelector('.calculator-grid')) return;
+  /*
+   * ⚠️ THE GUARD MUST NOT NAME A CLASS THE REDESIGN CAN RENAME.
+   *
+   * It used to be `.calculator-grid` — the legacy wrapper. The BEM rewrite renamed
+   * that to `.calculator__fields`, so this returned early, no listener was attached,
+   * and the whole results panel sat at "0,00 € / —" while the markup looked perfect.
+   * Nothing threw. Exactly the silent failure mode this module's ids were protected
+   * against, introduced by the one line that was not an id.
+   *
+   * Now keyed on an ID the id-contract check covers, so the same mistake cannot
+   * recur unnoticed.
+   */
+  if (!document.getElementById('mensalidade')) return;
 
   initCalculatorHelp();
 

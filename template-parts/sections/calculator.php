@@ -95,194 +95,184 @@ $ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (fl
 			</button>
 		<?php endif; ?>
 
-		<div class="calculator__panel">
-			
-			<div class="calculator-grid">
-			
-			  <!-- Property Price -->
-			  <div class="input-block property-price">
-			    <div class="input-row">
-			      <label for="property-price-input" class="input-label">Вартість нерухомості <span class="tooltip"></span></label>
-			      <div class="input-inline-control">
-			        <input type="text" id="property-price-input" min="50000" max="1500000" step="5000" value="200000"
-			          maxlength="7" />
-			      </div>
-			    </div>
-			    <input type="range" id="property-price-range" min="50000" max="1500000" step="5000" value="200000" />
-			  </div>
-			
-			  <!-- Down Payment -->
-			  <div class="input-block loan-term-input">
-			    <div class="input-row">
-			      <label for="loan-amount-input" class="input-label">Сума першого внеску <span class="tooltip"></span></label>
-			      <div class="input-inline-control">
-			        <input type="text" id="loan-amount-input" min="0" max="1000000" step="5000" value="30000" maxlength="7" />
-			      </div>
-			    </div>
-			    <input type="range" id="loan-amount-range" min="0" max="1000000" step="5000" value="30000" />
-			  </div>
-			
-			  <!-- Loan Term -->
-			  <div class="input-block loan-term">
-			    <div class="input-row">
-			      <label for="loan-term-input" class="input-label">Термін кредиту (у роках) <span class="tooltip"></span></label>
-			      <div class="input-inline-control">
-			        <input type="text" id="loan-term-input" min="5" max="40" step="1" value="20" maxlength="2" />
-			      </div>
-			    </div>
-			    <input type="range" id="loan-term-range" min="5" max="40" step="1" value="20" />
-			  </div>
-			
-			  <!-- Salary -->
-			  <div class="input-block salary">
-			    <div class="input-row">
-			      <label for="salary-input" class="input-label">Зарплата <span class="tooltip"></span></label>
-			      <div class="input-inline-control">
-			        <input type="text" id="salary-input" min="0" max="10000" step="500" value="3500" maxlength="5" />
-			      </div>
-			    </div>
-			    <input type="range" id="salary-range" min="0" max="10000" step="500" value="3500" />
-			  </div>
-			
-			  <!-- Net Income -->
-			  <div class="input-block net-income">
-			    <div class="input-row">
-			      <label for="net-income-input" class="input-label">Щомісячний чистий дохід <span class="tooltip"></span></label>
-			      <div class="input-inline-control">
-			        <input type="text" id="net-income-input" min="0" max="10000" step="500" value="2500" maxlength="5" />
-			      </div>
-			    </div>
-			    <input type="range" id="net-income-range" min="0" max="10000" step="500" value="2500" />
-			  </div>
-			
-			  <!-- Expenses -->
-			  <div class="input-block expenses">
-			    <div class="input-row">
-			      <label for="expenses-input" class="input-label">Щомісячні витрати <span class="tooltip"></span></label>
-			      <div class="input-inline-control">
-			        <input type="text" id="expenses-input" min="0" max="10000" step="250" value="0" maxlength="5" />
-			      </div>
-			    </div>
-			    <input type="range" id="expenses-range" min="0" max="10000" step="250" value="0" />
-			  </div>
-			
-			  <!-- Interest Rate (full width) -->
-			  <div class="input-block interest-rate" style="grid-column: span 2;">
-			    <label class="input-label">Процентна ставка <span class="rate-annual">(річна)</span> <span
-			        class="tooltip"></span></label>
-			
-			    <div class="interest-rate-wrapper">
-			      <div class="interest-rate-options">
-			        <label><input type="radio" name="rate-type" value="variable" /> Змінна (Spread)</label>
-			        <label><input type="radio" name="rate-type" value="fixed" checked /> Фіксована (TAN)</label>
-			      </div>
-			
-			      <div class="rate-stepper-wrapper">
-			        <!-- variable -->
-			        <div id="variable-stepper" class="rate-stepper">
-			          <button class="rate-minus" data-target="variable">−</button>
-			          <div class="input-wrapper">
-			            <input type="number" id="variable-rate-input" value="0.7" step="0.01" min="0" max="100" />
-			            <span class="percent-symbol">%</span>
-			          </div>
-			          <button class="rate-plus" data-target="variable">+</button>
-			        </div>
-			
-			        <!-- fixed -->
-			        <div id="fixed-stepper" class="rate-stepper hidden">
-			          <button class="rate-minus" data-target="fixed">−</button>
-			          <div class="input-wrapper">
-			            <input type="number" id="fixed-rate-input" value="2.80" step="0.01" min="0" max="100" />
-			            <span class="percent-symbol">%</span>
-			          </div>
-			          <button class="rate-plus" data-target="fixed">+</button>
-			        </div>
-			      </div>
-			    </div>
-			  </div>
-			
-			</div>
-			
+		<?php
+		/*
+		 * ⚠️ EVERY `id` AND `name="rate-type"` BELOW IS LOAD-BEARING.
+		 *
+		 * calculator.js addresses the DOM only by id — and six of them not through a
+		 * literal `getElementById('…')` but as STRING ARGUMENTS to the sync helpers
+		 * (`syncFormattedInput("expenses-range", "expenses-input")`), which a grep for
+		 * getElementById does not find. Renaming one does not throw; it silently
+		 * prints a wrong number. The 30-id contract is checked after every change.
+		 *
+		 * Classes are ours and free to change. Ids are not.
+		 */
+		$ak_fields = array(
+			array( 'property-price', 'Вартість нерухомості', 50000, 1500000, 5000, 200000, 7 ),
+			array( 'loan-amount', 'Сума першого внеску', 0, 1000000, 5000, 30000, 7 ),
+			array( 'loan-term', 'Термін кредиту (у роках)', 5, 40, 1, 20, 2 ),
+			array( 'salary', 'Зарплата', 0, 10000, 500, 3500, 5 ),
+			array( 'net-income', 'Щомісячний чистий дохід', 0, 10000, 500, 2500, 5 ),
+			array( 'expenses', 'Щомісячні витрати', 0, 10000, 250, 0, 5 ),
+		);
+		?>
+		<div class="calculator__layout">
 
-			
-			<div class="calculator-result">
-			  <!-- Header with payment and DSTI -->
-			  <div class="result-header">
-			    <div class="mensalidade">
-			      <span class="label"><span class="opc56">Mensalidade </span><span class="tooltip"></span></span>
-			      <div class="value" id="mensalidade">0,00 €</div>
-			    </div>
-			    <div class="dsti">
-			      <div class="dsti-gauge">
-			        <svg id="dsti-svg" width="187" height="70" viewBox="0 0 191 73" fill="none" xmlns="http://www.w3.org/2000/svg">
-			          <path id="path-green" d="M2 71C6.53488 52 24.655 19.5 69.5 6" stroke="#6DC797" stroke-width="4" stroke-linecap="round"/>
-			          <path id="path-yellow" d="M75.9362 4.33528C82.5254 2.89915 90.8481 2.05155 100.065 2.66889" stroke="#F9D504" stroke-width="4" stroke-linecap="round"/>
-			          <path id="path-red" d="M107 3C145.5 6.52593 175.5 29.6963 189 71" stroke="#D23644" stroke-width="4" stroke-linecap="round"/>
-			          <circle id="gauge-dot" r="7" fill="#2A2011" transform="translate(2,71)"/>
-			        </svg>
-			        <div id="dsti-info">
-			          <div class="dsti-percent" id="dsti-percent">—</div>
-			          <span>DSTI</span>
-			        </div>
-			      </div>
-			    </div>
-			  </div>
-			
-			  <!-- Main data -->
-			  <div class="result-data">
-			    <div class="result-row">
-			      <div class="item montant">
-			        <span class="label">Montante <span class="tooltip"></span></span>
-			        <div class="value" id="montante">0 €</div>
-			      </div>
-			      <div class="item prazo">
-			        <span class="label">Prazo <span class="tooltip tlt-right"></span></span>
-			        <div class="value" id="prazo">0 Meses</div>
-			      </div>
-			      <div class="item ltv">
-			        <span class="label">LTV <span class="tooltip tlt-right"></span></span>
-			        <div class="value" id="ltv">0%</div>
-			      </div>
-			    </div>
-			    <div class="result-row">
-			      <div class="item tan">
-			        <span class="label">TAN <span class="tooltip"></span></span>
-			        <div class="value" id="tan">0.000%</div>
-			      </div>
-			      <div class="item indexante">
-			        <span class="label">Indexante <span class="tooltip tlt-right"></span></span>
-			        <div class="value" id="indexante">0.000%</div>
-			      </div>
-			      <div class="item spread">
-			        <span class="label">Spread <span class="tooltip tlt-right"></span></span>
-			        <div class="value" id="spread">0.000%</div>
-			      </div>
-			    </div>
-			  </div>
-			
-			  <hr class="divider" />
-			
-			  <!-- Taxes -->
-			  <div class="result-data">
-			    <div class="result-row">
-			      <div class="item i-selo">
-			        <span class="label">Imposto Selo <span class="tooltip"></span></span>
-			        <div class="value" id="imposto-selo">0 €</div>
-			      </div>
-			      <div class="item imt-cont">
-			        <span class="label">IMT Cont. <span class="tooltip tlt-right"></span></span>
-			        <div class="value" id="imt-cont">0 €</div>
-			      </div>
-			    </div>
-			  </div>
-			
-			  <!-- Form -->
-			  <div class="contact-form">
-			    <p style="font-size: 16px;">Надсилайте нам розрахунок і ми з вами зв'яжемось</p>
-			    <?php echo do_shortcode( '[gravityform id="3" title="false" ajax="true"]' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-			  </div>
+			<div class="calculator__fields">
+				<?php foreach ( $ak_fields as $ak_f ) : ?>
+					<?php list( $ak_key, $ak_label, $ak_min, $ak_max, $ak_step, $ak_val, $ak_len ) = $ak_f; ?>
+					<div class="calculator__field">
+						<label class="calculator__label" for="<?php echo esc_attr( $ak_key ); ?>-input">
+							<span><?php echo esc_html( $ak_label ); ?></span>
+							<span class="calculator__hint" aria-hidden="true">i</span>
+						</label>
+
+						<input
+							class="calculator__input"
+							type="text"
+							inputmode="numeric"
+							id="<?php echo esc_attr( $ak_key ); ?>-input"
+							min="<?php echo esc_attr( $ak_min ); ?>"
+							max="<?php echo esc_attr( $ak_max ); ?>"
+							step="<?php echo esc_attr( $ak_step ); ?>"
+							value="<?php echo esc_attr( $ak_val ); ?>"
+							maxlength="<?php echo esc_attr( $ak_len ); ?>"
+						/>
+
+						<input
+							class="calculator__range"
+							type="range"
+							id="<?php echo esc_attr( $ak_key ); ?>-range"
+							min="<?php echo esc_attr( $ak_min ); ?>"
+							max="<?php echo esc_attr( $ak_max ); ?>"
+							step="<?php echo esc_attr( $ak_step ); ?>"
+							value="<?php echo esc_attr( $ak_val ); ?>"
+							aria-label="<?php echo esc_attr( $ak_label ); ?>"
+						/>
+					</div>
+				<?php endforeach; ?>
+
+				<?php
+				/*
+				 * The rate row spans both columns. TWO modes only — the Figma frame
+				 * shows a third ("Вручну"), but updateCalculation() branches on exactly
+				 * 'fixed' and 'variable' and initialises interestRate to 0, so a third
+				 * option would compute the payment at 0% and understate it. Petr's call
+				 * (2026-07-31): ship the two that work.
+				 */
+				?>
+				<div class="calculator__field calculator__field--wide">
+					<p class="calculator__label">
+						<span>Процентна ставка <span class="calculator__label-note">(річна)</span></span>
+						<span class="calculator__hint" aria-hidden="true">i</span>
+					</p>
+
+					<div class="calculator__rate">
+						<div class="calculator__modes">
+							<label class="calculator__mode">
+								<input type="radio" name="rate-type" value="variable" />
+								<span>Змінна</span>
+							</label>
+							<label class="calculator__mode">
+								<input type="radio" name="rate-type" value="fixed" checked />
+								<span>Фіксована</span>
+							</label>
+						</div>
+
+						<?php
+						/*
+						 * Both steppers stay in the DOM — calculator.js toggles the
+						 * `hidden` class on them and reads their inputs by id, so
+						 * rendering only the active one would break the swap. `hidden`
+						 * here is that legacy class, not the HTML attribute.
+						 */
+						?>
+						<div class="calculator__stepper rate-stepper hidden" id="variable-stepper">
+							<button class="calculator__step" type="button" aria-label="-">-</button>
+							<span class="input-wrapper">
+								<input class="calculator__step-value" type="text" inputmode="decimal" id="variable-rate-input" value="0,75" aria-label="Spread, %" />
+								<span class="percent-symbol">%</span>
+							</span>
+							<button class="calculator__step" type="button" aria-label="+">+</button>
+						</div>
+
+						<div class="calculator__stepper rate-stepper" id="fixed-stepper">
+							<button class="calculator__step" type="button" aria-label="-">-</button>
+							<span class="input-wrapper">
+								<input class="calculator__step-value" type="text" inputmode="decimal" id="fixed-rate-input" value="2,80" aria-label="TAN, %" />
+								<span class="percent-symbol">%</span>
+							</span>
+							<button class="calculator__step" type="button" aria-label="+">+</button>
+						</div>
+					</div>
+				</div>
 			</div>
-			
+
+			<div class="calculator__result">
+				<div class="calculator__headline">
+					<div class="calculator__payment">
+						<span class="calculator__metric-label">Mensalidade <span class="calculator__hint" aria-hidden="true">i</span></span>
+						<p class="calculator__payment-value" id="mensalidade">0,00 €</p>
+					</div>
+
+					<div class="calculator__gauge">
+						<svg id="dsti-svg" width="187" height="70" viewBox="0 0 191 73" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+							<path id="path-green" d="M2 71C6.53488 52 24.655 19.5 69.5 6" stroke="#6DC797" stroke-width="4" stroke-linecap="round"/>
+							<path id="path-yellow" d="M75.9362 4.33528C82.5254 2.89915 90.8481 2.05155 100.065 2.66889" stroke="#F9D504" stroke-width="4" stroke-linecap="round"/>
+							<path id="path-red" d="M107 3C145.5 6.52593 175.5 29.6963 189 71" stroke="#D23644" stroke-width="4" stroke-linecap="round"/>
+							<circle id="gauge-dot" r="7" fill="#2A2011" transform="translate(2,71)"/>
+						</svg>
+
+						<div class="calculator__gauge-read" id="dsti-info">
+							<p class="calculator__gauge-value" id="dsti-percent">—</p>
+							<p class="calculator__gauge-caption">DSTI</p>
+						</div>
+					</div>
+				</div>
+
+				<?php
+				$ak_metrics = array(
+					array(
+						array( 'montante', 'Montante', '0 €' ),
+						array( 'prazo', 'Prazo', '0 Meses' ),
+						array( 'ltv', 'LTV', '0%' ),
+					),
+					array(
+						array( 'tan', 'TAN', '0.000%' ),
+						array( 'indexante', 'Indexante', '0.000%' ),
+						array( 'spread', 'Spread', '0.000%' ),
+					),
+				);
+				?>
+				<?php foreach ( $ak_metrics as $ak_row ) : ?>
+					<div class="calculator__metrics">
+						<?php foreach ( $ak_row as $ak_m ) : ?>
+							<div class="calculator__metric">
+								<span class="calculator__metric-label"><?php echo esc_html( $ak_m[1] ); ?> <span class="calculator__hint" aria-hidden="true">i</span></span>
+								<p class="calculator__metric-value" id="<?php echo esc_attr( $ak_m[0] ); ?>"><?php echo esc_html( $ak_m[2] ); ?></p>
+							</div>
+						<?php endforeach; ?>
+					</div>
+				<?php endforeach; ?>
+
+				<hr class="calculator__divider" />
+
+				<div class="calculator__metrics calculator__metrics--taxes">
+					<div class="calculator__metric">
+						<span class="calculator__metric-label">Imposto Selo <span class="calculator__hint" aria-hidden="true">i</span></span>
+						<p class="calculator__metric-value" id="imposto-selo">0 €</p>
+					</div>
+					<div class="calculator__metric">
+						<span class="calculator__metric-label">IMT Cont. <span class="calculator__hint" aria-hidden="true">i</span></span>
+						<p class="calculator__metric-value" id="imt-cont">0 €</p>
+					</div>
+				</div>
+
+				<div class="calculator__form contact-form">
+					<p class="calculator__form-title">Надсилайте нам розрахунок і ми з вами зв’яжемось</p>
+					<?php echo do_shortcode( '[gravityform id="3" title="false" ajax="true"]' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+				</div>
+			</div>
 		</div>
 	</div>
 

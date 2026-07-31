@@ -1,0 +1,639 @@
+@use '../abstracts/tokens' as t;
+@use '../abstracts/mixins' as m;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// .calculator — Figma 1130:9148 (desktop 1376×1123) / 332:2591 (mobile 343)
+//
+// Replaces _calculator-legacy.scss, which was the verbatim port out of Divi:
+// ~16 KB of magic numbers and !important. Everything here comes from tokens.
+//
+// 🔒 CONTAINER RULE: the band is full-bleed, __inner is capped by container().
+//
+// ⚠️ The MARKUP carries load-bearing ids (calculator.js addresses every field by
+// id). Classes are ours; ids are not. See the template docblock.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// .calculator
+.calculator {
+  padding-block: t.$space-5;
+
+  @include m.bp(desktop) {
+    padding-block: t.$space-6;
+  }
+
+  // .calculator__inner
+  &__inner {
+    @include m.container;
+  }
+
+  // .calculator__head
+  &__head {
+    margin-bottom: t.$space-3;
+    text-align: center;
+  }
+
+  // .calculator__title
+  // Rendered as h1 or h2 depending on what else is on the page (ak_claim_h1);
+  // the TYPE lives here so the tag only carries the document outline.
+  &__title {
+    @include m.text-h1;
+
+    margin: 0;
+    padding-bottom: 0; // Divi's inline `h1..h6 { padding-bottom: 10px }`
+    color: t.$color-ink;
+    text-wrap: balance;
+  }
+
+  // .calculator__intro
+  &__intro {
+    @include m.text-body;
+
+    max-width: t.$measure-max;
+    margin: t.$space-2 auto 0;
+    color: t.$color-ink;
+  }
+
+  // .calculator__layout
+  // Figma: fields on the left, the result panel on the right at 655 of 1376.
+  &__layout {
+    display: grid;
+    gap: t.$space-3;
+
+    @include m.bp(desktop) {
+      grid-template-columns: minmax(0, 656fr) minmax(0, 655fr);
+      gap: t.$space-5;
+      align-items: start;
+    }
+  }
+
+  // .calculator__fields
+  // Two columns of 296 with a 24 gutter (measured x=40 and x=360).
+  &__fields {
+    display: grid;
+    gap: t.$space-3;
+
+    @include m.bp(tablet) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: t.$space-4 t.$space-3;
+    }
+  }
+
+  // .calculator__field
+  &__field {
+    display: grid;
+    gap: t.$space-2;
+    align-content: start;
+    min-width: 0;
+
+    // .calculator__field--wide
+    &--wide {
+      @include m.bp(tablet) {
+        grid-column: 1 / -1;
+      }
+    }
+  }
+
+  // .calculator__label
+  // Figma: 20 Bold 116% −1%. The kit's Body Bold is 20 Bold 124% — the same size
+  // and weight, 8% apart on leading. Taking the kit role rather than minting a
+  // 40th type combination for that difference (Petr, 2026-07-31).
+  &__label {
+    @include m.text-body-strong;
+
+    display: flex;
+    align-items: center;
+    gap: t.$space-1;
+    margin: 0;
+    color: t.$color-ink;
+  }
+
+  // .calculator__label-note
+  &__label-note {
+    font-weight: t.$weight-regular;
+  }
+
+  // .calculator__hint
+  // The ⓘ badge — 24×24 circle on the sunken surface (Figma 1130:4130).
+  &__hint {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 24px;
+    height: 24px;
+    font-size: t.$text-body-xs-mobile;
+    font-style: italic;
+    line-height: 1;
+    color: t.$color-ink;
+    background-color: t.$color-surface-sunken;
+    border-radius: t.$radius-circle;
+  }
+
+  // .calculator__input
+  // 296×43, radius 16, 1px ink @24%, padding 16/10, value right-aligned, 20 Bold.
+  &__input {
+    @include m.text-body-strong;
+
+    width: 100%;
+    min-width: 0;
+    padding: 10px t.$space-2;
+    color: t.$color-ink;
+    text-align: right;
+    background-color: transparent;
+    border: t.$border-width solid t.$color-ink-faint;
+    border-radius: t.$radius-md;
+    transition: border-color t.$dur-base t.$ease;
+
+    &:hover {
+      border-color: t.$color-border;
+    }
+
+    &:focus-visible {
+      @include m.focus-ring;
+    }
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // .calculator__range — the slider.
+  //
+  // ⚠️ THUMB STYLING HAS NO SHARED SELECTOR. `::-webkit-slider-thumb` and
+  // `::-moz-range-thumb` cannot be combined in one rule: a selector list is
+  // dropped WHOLESALE by any browser that does not understand one of its parts,
+  // so writing them together silently unstyles the slider everywhere. They are
+  // duplicated below on purpose — do not "tidy" them into one selector.
+  //
+  // Track 296×20 radius 24 on the sunken surface; thumb 48×48 accent circle
+  // (Figma 1130:4099 / 1130:4100). 48 is comfortably over the 40px tap minimum.
+  // ───────────────────────────────────────────────────────────────────────────
+  &__range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: t.$space-6; // room for the 48px thumb
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+
+    &:focus-visible {
+      @include m.focus-ring;
+    }
+
+    &::-webkit-slider-runnable-track {
+      height: 20px;
+      background-color: t.$color-surface-sunken;
+      border-radius: t.$radius-lg;
+    }
+
+    &::-moz-range-track {
+      height: 20px;
+      background-color: t.$color-surface-sunken;
+      border-radius: t.$radius-lg;
+    }
+
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 48px;
+      height: 48px;
+      // Centre the 48 thumb on the 20 track: (20 − 48) / 2.
+      margin-top: -14px;
+      background-color: t.$color-accent;
+      border: 0;
+      border-radius: t.$radius-circle;
+    }
+
+    &::-moz-range-thumb {
+      width: 48px;
+      height: 48px;
+      background-color: t.$color-accent;
+      border: 0;
+      border-radius: t.$radius-circle;
+    }
+  }
+
+  // .calculator__rate
+  &__rate {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: t.$space-3;
+  }
+
+  // .calculator__modes
+  &__modes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: t.$space-3;
+  }
+
+  // .calculator__mode
+  &__mode {
+    @include m.text-body;
+
+    display: inline-flex;
+    align-items: center;
+    gap: t.$space-1;
+    min-height: t.$tap-min;
+    color: t.$color-ink;
+    cursor: pointer;
+
+    input {
+      width: 20px;
+      height: 20px;
+      accent-color: t.$color-accent;
+    }
+  }
+
+  // .calculator__stepper
+  // 243×43, radius 16, 1px ink @24%; −/+ are 31×31 radius 12 on the sunken surface.
+  &__stepper {
+    display: inline-flex;
+    align-items: center;
+    gap: t.$space-1;
+    padding: 6px;
+    border: t.$border-width solid t.$color-ink-faint;
+    border-radius: t.$radius-md;
+
+    // `.hidden` is the legacy class calculator.js toggles — it is NOT the HTML
+    // attribute, and renaming it would break the fixed/variable swap.
+    &.hidden {
+      display: none;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .percent-symbol {
+      @include m.text-body-strong;
+
+      color: t.$color-ink;
+    }
+  }
+
+  // .calculator__step
+  &__step {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 31px;
+    height: 31px;
+    font-size: t.$text-body-desktop;
+    line-height: 1;
+    color: t.$color-ink;
+    background-color: t.$color-surface-sunken;
+    border-radius: t.$radius-chip;
+    cursor: pointer;
+    transition: background-color t.$dur-base t.$ease;
+
+    &:hover {
+      background-color: t.$color-border;
+    }
+
+    &:focus-visible {
+      @include m.focus-ring;
+    }
+  }
+
+  // .calculator__step-value
+  &__step-value {
+    @include m.text-body-strong;
+
+    width: 5ch;
+    padding: 0;
+    color: t.$color-ink;
+    text-align: right;
+    background-color: transparent;
+    border: 0;
+
+    &:focus-visible {
+      @include m.focus-ring;
+    }
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // .calculator__result — the panel, 655×764, radius 16, sunken surface.
+  // ───────────────────────────────────────────────────────────────────────────
+  &__result {
+    display: grid;
+    gap: t.$space-3;
+    align-content: start;
+    padding: t.$space-3;
+    background-color: t.$color-surface-sunken;
+    border-radius: t.$radius-md;
+
+    @include m.bp(desktop) {
+      padding: t.$space-5;
+    }
+  }
+
+  // .calculator__headline
+  &__headline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: t.$space-3;
+  }
+
+  // .calculator__payment
+  &__payment {
+    display: grid;
+    gap: t.$space-1;
+    min-width: 0;
+  }
+
+  // .calculator__payment-value
+  &__payment-value {
+    @include m.text-h1;
+
+    margin: 0;
+    padding-bottom: 0;
+    color: t.$color-ink;
+    // The euro amount is the one number people compare between runs — lining it
+    // up stops the digits dancing as it updates on every keystroke.
+    font-variant-numeric: tabular-nums;
+  }
+
+  // .calculator__gauge
+  &__gauge {
+    position: relative;
+    flex: 0 0 auto;
+  }
+
+  // .calculator__gauge-read
+  &__gauge-read {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    text-align: right;
+  }
+
+  // .calculator__gauge-value
+  &__gauge-value {
+    @include m.text-body-strong;
+
+    margin: 0;
+    color: t.$color-ink;
+    font-variant-numeric: tabular-nums;
+  }
+
+  // .calculator__gauge-caption
+  &__gauge-caption {
+    @include m.text-body-sm;
+
+    margin: 0;
+    color: t.$color-ink-muted;
+  }
+
+  // .calculator__metrics
+  &__metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: t.$space-2;
+
+    // .calculator__metrics--taxes
+    &--taxes {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  // .calculator__metric
+  &__metric {
+    display: grid;
+    gap: t.$space-1;
+    align-content: start;
+    min-width: 0;
+  }
+
+  // .calculator__metric-label
+  &__metric-label {
+    @include m.text-body-sm;
+
+    display: flex;
+    align-items: center;
+    gap: t.$space-1;
+    color: t.$color-ink-muted;
+  }
+
+  // .calculator__metric-value
+  &__metric-value {
+    @include m.text-body-strong;
+
+    margin: 0;
+    color: t.$color-ink;
+    font-variant-numeric: tabular-nums;
+  }
+
+  // .calculator__divider
+  &__divider {
+    height: 0;
+    margin: 0;
+    border: 0;
+    border-top: t.$border-width solid t.$color-ink-faint;
+  }
+
+  // .calculator__form-title
+  &__form-title {
+    @include m.text-body-sm;
+
+    margin: 0 0 t.$space-2;
+    color: t.$color-ink;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// .dovidka — the help trigger. Kept as its own block: it sits outside the panel
+// and the class name is referenced from the template's ported markup.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// .dovidka
+.dovidka {
+  @include m.text-ui;
+
+  display: inline-flex;
+  align-items: center;
+  gap: t.$space-1;
+  min-height: t.$tap-min;
+  margin-bottom: t.$space-2;
+  color: t.$color-accent;
+  cursor: pointer;
+
+  &:hover {
+    color: t.$color-ink;
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+}
+
+/* ═══ ✚ ADDED: the help panel that replaces the Divi Popups section ═══ */
+
+// .calc-help
+.calc-help {
+  position: fixed;
+  inset: 0;
+  // $z-overlay, deliberately the highest layer we have: a modal that the sticky
+  // header can cover is a modal the visitor cannot read.
+  z-index: t.$z-overlay;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: t.$space-2;
+
+  &[hidden] {
+    display: none;
+  }
+
+  // .calc-help__scrim
+  &__scrim {
+    position: absolute;
+    inset: 0;
+    background-color: rgba(42, 32, 17, 0.5);
+  }
+
+  // .calc-help__dialog
+  &__dialog {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 680px;
+    max-height: 90vh;
+    background-color: t.$color-surface;
+    border-radius: t.$radius-lg;
+  }
+
+  // .calc-help__bar
+  &__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: t.$space-2;
+    padding: t.$space-3 t.$space-3 t.$space-2;
+  }
+
+  // .calc-help__title
+  &__title {
+    @include m.text-h4;
+
+    margin: 0;
+    color: t.$color-ink;
+  }
+
+  // .calc-help__close
+  &__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: t.$tap-min;
+    height: t.$tap-min;
+    color: t.$color-ink;
+    border-radius: t.$radius-circle;
+    transition: background-color t.$dur-base t.$ease;
+
+    &:hover {
+      background-color: t.$color-surface-sunken;
+    }
+
+    &:focus-visible {
+      @include m.focus-ring;
+    }
+  }
+
+  // .calc-help__body
+  // The one part that scrolls — the help copy is 16 explanations long, and a modal
+  // that grows past the viewport is a modal you cannot close.
+  &__body {
+    overflow-y: auto;
+    padding: 0 t.$space-3 t.$space-3;
+    color: t.$color-ink;
+
+    h4 {
+      @include m.text-body-strong;
+
+      margin: t.$space-3 0 t.$space-1;
+      padding-bottom: 0; // Divi's inline heading padding
+    }
+
+    p,
+    div,
+    span {
+      @include m.text-body-sm;
+    }
+
+    p {
+      margin: 0;
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Gravity Forms inside the result panel.
+//
+// ⚠️ `!important` IS REQUIRED HERE AND IS NOT LAZINESS. Gravity Forms 2.10's
+// Orbital theme writes ~745 CSS custom properties into an INLINE style attribute
+// on .gform_wrapper. An inline custom property beats any stylesheet selector, so
+// nothing else can reach the button — this was established the hard way on the
+// footer form. Keep the overrides minimal and scoped to this block.
+//
+// Without them the submit button renders in Gravity Forms' default blue, which is
+// what happened the moment the legacy stylesheet carrying these rules was deleted.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// .calculator__form
+.calculator__form {
+  .gform_wrapper {
+    margin: 0;
+  }
+
+  .gform_fields {
+    gap: t.$space-2 !important;
+  }
+
+  input[type='text'],
+  input[type='email'],
+  input[type='tel'] {
+    @include m.text-body-sm;
+
+    padding: 10px t.$space-2 !important;
+    color: t.$color-ink !important;
+    background-color: t.$color-surface !important;
+    border: t.$border-width solid t.$color-ink-faint !important;
+    border-radius: t.$radius-md !important;
+  }
+
+  .gform_footer {
+    margin: t.$space-2 0 0 !important;
+    padding: 0 !important;
+  }
+
+  input[type='submit'],
+  .gform_button {
+    @include m.text-ui;
+
+    width: 100%;
+    min-height: t.$btn-height;
+    padding: t.$btn-padding t.$space-3 !important;
+    color: t.$color-canvas !important;
+    background-color: t.$color-ink !important;
+    border: 0 !important;
+    border-radius: t.$radius-lg !important;
+    cursor: pointer;
+    transition: background-color t.$dur-base t.$ease;
+
+    &:hover {
+      background-color: t.$color-accent !important;
+    }
+
+    &:focus-visible {
+      @include m.focus-ring;
+    }
+  }
+}
