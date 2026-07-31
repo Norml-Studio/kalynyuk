@@ -898,3 +898,105 @@
     }
   }
 }
+
+/* ═══ ✚ ADDED: the help panel that replaces the Divi Popups section ═══ */
+
+// .calc-help
+.calc-help {
+  position: fixed;
+  inset: 0;
+  // $z-overlay, deliberately the highest layer we have: a modal that the sticky
+  // header can cover is a modal the visitor cannot read.
+  z-index: t.$z-overlay;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: t.$space-2;
+
+  &[hidden] {
+    display: none;
+  }
+
+  // .calc-help__scrim
+  &__scrim {
+    position: absolute;
+    inset: 0;
+    background-color: rgba(42, 32, 17, 0.5);
+  }
+
+  // .calc-help__dialog
+  &__dialog {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 680px;
+    max-height: 90vh;
+    background-color: t.$color-surface;
+    border-radius: t.$radius-lg;
+  }
+
+  // .calc-help__bar
+  &__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: t.$space-2;
+    padding: t.$space-3 t.$space-3 t.$space-2;
+  }
+
+  // .calc-help__title
+  &__title {
+    @include m.text-h4;
+
+    margin: 0;
+    color: t.$color-ink;
+  }
+
+  // .calc-help__close
+  &__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: t.$tap-min;
+    height: t.$tap-min;
+    color: t.$color-ink;
+    border-radius: t.$radius-circle;
+    transition: background-color t.$dur-base t.$ease;
+
+    &:hover {
+      background-color: t.$color-surface-sunken;
+    }
+
+    &:focus-visible {
+      @include m.focus-ring;
+    }
+  }
+
+  // .calc-help__body
+  // The one part that scrolls — the help copy is 16 explanations long, and a modal
+  // that grows past the viewport is a modal you cannot close.
+  &__body {
+    overflow-y: auto;
+    padding: 0 t.$space-3 t.$space-3;
+    color: t.$color-ink;
+
+    h4 {
+      @include m.text-body-strong;
+
+      margin: t.$space-3 0 t.$space-1;
+      padding-bottom: 0; // Divi's inline heading padding
+    }
+
+    p,
+    div,
+    span {
+      @include m.text-body-sm;
+    }
+
+    p {
+      margin: 0;
+    }
+  }
+}

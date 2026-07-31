@@ -25,6 +25,8 @@
 export function initCalculator() {
   if (!document.querySelector('.calculator-grid')) return;
 
+  initCalculatorHelp();
+
   /* ═══ block 1 — inputs, sliders, steppers ═══ */
   (function () {
     /* ========= Formatting & parsing helpers ========= */
@@ -457,7 +459,21 @@ export function initCalculator() {
       const p3 = document.getElementById("path-red");
     
       /* ---------- Parameters ---------- */
-      const INDEXANTE_CONST = 0.02143;    // 2.143% для змінної ставки
+      /*
+       * ⚠️ WAS `const INDEXANTE_CONST = 0.02143;` — a Euribor snapshot hardcoded in
+       * the page. Euribor moves and the constant did not, so the variable-rate
+       * results drifted further from reality every month and only a developer could
+       * correct them. That is the most likely explanation for the client's report
+       * that the calculator started giving wrong numbers a few months ago.
+       *
+       * It now comes from an editable field (Page → Calculator → Indexante), with
+       * the SAME 2.143 as the default, so nothing on the page moves today — the
+       * number simply becomes correctable without a deploy.
+       *
+       * This does NOT resolve the separate DSTI problem documented below.
+       */
+      const INDEXANTE_CONST =
+        (parseFloat(document.querySelector('.calculator')?.dataset.akIndexante) || 2.143) / 100;
     
       /* ---------- IMT calculation ---------- */
       function calculateIMTContinente(price) {
@@ -580,4 +596,52 @@ export function initCalculator() {
       updateCalculation();
       setTimeout(updateCalculation, 200);
   })();
+}
+
+/**
+ * The "Довідка" help panel.
+ *
+ * Replaces the Divi Popups section the old `<a href="#infobox">` pointed at — which
+ * had already stopped working on production (measured there: a 0×0 element whose
+ * click opened nothing). Same open/close contract as the mobile drawer, because it
+ * is the one already proven in this theme: Escape closes, the scrim closes, focus
+ * moves into the panel and returns to the trigger, and body scroll is locked while
+ * it is open.
+ */
+function initCalculatorHelp() {
+  const panel = document.querySelector('[data-ak-help]');
+  const trigger = document.querySelector('[data-ak-help-open]');
+
+  if (!panel || !trigger) return;
+
+  const dialog = panel.querySelector('.calc-help__dialog');
+
+  const open = () => {
+    panel.hidden = false;
+    requestAnimationFrame(() => panel.classList.add('is-open'));
+    trigger.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+    (dialog.querySelector('button') || dialog).focus({ preventScroll: true });
+  };
+
+  const close = () => {
+    panel.classList.remove('is-open');
+    panel.hidden = true;
+    trigger.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+    trigger.focus({ preventScroll: true });
+  };
+
+  trigger.addEventListener('click', () => {
+    if (trigger.getAttribute('aria-expanded') === 'true') close();
+    else open();
+  });
+
+  panel.querySelectorAll('[data-ak-help-close]').forEach((el) => {
+    el.addEventListener('click', close);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && trigger.getAttribute('aria-expanded') === 'true') close();
+  });
 }

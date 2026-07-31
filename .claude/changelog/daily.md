@@ -256,6 +256,43 @@ Verified on local: `/pt/` renders `lang="pt-PT"`, native hero with Portuguese co
 
 **Not deployed.** Local only so far.
 
+### 🔴 Calculator: the client's "wrong results" bug — diagnosed, NOT silently fixed
+
+Client report: *"the coefficients don't add up, the calculator gives a wrong result — started a few months ago."* Two separate causes, and the second is the serious one.
+
+**1. The index was hardcoded, which explains the timing.** `const INDEXANTE_CONST = 0.02143` — a Euribor snapshot frozen in the page. Euribor moves; the constant did not, so variable-rate results drifted further from reality every month and only a developer could correct them. **Fixed structurally:** it is now an editable field (Page → Calculator → *Indexante*), defaulting to the same 2.143, so **no number on the page moves today** — the value simply becomes correctable without a deploy.
+
+**2. [BUG] The DSTI is computed from a rate that has the index SUBTRACTED from it, and the page contradicts itself.**
+
+```js
+interestRateForDSTI = fixedRateUI - INDEXANTE_CONST;   // 2.80% − 2.143% = 0.657%
+```
+
+No regulatory knowledge is needed to see this is wrong — **the two numbers on screen disagree**. With the default inputs the page displays a payment of **925,89 €** and an income of **2 500 €**, and then reports **DSTI 30%**. 925.89 / 2500 = **37.0%**. The 30% comes from a shadow payment of 756,08 € computed at 0.657%, a rate that appears nowhere and that no borrower will ever pay.
+
+Reproduced with the calculator's own formula:
+
+| Rate used for DSTI | Payment | DSTI |
+|---|---|---|
+| 2.800% — the contract rate, and what the page shows | 925,89 € | **37.0%** |
+| 0.657% — 2.80% *minus the index*, **as currently coded** | 756,08 € | **30.2%** ← displayed |
+| 4.300% — contract +1.5pp stress | 1 057,24 € | 42.3% |
+| 5.800% — contract +3.0pp stress | 1 198,40 € | 47.9% |
+
+The error runs in the **optimistic** direction: affordability is overstated by ~7 points before any stress test is even considered. On a licensed credit intermediary's site that is the worst direction to be wrong in. Note also that the variable branch applies no stress at all (`interestRateForDSTI = interestRate`), whereas Banco de Portugal's macroprudential recommendation expects an interest-rate shock precisely there.
+
+⚠️ **Deliberately NOT changed.** Whether the correct figure is 37% (contract rate) or 42–48% (with the BdP stress increment) is a regulatory decision for Anna, not a refactor. Changing it alters what every visitor is told about their own affordability. The diagnosis and the numbers above are for her to confirm; the one-line fix takes minutes once she does.
+
+**Also worth her eye:** the IMT bracket table is hardcoded for one tax year, and Imposto do Selo is only the 0.8% on the purchase price — the 0.6% on the loan itself (verba 17.1) is not included. Neither was touched.
+
+### Calculator: page 566 is now 100% Divi-free
+
+- The help popup ("Довідка") migrated out of the second Divi section. Its 4 KB of copy moved **verbatim** into an ACF WYSIWYG field on the page, so it stays editable where an editor expects it rather than being hardcoded in the theme.
+- Replaced the Divi Popups modal with our own panel, reusing the mobile drawer's proven contract: Escape closes, scrim closes, focus moves in and returns to the trigger, body scroll locked. The old `<a href="#infobox">` became a real `<button>` with `aria-expanded` — it had been a 0×0 element on production whose click did nothing.
+- [DECISION] Added `ak_strip_extra`. One native section does not always replace exactly one Divi section: the calculator template renders both the calculator *and* the help panel, so two Divi sections must come out while only one slug is listed. Stated explicitly rather than inventing a placeholder slug that renders nothing, which would be a lie in the section list.
+- **Verified 10/11 → all real:** page renders **zero** Divi sections, one `h1`, index data-driven, help content intact (16 headings), panel opens/locks/focuses/closes correctly, 16 inputs + Gravity Form, no horizontal scroll. **All ten computed values byte-identical to production** (mensalidade, DSTI, montante, prazo, LTV, TAN, indexante, spread, Selo, IMT) — the port changed no arithmetic.
+- Two initial "failures" were **my test's fault, not the page's**: the value comparison used a plain space where `toLocaleString('fr-FR')` emits a narrow no-break space, and the visibility check used `offsetParent`, which is always null for a `position: fixed` element. Both assertions corrected and re-run.
+
 ### Article template + menu label translations
 
 **⚠️ FINDING FIRST: the four Guides have no content.** They are the empty placeholders I created during the phase-1 cutover so the Portugal dropdown had destinations — title only, `content_len=0`, no featured image, no topic. So "translate the Guides articles" has nothing to translate. **I have not written them**: they are about Portuguese mortgage regulation (IMT and Imposto do Selo rates, documents required of non-residents, bank criteria) on the site of a licensed credit intermediary — `Intermediário de crédito n.º 0008515` — and inventing figures there is a liability, not a draft. The copy has to come from Anna. Flagged to Petr; nothing was faked and no empty `pt` guide stubs were created either, since four more empty indexable pages would be worse than none.

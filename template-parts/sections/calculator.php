@@ -27,8 +27,24 @@ $ak_id      = (int) get_queried_object_id();
 $ak_heading = (string) ak_section_field( 'ak_calc_heading', $ak_id );
 $ak_intro   = (string) ak_section_field( 'ak_calc_intro', $ak_id );
 $ak_help    = ak_str( 'ak_calc_help', 'Довідка' );
+$ak_help_html = (string) ak_section_field( 'ak_calc_help_content', $ak_id );
+
+/*
+ * ⚠️ THE INDEX IS NOW EDITABLE, AND THAT IS THE POINT.
+ *
+ * It used to be `const INDEXANTE_CONST = 0.02143` hardcoded in the inline script —
+ * a Euribor snapshot frozen at the moment someone typed it. Euribor moves; the
+ * constant did not, so the variable-rate results drifted further from reality every
+ * month and only a developer could correct them. That matches the client's report
+ * that the numbers went wrong "a few months ago".
+ *
+ * The default is deliberately the SAME 2.143, so publishing this change moves no
+ * number on the page today. It only makes the number correctable without a deploy.
+ */
+$ak_indexante = ak_section_field( 'ak_calc_indexante', $ak_id );
+$ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (float) $ak_indexante;
 ?>
-<section class="calculator">
+<section class="calculator" data-ak-indexante="<?php echo esc_attr( (string) $ak_indexante ); ?>">
 	<div class="calculator__inner">
 
 		<?php if ( '' !== $ak_heading || '' !== $ak_intro ) : ?>
@@ -42,7 +58,31 @@ $ak_help    = ak_str( 'ak_calc_help', 'Довідка' );
 			</div>
 		<?php endif; ?>
 
-		<a class="dovidka" href="#infobox"><span class="tooltip"></span> <?php echo esc_html( $ak_help ); ?></a>
+		<?php
+		/*
+		 * A <button>, not the old `<a href="#infobox">`.
+		 *
+		 * That link pointed at a Divi popup section which no longer exists — and it
+		 * had already stopped working on production before this migration: measured
+		 * there as a 0×0 element whose click opened nothing. It was a control in name
+		 * only. This is a real button with real state, and the panel below is ours.
+		 */
+		?>
+		<?php if ( '' !== trim( $ak_help_html ) ) : ?>
+			<button
+				class="dovidka"
+				type="button"
+				aria-expanded="false"
+				aria-controls="ak-calc-help"
+				data-ak-help-open
+			>
+				<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+					<circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5" />
+					<path d="M8 7.2v3.4M8 5.2v.9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+				</svg>
+				<span><?php echo esc_html( $ak_help ); ?></span>
+			</button>
+		<?php endif; ?>
 
 		<div class="calculator__panel">
 			
@@ -234,4 +274,39 @@ $ak_help    = ak_str( 'ak_calc_help', 'Довідка' );
 			
 		</div>
 	</div>
+
+	<?php if ( '' !== trim( $ak_help_html ) ) : ?>
+		<?php
+		/*
+		 * The help panel, replacing the Divi Popups section. Deliberately NOT a
+		 * <dialog>: Divi's stylesheet and the legacy calculator CSS both fight the
+		 * backdrop, and a plain overlay with the drawer's proven open/close contract
+		 * (Escape, scrim click, focus moved in and restored, body scroll locked) is
+		 * fewer unknowns than debugging ::backdrop against 16 KB of !important.
+		 *
+		 * `hidden` on the wrapper means it costs nothing until opened, and a visitor
+		 * without JS simply never sees a button that would not have worked anyway.
+		 */
+		?>
+		<div class="calc-help" id="ak-calc-help" hidden data-ak-help>
+			<div class="calc-help__scrim" data-ak-help-close></div>
+
+			<div class="calc-help__dialog" role="dialog" aria-modal="true" aria-labelledby="ak-calc-help-title">
+				<div class="calc-help__bar">
+					<p class="calc-help__title" id="ak-calc-help-title"><?php echo esc_html( $ak_help ); ?></p>
+
+					<button class="calc-help__close" type="button" data-ak-help-close>
+						<span class="u-visually-hidden"><?php echo esc_html( ak_str( 'ak_menu_close', 'Закрити меню' ) ); ?></span>
+						<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+							<path d="M5 5l14 14M19 5L5 19" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+						</svg>
+					</button>
+				</div>
+
+				<div class="calc-help__body">
+					<?php echo wp_kses_post( $ak_help_html ); ?>
+				</div>
+			</div>
+		</div>
+	<?php endif; ?>
 </section>

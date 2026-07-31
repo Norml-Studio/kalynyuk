@@ -175,7 +175,19 @@ function ak_native_section_count( $post_id = null ) {
 	$slugs = ak_native_section_slugs( $post_id );
 
 	if ( $slugs ) {
-		return count( $slugs );
+		/*
+		 * ONE native section does not always replace exactly ONE Divi section.
+		 *
+		 * The calculator is the case that forced this: its Divi layout was two
+		 * sections — the calculator itself, and a second section holding the
+		 * "Довідка" popup. Our single `calculator` template renders both, so two Divi
+		 * sections have to come out while only one slug is listed.
+		 *
+		 * Rather than inventing a placeholder slug that renders nothing — which would
+		 * be a lie in the section list and would confuse the next person reading it —
+		 * the surplus is stated explicitly. It stays 0 for every ordinary page.
+		 */
+		return count( $slugs ) + max( 0, (int) ak_section_field( 'ak_strip_extra', $post_id ) );
 	}
 
 	return max( 0, (int) ak_section_field( 'ak_native_sections', $post_id ) );
@@ -338,6 +350,15 @@ function ak_acf_page_sections_fields() {
 					'return_format' => 'value',
 					'instructions'  => __( 'The theme-built sections for this page, IN DOCUMENT ORDER. That many of the page\'s LEADING Divi sections stop rendering and these are drawn instead — so the order here must match the order they appear in the Divi layout. Clear the field to restore the Divi originals; nothing is ever deleted.', 'kalynyuk' ),
 				),
+				array(
+					'key'           => 'field_ak_strip_extra',
+					'label'         => __( 'Extra Divi sections to remove', 'kalynyuk' ),
+					'name'          => 'ak_strip_extra',
+					'type'          => 'number',
+					'min'           => 0,
+					'default_value' => 0,
+					'instructions'  => __( 'Leave at 0 unless one theme section replaces MORE than one Divi section. The calculator is the case: its Divi layout was two sections (the calculator and the “Довідка” popup) and one template now renders both, so this is 1 there.', 'kalynyuk' ),
+				),
 			),
 		)
 	);
@@ -442,6 +463,27 @@ function ak_acf_page_sections_fields() {
 					'name'  => 'ak_calc_intro',
 					'type'  => 'textarea',
 					'rows'  => 3,
+				),
+				array(
+					// Named *_content so it cannot be confused with the Polylang string
+					// `ak_calc_help`, which is the LINK LABEL, not the panel body.
+					'key'          => 'field_ak_calc_help_content',
+					'label'        => __( 'Help panel ("Довідка")', 'kalynyuk' ),
+					'name'         => 'ak_calc_help_content',
+					'type'         => 'wysiwyg',
+					'media_upload' => 0,
+					'tabs'         => 'visual',
+					'instructions' => __( 'The explanations shown when a visitor opens “Довідка”. Moved out of the Divi popup so it stays editable here rather than in a builder module.', 'kalynyuk' ),
+				),
+				array(
+					'key'           => 'field_ak_calc_indexante',
+					'label'         => __( 'Indexante (Euribor), % — used for the variable rate', 'kalynyuk' ),
+					'name'          => 'ak_calc_indexante',
+					'type'          => 'number',
+					'step'          => '0.001',
+					'min'           => 0,
+					'default_value' => 2.143,
+					'instructions'  => __( 'The index the variable rate is built on: rate = indexante + spread. It used to be HARDCODED in the JavaScript at 2.143%, which is why the results drifted as Euribor moved — the number could only be changed by a developer. Update it here whenever the reference index changes. Note it is also involved in the DSTI figure, which is under review.', 'kalynyuk' ),
 				),
 			),
 		)
