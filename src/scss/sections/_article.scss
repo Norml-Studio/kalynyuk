@@ -237,6 +237,22 @@
   // .article__column
   &__column {
     min-width: 0; // a long <pre> or table must not widen the grid track
+
+    @include m.bp(desktop) {
+      /*
+       * ⚠️ PINNED TO TRACK 2 — the prose must not slide into the rail.
+       *
+       * The TOC renders nothing on an article with fewer than two H2s, and grid
+       * auto-placement then dropped the prose into the FIRST track: 680px of text
+       * squeezed into the 348px rail. Invisible locally because the test fixture had
+       * four headings; caught on production, where the real guides have none.
+       *
+       * The left rail is part of the layout, not a consequence of the TOC being
+       * there — the design indents the prose either way — so the column claims
+       * column 2 explicitly and the rail simply stays empty.
+       */
+      grid-column: 2;
+    }
   }
 }
 

@@ -259,7 +259,12 @@ Verified on local: `/pt/` renders `lang="pt-PT"`, native hero with Portuguese co
 - **Not built, deliberately:** the "Опрацювати за допомогою ШІ" block (`1163:393` — create post / summarise / extract quotes). It is a product feature, not a layout, and needs decisions nobody has made yet.
 - Verified at 1440 and 375 on a temporary fixture built from the design's own copy (created, measured, deleted — never on production): TOC x=32 w=348 and prose x=380 w=680 exactly as drawn, sticky on desktop and static on mobile, title 48/32, prose 20, lead 24, H2 32/28, callout on surface at radius 24, 3 related cards, one `h1`, no horizontal scroll, no Divi sections on the page.
 
-**Not deployed.** Local only so far.
+**🚀 Deployed to production** (backup `_backup-20260731-132144/`, 48 files, then menu strings + article strings + guide authors, rewrites and caches flushed).
+
+- [BUG] **A sixth defect, and only production could have found it.** The first prod check failed one assertion: `.article__column` measured **348 wide at x=32** instead of 680 at x=380. The TOC renders nothing on an article with fewer than two H2s, and CSS grid auto-placement then dropped the prose into the FIRST track — the 348px rail. Invisible locally because the render fixture had four headings; the real guides have none, so every live guide would have shown its text crammed into the sidebar column. The left rail is part of the layout rather than a consequence of the TOC existing, so `.article__column` now claims `grid-column: 2` explicitly and the rail simply stays empty. **The lesson is the general one: a fixture built to exercise a feature is the worst case for finding what happens when the feature is absent.**
+- Article-chrome strings translated for pt/en/ru as well (12 each) — reading time carries the three plural forms, and for Portuguese and English `few`/`many` are set to the same plural so "1 minute" / "5 minutes" comes out right with no special case.
+- Guide authors assigned on production (they were `post_author = 0`, a WP-CLI artefact from the phase-1 cutover).
+- **Verified on production: 16/16.** Guide 200 with the article template, breadcrumb + 48px title, author card, prose column 680 at x=380, TOC correctly absent, share row FB/LI/copy, 3 related cards, one `h1`, no Divi sections, no horizontal scroll. Portuguese nav now reads *Sobre mim · Portugal · Simulador · Blog · Testemunhos · FAQ* with the whole dropdown translated, `/pt/` still serves the native Portuguese hero, and the Ukrainian home is untouched (hero 1440, H1 at x=32).
 
 ### ✅ Repo moved to the Norml-Studio org
 
