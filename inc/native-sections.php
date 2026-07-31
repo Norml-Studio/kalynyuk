@@ -102,16 +102,82 @@ function ak_section_field( $key, $post_id = null ) {
 }
 
 /**
+ * Every section the theme can render, slug => admin label.
+ *
+ * The slug is also the template name: `template-parts/sections/{slug}.php`. Filter
+ * `ak_section_registry` rather than editing this, so a plugin or a child could add
+ * one without touching the theme.
+ *
+ * @return array<string,string>
+ */
+function ak_section_registry() {
+	return (array) apply_filters(
+		'ak_section_registry',
+		array(
+			'hero'       => __( 'Hero', 'kalynyuk' ),
+			'calculator' => __( 'Mortgage calculator', 'kalynyuk' ),
+		)
+	);
+}
+
+/**
+ * The native sections for a page, in render order.
+ *
+ * ⚠️ THIS REPLACED A PLAIN COUNT, and the reason is worth recording. The first
+ * version stored only a NUMBER — "how many leading Divi sections have been
+ * rebuilt" — and `ak_render_native_sections()` hardcoded `get_template_part(
+ * 'sections/hero' )`. That was honest while exactly one page and one section
+ * existed. The moment a SECOND page needed a DIFFERENT section (the calculator on
+ * page 566) the number stopped carrying enough information: it says how many to
+ * strip but not what to draw.
+ *
+ * Storing the ordered list instead fixes that and removes a whole class of bug at
+ * the same time — the strip count is now DERIVED from the list (`count()`), so the
+ * "how many to remove" and "what to render" can no longer drift apart. Under the old
+ * shape, setting the count to 2 while rendering one section silently deleted a Divi
+ * section and put nothing in its place.
+ *
+ * Unknown slugs are dropped rather than fatally `get_template_part`-ing into
+ * nothing: a renamed template should degrade to "Divi section missing", which is
+ * visible, not to a blank page.
+ *
+ * @param int|null $post_id Defaults to the queried object.
+ * @return string[]
+ */
+function ak_native_section_slugs( $post_id = null ) {
+	$value = ak_section_field( 'ak_sections', $post_id );
+
+	if ( empty( $value ) ) {
+		return array();
+	}
+
+	$registry = ak_section_registry();
+
+	return array_values( array_intersect( (array) $value, array_keys( $registry ) ) );
+}
+
+/**
  * How many leading Divi sections this page has already had rebuilt natively.
  *
- * Reads raw meta rather than get_field() so the count still works if ACF is ever
- * deactivated — a page whose Divi hero has been stripped must not come back with
- * neither hero just because a plugin is off.
+ * Derived from the section list — see ak_native_section_slugs() for why it is no
+ * longer stored separately.
+ *
+ * Falls back to the legacy numeric `ak_native_sections` meta so a page saved before
+ * the change keeps working until it is migrated. Reads raw meta rather than
+ * get_field() so the strip still applies if ACF is ever deactivated: a page whose
+ * Divi hero has been removed must not come back with NEITHER hero because a plugin
+ * is off.
  *
  * @param int|null $post_id Defaults to the queried object.
  * @return int
  */
 function ak_native_section_count( $post_id = null ) {
+	$slugs = ak_native_section_slugs( $post_id );
+
+	if ( $slugs ) {
+		return count( $slugs );
+	}
+
 	return max( 0, (int) ak_section_field( 'ak_native_sections', $post_id ) );
 }
 
@@ -220,8 +286,10 @@ add_filter( 'the_content', 'ak_filter_native_sections', 5 );
  * anywhere near them. The `the_content` filter keeps its one job: removing the Divi
  * sections these replace, which is a string operation on shortcode text.
  *
- * Only the hero exists today. As phase 3 rebuilds more sections, add them here in
- * document order and bump the page's "Rebuilt sections" count to match.
+ * Which sections, and in what order, comes from the page itself — see
+ * ak_native_section_slugs(). Adding a section to the theme is therefore two steps
+ * and no edit here: drop `template-parts/sections/{slug}.php` in place and register
+ * the slug in ak_section_registry().
  *
  * @return void
  */
@@ -230,7 +298,9 @@ function ak_render_native_sections() {
 		return;
 	}
 
-	get_template_part( 'template-parts/sections/hero' );
+	foreach ( ak_native_section_slugs() as $slug ) {
+		get_template_part( 'template-parts/sections/' . $slug );
+	}
 }
 
 /**
@@ -258,13 +328,15 @@ function ak_acf_page_sections_fields() {
 			),
 			'fields'   => array(
 				array(
-					'key'           => 'field_ak_native_sections',
+					'key'           => 'field_ak_sections',
 					'label'         => __( 'Rebuilt sections', 'kalynyuk' ),
-					'name'          => 'ak_native_sections',
-					'type'          => 'number',
-					'min'           => 0,
-					'default_value' => 0,
-					'instructions'  => __( 'How many of this page\'s LEADING Divi sections have been rebuilt in the theme. Those sections stop rendering from the Divi content and the theme draws them instead. Set back to 0 to restore the Divi originals — nothing is deleted.', 'kalynyuk' ),
+					'name'          => 'ak_sections',
+					'type'          => 'select',
+					'choices'       => ak_section_registry(),
+					'multiple'      => 1,
+					'ui'            => 1,
+					'return_format' => 'value',
+					'instructions'  => __( 'The theme-built sections for this page, IN DOCUMENT ORDER. That many of the page\'s LEADING Divi sections stop rendering and these are drawn instead — so the order here must match the order they appear in the Divi layout. Clear the field to restore the Divi originals; nothing is ever deleted.', 'kalynyuk' ),
 				),
 			),
 		)
@@ -338,6 +410,38 @@ function ak_acf_page_sections_fields() {
 					'return_format' => 'id',
 					'allow_null'    => 1,
 					'ui'            => 1,
+				),
+			),
+		)
+	);
+
+	acf_add_local_field_group(
+		array(
+			'key'      => 'group_ak_calculator',
+			'title'    => __( 'Calculator', 'kalynyuk' ),
+			'location' => array(
+				array(
+					array(
+						'param'    => 'post_type',
+						'operator' => '==',
+						'value'    => 'page',
+					),
+				),
+			),
+			'fields'   => array(
+				array(
+					'key'          => 'field_ak_calc_heading',
+					'label'        => __( 'Heading', 'kalynyuk' ),
+					'name'         => 'ak_calc_heading',
+					'type'         => 'text',
+					'instructions' => __( 'Rendered above the calculator. Leave empty to hide the whole heading block.', 'kalynyuk' ),
+				),
+				array(
+					'key'   => 'field_ak_calc_intro',
+					'label' => __( 'Intro', 'kalynyuk' ),
+					'name'  => 'ak_calc_intro',
+					'type'  => 'textarea',
+					'rows'  => 3,
 				),
 			),
 		)

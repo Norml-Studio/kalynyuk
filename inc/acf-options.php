@@ -266,6 +266,7 @@ function ak_register_pll_strings() {
 		'ak_share_copy'     => 'Скопіювати посилання',
 		'ak_share_copied'   => 'Скопійовано',
 		'ak_related_title'  => 'Інші статті',
+		'ak_calc_help'      => 'Довідка',
 	);
 
 	foreach ( $strings as $name => $default ) {
