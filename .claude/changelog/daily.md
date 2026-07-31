@@ -256,6 +256,17 @@ Verified on local: `/pt/` renders `lang="pt-PT"`, native hero with Portuguese co
 
 **Not deployed.** Local only so far.
 
+### 🔴 The calculator existed TWICE — the homepage copy is now the same template
+
+Petr looked at the homepage and saw `div#calculator.et_pb_section` still there. Correct: **there are two calculators.** One is page 566 (`/calc/`), which I had migrated; the other is a Divi section on the homepage, sixth of nine, and I had not touched it.
+
+They are near-identical copies of the same 97 KB of code that **have already drifted apart** — 97 443 vs 97 526 characters, different checksums — and **both carry the DSTI defect**. That is the real cost of the duplication: today the same bug has to be fixed in two places, by hand, in the database, and the copies keep diverging. Pointing both at one template is what makes the DSTI fix a single change once Anna confirms it.
+
+- [DECISION] **Sections can now be replaced IN PLACE, addressed by their Divi `module_id`.** The original stripper only removed *leading* sections, and the reasoning was sound — Divi sections have no stable identifier and pages are rebuilt top-down. That held until this one: the homepage calculator sits sixth, with four untouched Divi sections above it, so by count it could only be migrated after everything above it. But it carries `module_id="calculator"` — a real, stable, editor-visible id. Where one exists, addressing by it is strictly better and lets a page be migrated in whatever order the design work actually happens. Configured per page as `divi_module_id = section_slug`, one per line.
+- **The wpautop lesson, applied a second time.** The strip filter leaves an inert HTML comment token at priority 5; a filter at priority **20** — after wpautop has finished — swaps in the rendered section. Injecting the markup directly at priority 5 is exactly what appended a stray `<p>` inside the hero and broke its layout. The token pattern also eats an optional wrapping `<p>`, because wpautop will paragraph-wrap a lone comment. Verified: no leftover token, no stray empty paragraph.
+- [BUG] **Two `h1`s on the homepage** — caught by measuring, not by reasoning. Giving the calculator an `<h1>` was correct for `/calc/`, where it is the whole page and there genuinely was no h1; the same template on the homepage then collided with the hero's. Neither "always h1" nor "always h2" is right, because the answer depends on what else is on the page. Added `ak_claim_h1()`: sections render in document order, so the first to ask is the one at the top and it gets the h1 — the calculator on `/calc/`, the hero on the homepage. No section needs to know about any other and nothing is configured. The look is unaffected: `.calculator__title` carries the type, the tag carries only the outline.
+- **Verified 11/11 on the homepage:** the Divi `#calculator` section is gone (9 → 7 rendering), our calculator renders *after the hero* rather than prepended, the homepage keeps its own heading and intro (lifted verbatim from its own text modules — they differ from page 566's), 16 inputs computing, all values matching, one `h1`, no horizontal scroll. `/calc/` re-checked afterwards: all ten values still byte-identical to production.
+
 ### 🔴 Calculator: the client's "wrong results" bug — diagnosed, NOT silently fixed
 
 Client report: *"the coefficients don't add up, the calculator gives a wrong result — started a few months ago."* Two separate causes, and the second is the serious one.

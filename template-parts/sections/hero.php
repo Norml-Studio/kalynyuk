@@ -64,7 +64,8 @@ $ak_img = (int) $ak_hero['image'];
 	<?php endif; ?>
 
 	<div class="hero__inner">
-		<h1 class="hero__heading"><?php echo esc_html( $ak_hero['heading'] ); ?></h1>
+		<?php $ak_h = ak_claim_h1(); ?>
+		<<?php echo $ak_h; ?> class="hero__heading"><?php echo esc_html( $ak_hero['heading'] ); ?></<?php echo $ak_h; ?>>
 
 		<?php if ( $ak_hero['cta'] || $ak_hero['cta2'] ) : ?>
 			<div class="hero__actions">

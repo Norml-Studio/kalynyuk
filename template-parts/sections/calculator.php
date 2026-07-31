@@ -14,9 +14,19 @@
  * The Gravity Form is untouched by decision (Petr, 2026-07-31): it stays form 3 via
  * shortcode, so notifications and integrations keep working exactly as they do now.
  *
- * The "Довідка" popup it links to (#infobox) is still the SECOND Divi section on the
- * page — deliberately not migrated. It is 6 KB of editorial help text, and moving it
- * into the theme would hardcode client copy that belongs in the editor.
+ * ⚠️ USED ON TWO PAGES, and that is the point. The calculator existed TWICE in the
+ * database — once as page 566 and once as a Divi section on the homepage — as two
+ * near-identical copies that had already drifted apart (97 443 vs 97 526 characters
+ * of code, different checksums), each carrying its own copy of the DSTI defect. Both
+ * now render from this file, so a fix is made once. Do not fork it back.
+ *
+ * The heading level is CLAIMED, not hardcoded — see ak_claim_h1(). On /calc/ the
+ * calculator is the page and takes the h1; on the homepage the hero already has it,
+ * so this becomes an h2. The LOOK is unaffected either way: `.calculator__title`
+ * carries the type, the tag carries only the document outline.
+ *
+ * The "Довідка" help panel is rendered here, from an ACF field. It replaced a Divi
+ * Popups section whose trigger was already dead on production.
  *
  * @package kalynyuk
  */
@@ -50,7 +60,8 @@ $ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (fl
 		<?php if ( '' !== $ak_heading || '' !== $ak_intro ) : ?>
 			<div class="calculator__head">
 				<?php if ( '' !== $ak_heading ) : ?>
-					<h1 class="calculator__title"><?php echo esc_html( $ak_heading ); ?></h1>
+					<?php $ak_h = ak_claim_h1(); ?>
+					<<?php echo $ak_h; ?> class="calculator__title"><?php echo esc_html( $ak_heading ); ?></<?php echo $ak_h; ?>>
 				<?php endif; ?>
 				<?php if ( '' !== $ak_intro ) : ?>
 					<p class="calculator__intro"><?php echo nl2br( esc_html( $ak_intro ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped above. ?></p>

@@ -261,6 +261,200 @@ function ak_strip_leading_divi_sections( $content, $strip ) {
 }
 
 /**
+ * Sections replaced IN PLACE, addressed by their Divi `module_id`.
+ *
+ * ⚠️ WHY A SECOND MECHANISM EXISTS ALONGSIDE THE LEADING-COUNT ONE.
+ *
+ * The original stripper only removes LEADING sections, and the reasoning was sound:
+ * Divi sections have no stable identifier in `post_content`, and rebuilding a page
+ * top-down means "the first N" is the only honest addressing scheme.
+ *
+ * That held until the homepage. Its calculator is the SIXTH section — with four
+ * untouched Divi sections above it — so replacing it by count would mean rebuilding
+ * everything above it first. But that section, unlike the ones on page 566, carries
+ * `module_id="calculator"`: a real, stable, editor-visible identifier. Where one
+ * exists, addressing by it is strictly better, and it unlocks migrating a page's
+ * sections in whatever order the design work actually happens.
+ *
+ * Stored as one `divi_module_id = section_slug` per line, deliberately as plain text:
+ * this is a migration control that developers operate, and a line of text is easier
+ * to read, diff and grep than an ACF repeater.
+ *
+ * @param int|null $post_id Defaults to the queried object.
+ * @return array<string,string> module_id => section slug
+ */
+function ak_inline_section_map( $post_id = null ) {
+	$raw = (string) ak_section_field( 'ak_inline_sections', $post_id );
+
+	if ( '' === trim( $raw ) ) {
+		return array();
+	}
+
+	$registry = ak_section_registry();
+	$map      = array();
+
+	foreach ( preg_split( '/\R/', $raw ) as $line ) {
+		if ( ! strpos( $line, '=' ) ) {
+			continue;
+		}
+
+		list( $module_id, $slug ) = array_map( 'trim', explode( '=', $line, 2 ) );
+
+		// An unknown slug is skipped rather than fatally rendering nothing: a renamed
+		// template should leave the Divi original in place, which is visible, not
+		// blank the section.
+		if ( '' !== $module_id && isset( $registry[ $slug ] ) ) {
+			$map[ $module_id ] = $slug;
+		}
+	}
+
+	return $map;
+}
+
+/**
+ * Replace ONE Divi section, matched by `module_id`, with an arbitrary string.
+ *
+ * Same bracket-depth walk as ak_strip_leading_divi_sections() and for the same
+ * reason — Divi nests `et_pb_section` inside itself for specialty sections, so no
+ * regex can find the matching close tag.
+ *
+ * @param string $content     Post content.
+ * @param string $module_id   The section's module_id attribute.
+ * @param string $replacement What to put in its place.
+ * @return string
+ */
+function ak_replace_divi_section_by_id( $content, $module_id, $replacement ) {
+	$offset = 0;
+
+	while ( true ) {
+		$start = strpos( $content, '[et_pb_section', $offset );
+
+		if ( false === $start ) {
+			return $content;
+		}
+
+		$tag_end = strpos( $content, ']', $start );
+
+		if ( false === $tag_end ) {
+			return $content;
+		}
+
+		$is_match = (bool) preg_match(
+			'/\bmodule_id="' . preg_quote( $module_id, '/' ) . '"/',
+			substr( $content, $start, $tag_end - $start )
+		);
+
+		// Walk to this section's matching close, counting nested sections.
+		$depth = 0;
+		$pos   = $start;
+		$end   = false;
+
+		while ( true ) {
+			$open  = strpos( $content, '[et_pb_section', $pos + 1 );
+			$close = strpos( $content, '[/et_pb_section]', $pos + 1 );
+
+			if ( false === $close ) {
+				return $content; // Malformed — leave it alone.
+			}
+
+			if ( false !== $open && $open < $close ) {
+				++$depth;
+				$pos = $open;
+				continue;
+			}
+
+			if ( 0 === $depth ) {
+				$end = $close + strlen( '[/et_pb_section]' );
+				break;
+			}
+
+			--$depth;
+			$pos = $close;
+		}
+
+		if ( $is_match ) {
+			return substr( $content, 0, $start ) . $replacement . substr( $content, $end );
+		}
+
+		$offset = $end;
+	}
+}
+
+/**
+ * Claim the page's `<h1>` — returns 'h1' to the first caller, 'h2' to every one after.
+ *
+ * ⚠️ THIS EXISTS BECAUSE A SECTION CANNOT KNOW ITS OWN RANK. The calculator was
+ * given an `<h1>` when it was migrated as page 566, where it is the whole page and
+ * the page genuinely had no h1 — a real defect, correctly fixed. Then the same
+ * template was pointed at the homepage, where it sits below the hero, and the page
+ * immediately had TWO h1s. Caught by measuring the homepage, not by reasoning about
+ * the template.
+ *
+ * Neither "always h1" nor "always h2" is right, because the correct answer depends on
+ * what else is on the page. Claiming is right: sections render in document order, so
+ * the first one to ask is the one at the top, and it gets the h1. On `/calc/` that is
+ * the calculator; on the homepage it is the hero. No section needs to know about any
+ * other, and nothing has to be configured.
+ *
+ * @return string 'h1' or 'h2'
+ */
+function ak_claim_h1() {
+	static $claimed = false;
+
+	if ( $claimed ) {
+		return 'h2';
+	}
+
+	$claimed = true;
+
+	return 'h1';
+}
+
+/**
+ * The token left in the content where an in-place section will be rendered.
+ *
+ * ⚠️ A TOKEN, NOT THE MARKUP ITSELF — this is the wpautop lesson again, in a second
+ * place. Injecting rendered HTML at priority 5 would hand it to wpautop at 10, which
+ * is exactly what appended a stray `<p>` inside the hero and broke its layout. The
+ * strip filter leaves an inert comment; a LATE filter (priority 20, after wpautop has
+ * finished) swaps in the real markup, which therefore never meets a content filter.
+ *
+ * @param string $slug Section slug.
+ * @return string
+ */
+function ak_section_token( $slug ) {
+	return '<!--ak-section:' . $slug . '-->';
+}
+
+/**
+ * Swap the tokens for the actual rendered sections. Runs AFTER wpautop.
+ *
+ * wpautop may wrap a lone comment in a paragraph, so the pattern optionally eats a
+ * surrounding `<p>` — otherwise every in-place section would ship inside a stray
+ * empty paragraph.
+ *
+ * @param string $content Post content.
+ * @return string
+ */
+function ak_render_inline_sections( $content ) {
+	if ( false === strpos( $content, '<!--ak-section:' ) ) {
+		return $content;
+	}
+
+	return preg_replace_callback(
+		'#(?:<p>\s*)?<!--ak-section:([a-z0-9\-_]+)-->(?:\s*</p>)?#i',
+		static function ( $m ) {
+			ob_start();
+			get_template_part( 'template-parts/sections/' . $m[1] );
+
+			return (string) ob_get_clean();
+		},
+		$content
+	);
+}
+add_filter( 'the_content', 'ak_render_inline_sections', 20 );
+
+/**
  * Apply the strip on the front end.
  *
  * Priority 5 — before Divi's own `the_content` processing at 10, so it never sees
@@ -277,7 +471,17 @@ function ak_filter_native_sections( $content ) {
 
 	$strip = ak_native_section_count();
 
-	return $strip ? ak_strip_leading_divi_sections( $content, $strip ) : $content;
+	if ( $strip ) {
+		$content = ak_strip_leading_divi_sections( $content, $strip );
+	}
+
+	// In-place replacements run after the leading strip so the two cannot fight over
+	// the same section: anything already removed simply will not be found by id.
+	foreach ( ak_inline_section_map() as $module_id => $slug ) {
+		$content = ak_replace_divi_section_by_id( $content, $module_id, ak_section_token( $slug ) );
+	}
+
+	return $content;
 }
 add_filter( 'the_content', 'ak_filter_native_sections', 5 );
 
@@ -358,6 +562,14 @@ function ak_acf_page_sections_fields() {
 					'min'           => 0,
 					'default_value' => 0,
 					'instructions'  => __( 'Leave at 0 unless one theme section replaces MORE than one Divi section. The calculator is the case: its Divi layout was two sections (the calculator and the “Довідка” popup) and one template now renders both, so this is 1 there.', 'kalynyuk' ),
+				),
+				array(
+					'key'          => 'field_ak_inline_sections',
+					'label'        => __( 'Sections replaced in place', 'kalynyuk' ),
+					'name'         => 'ak_inline_sections',
+					'type'         => 'textarea',
+					'rows'         => 3,
+					'instructions' => __( 'For sections that are NOT at the top of the page. One “divi_module_id = section_slug” per line — e.g. “calculator = calculator”. The Divi section with that module ID is swapped for the theme section exactly where it sits, so a page can be migrated in any order. Find the module ID in the Divi section settings under Advanced → CSS ID.', 'kalynyuk' ),
 				),
 			),
 		)
