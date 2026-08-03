@@ -1,0 +1,178 @@
+@use '../abstracts/tokens' as t;
+@use '../abstracts/mixins' as m;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// .trust — Figma 1130:8979 ("Frame 9100"), 1376×938 at x=32 y=4917.
+//          Photo 1130:4009 (680×790) · accordion 1130:8953 (664 wide, 5 items)
+//
+// 🔒 CONTAINER RULE: full-bleed band, container() on __inner, no background.
+//
+// ⚠️ THE ACCORDION IS NATIVE <details name="…"> — the single-open behaviour is the
+// browser's, not ours. Everything below is presentation only; see trust.php for why, and
+// trust.js for the one case where JavaScript is involved at all.
+//
+// ⚠️ NO EXPAND ANIMATION. design.md §9 budgets two motion moments and both are spent.
+// A height transition here would be a third. The marker swap is instant for the same
+// reason — an animated icon over an instant panel reads as a glitch, not as polish.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// .trust
+.trust {
+  // Divi's own section says `custom_padding="120px||0px"` with a bottom rule. 50 is used
+  // instead of 0 so the band matches `.services` directly above it — Figma measures 64
+  // here, which is not a token, and 50 is both a token and the neighbouring value.
+  padding-block: t.$space-8 t.$space-6;
+  border-bottom: t.$border-width solid t.$color-border;
+
+  // .trust__inner
+  &__inner {
+    @include m.container;
+  }
+
+  // .trust__heading
+  &__heading {
+    @include m.text-h1;
+
+    margin: 0 auto;
+    padding-bottom: 0; // Divi inline h1..h6 override — see _about.scss
+    max-width: 677px; // measured, 1130:4008
+    color: t.$color-ink;
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  // .trust__body
+  // Photo 680 + gap 32 + accordion 664 = 1376. Stated as measured ratios rather than
+  // halves for the same reason as `.about` — the two columns are NOT equal.
+  &__body {
+    display: grid;
+    gap: t.$space-5;
+    margin-top: t.$space-5;
+
+    @include m.bp(desktop) {
+      grid-template-columns: minmax(0, 680fr) minmax(0, 664fr);
+      column-gap: t.$space-4; // measured 32
+      align-items: start;
+      margin-top: t.$space-7; // measured 56 — heading box ends 92, body starts 148
+    }
+  }
+
+  // .trust__media
+  &__media {
+    position: relative;
+    overflow: hidden;
+    // Shows through wherever the photo does not reach — the frame's own fill in Figma.
+    background-color: t.$color-canvas;
+    border-radius: t.$radius-lg;
+    aspect-ratio: 680 / 790; // measured, 1130:4009
+
+    @include m.bp(desktop) {
+      aspect-ratio: auto;
+      height: 790px;
+    }
+  }
+
+  // .trust__photo
+  // ⚠️ Plain `cover`, against Figma's more specific crop — the THIRD time this design file
+  // has held artwork the shipped asset does not match (see design.md §13 gaps 16 and 18).
+  // The frame crops an 887×1331 box (0.666) but the attachment is 1020×1101 (0.926),
+  // which is within 7% of the container's own 0.861 — so cover trims ~26px per side and
+  // there is no meaningful crop left to reproduce.
+  &__photo {
+    position: absolute;
+    inset: 0;
+    display: block;
+
+    // Imagify may move the class onto a <picture> wrapper, where object-fit is inert.
+    &,
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
+  }
+
+  // .trust__item
+  // A hairline BETWEEN items — never above the first or below the last, which is what the
+  // sibling selector gives without a :last-child exception.
+  &__item {
+    & + & {
+      margin-top: t.$space-4; // measured 32 above the rule
+      padding-top: t.$space-4; // measured 32 below it
+      border-top: t.$border-width solid t.$color-border;
+    }
+  }
+
+  // .trust__question
+  // ⚠️ `list-style: none` AND the -webkit pseudo-element are both required to remove the
+  // native disclosure triangle: Safari still uses ::-webkit-details-marker, and Chrome and
+  // Firefox use the list marker. Dropping either leaves a stray triangle in one browser.
+  &__question {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: t.$space-3;
+    cursor: pointer;
+    list-style: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &:focus-visible {
+      @include m.focus-ring;
+    }
+  }
+
+  // .trust__question-text
+  &__question-text {
+    @include m.text-h3;
+
+    margin: 0;
+    padding-bottom: 0; // Divi inline h1..h6 override — see _about.scss
+    color: t.$color-ink;
+
+    @include m.bp(desktop) {
+      max-width: 548px; // measured, 1130:8847
+    }
+  }
+
+  // .trust__marker
+  // 32×32 lucide plus, drawn on the 24 grid it is designed for so the stroke weight stays
+  // the component's own rather than a scaled approximation.
+  &__marker {
+    flex: 0 0 auto;
+    width: 32px;
+    height: 32px;
+    color: t.$color-ink;
+  }
+
+  // .trust__marker-bar
+  // The vertical stroke of the plus. Hidden when the item is open, which turns the same
+  // icon into a minus — Figma uses `lucide/plus` on the closed rows and `lucide/minus` on
+  // the open one, and this is that pair with one path instead of two icons.
+  &__item[open] &__marker-bar {
+    display: none;
+  }
+
+  // .trust__answer
+  &__answer {
+    @include m.text-body;
+
+    margin-top: t.$space-3; // measured 24 — question box ends 56, answer starts 80
+    color: t.$color-ink;
+
+    @include m.bp(desktop) {
+      max-width: 587px; // measured, 1130:8850
+    }
+
+    p {
+      margin: 0;
+
+      + p {
+        margin-top: t.$space-3;
+      }
+    }
+  }
+}

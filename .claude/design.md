@@ -495,6 +495,30 @@ Forms are all forced into AJAX mode by the child theme — see `docs/03-theme-ar
 
 Measured on the homepage: 1 accordion, 7 items. The FAQ page (2440) uses the same pattern.
 
+⚠️ **SUPERSEDED ON THE HOMEPAGE — v2.1.0.** The table above is the LEGACY Divi accordion.
+The `trust` band was rebuilt to a different pattern entirely (Figma `1130:8979`) and the
+two share nothing but the word: no panel boxes, no chevron, no 16px header.
+
+| Part | Spec — the current pattern |
+|---|---|
+| Question | Desktop/H3 — 24 / 700 / 116% / −1%, `--ink`, max 548 |
+| Answer | Desktop/Body, max 587, `--space-3` below the question |
+| Marker | 32×32 lucide **plus** closed, **minus** open, `--ink`, hard right |
+| Separator | 1px `--border` **between** items — `--space-4` above and below it |
+| Panel | **none** — no fill, no box, no radius |
+
+🔒 **It is a native `<details name="…">` accordion and must stay one.** Grouping by `name`
+makes the items mutually exclusive in the browser — the requested "opening one closes the
+other" is not code we own. That also buys keyboard operation, correct ARIA with no
+`aria-expanded` to keep in sync, and Ctrl+F opening a collapsed answer to reveal a match.
+The first item carries `open` declaratively, so it is never briefly collapsed on load.
+
+⚠️ **No expand animation, and that is a §9 constraint rather than an oversight** — the two
+motion moments are already spent, so an animated height would be a third. The marker swap
+is instant for the same reason: an animated icon over an instant panel reads as a glitch.
+
+The legacy table still applies to the FAQ page (2440), which has not been migrated.
+
 ### Panels / cards
 
 ```css
@@ -1054,3 +1078,14 @@ out of the URL.
     **The canonical order is `Group-16`, `Group-17`, `Group-18` → slots 3, 4, 8** — i.e.
     the woman at a laptop top-right, the walking woman below-left, the woman signing in the
     bottom row. Any re-seed (production included) must use this order, not Divi's.
+20. **⚠️ THE PATTERN behind gaps 16 and 18: this design file's image frames routinely do
+    not match the shipped assets** — added v2.1.0, after it happened a third time. The
+    `trust` photo is framed as an 887×1331 crop (0.666) while the attachment is 1020×1101
+    (0.926). Together with the CTA banner (frame 1.5:1, asset 2.95:1) and the services
+    illustrations (frame 0.668, assets 1.31 / 0.72 / 1.19), **three of the four image
+    placements in this migration were composed around artwork that was never exported.**
+    Treat any Figma crop geometry here as a hint, not a spec: check the real attachment's
+    dimensions FIRST and reproduce the crop only when the ratios are close. Where they are
+    not, plain `object-fit: cover` is the honest answer — and the `.about` portrait is the
+    counter-example proving the rule, since there the ratios did match and the crop was
+    worth reproducing exactly.

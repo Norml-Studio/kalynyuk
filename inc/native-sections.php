@@ -158,6 +158,7 @@ function ak_section_registry() {
 			'about'      => __( 'About / credentials', 'kalynyuk' ),
 			'cta'        => __( 'CTA banner', 'kalynyuk' ),
 			'services'   => __( 'Services grid', 'kalynyuk' ),
+			'trust'      => __( 'Why us (accordion)', 'kalynyuk' ),
 			'calculator' => __( 'Mortgage calculator', 'kalynyuk' ),
 		)
 	);
@@ -983,6 +984,67 @@ function ak_acf_page_sections_fields() {
 
 	acf_add_local_field_group(
 		array(
+			'key'      => 'group_ak_trust',
+			'title'    => __( 'Why us (accordion)', 'kalynyuk' ),
+			'location' => array(
+				array(
+					array(
+						'param'    => 'post_type',
+						'operator' => '==',
+						'value'    => 'page',
+					),
+				),
+			),
+			'fields'   => array(
+				array(
+					'key'          => 'field_ak_trust_heading',
+					'label'        => __( 'Heading', 'kalynyuk' ),
+					'name'         => 'ak_trust_heading',
+					'type'         => 'textarea',
+					'rows'         => 2,
+					'instructions' => __( 'Centred above the two columns. Leave empty to hide the whole section — the Divi original comes back.', 'kalynyuk' ),
+				),
+				array(
+					'key'           => 'field_ak_trust_image',
+					'label'         => __( 'Photo', 'kalynyuk' ),
+					'name'          => 'ak_trust_image',
+					'type'          => 'image',
+					'return_format' => 'id',
+					'preview_size'  => 'medium',
+					'instructions'  => __( 'The left column, roughly a 680×790 portrait crop.', 'kalynyuk' ),
+				),
+				array(
+					'key'          => 'field_ak_trust_items',
+					'label'        => __( 'Questions', 'kalynyuk' ),
+					'name'         => 'ak_trust_items',
+					'type'         => 'repeater',
+					'layout'       => 'block',
+					'button_label' => __( 'Add question', 'kalynyuk' ),
+					'instructions' => __( 'THE FIRST ONE IS OPEN when the page loads, and opening any other closes it — that is the browser doing it, not a setting, so it follows the order here automatically. Put the answer you most want read first.', 'kalynyuk' ),
+					'sub_fields'   => array(
+						array(
+							'key'   => 'field_ak_trust_item_question',
+							'label' => __( 'Question', 'kalynyuk' ),
+							'name'  => 'question',
+							'type'  => 'text',
+						),
+						array(
+							'key'          => 'field_ak_trust_item_answer',
+							'label'        => __( 'Answer', 'kalynyuk' ),
+							'name'         => 'answer',
+							'type'         => 'wysiwyg',
+							'media_upload' => 0,
+							'tabs'         => 'visual',
+							'toolbar'      => 'basic',
+						),
+					),
+				),
+			),
+		)
+	);
+
+	acf_add_local_field_group(
+		array(
 			'key'      => 'group_ak_calculator',
 			'title'    => __( 'Calculator', 'kalynyuk' ),
 			'location' => array(
@@ -1211,5 +1273,30 @@ function ak_services_data() {
 		'heading' => $heading,
 		'intro'   => (string) ak_section_field( 'ak_services_intro', $id ),
 		'items'   => $items,
+	);
+}
+
+/**
+ * "Why us" accordion data for the current page, or null when there is nothing to render.
+ *
+ * @return array|null
+ */
+function ak_trust_data() {
+	$id = (int) get_queried_object_id();
+
+	if ( ! $id ) {
+		return null;
+	}
+
+	$heading = (string) ak_section_field( 'ak_trust_heading', $id );
+
+	if ( '' === trim( $heading ) ) {
+		return null;
+	}
+
+	return array(
+		'heading' => $heading,
+		'image'   => ak_translate_id( (int) ak_section_field( 'ak_trust_image', $id ) ),
+		'items'   => ak_section_rows( 'ak_trust_items', array( 'question', 'answer' ), $id ),
 	);
 }

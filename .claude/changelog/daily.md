@@ -512,3 +512,39 @@ Verified between the two steps, which is the point of splitting them: after the 
 - Backups: `~/backup-theme-20260803b.tgz` + `~/backup-akmeta-20260803b.tsv` (the pre-deploy-#1 pair is still there too).
 
 Homepage now has ONE Divi section left — `trust`. The calculator remains Divi on both page 11 and `/calc/`.
+
+### De-Divi migration — the `trust` accordion (homepage section #5, the last one)
+
+Figma `1130:8979` → Divi `module_id="trust"`. Centred heading over two columns: a 680×790 photo and a five-item accordion. **This was the last Divi section on the homepage.**
+
+🔒 **It is a native `<details name="…">` accordion, and that IS the implementation.** The brief was "first one open, opening another closes it" — which is exactly what the `name` attribute does, so the behaviour is the browser's and not code we own. What that buys, none of which a hand-rolled accordion gets for free:
+
+- keyboard operation, Enter/Space, focus handling
+- correct ARIA semantics with no `aria-expanded` to keep in sync
+- **Ctrl+F opening a collapsed answer to reveal the match** — worth noting on an SEO-driven page
+- it works before, and without, JavaScript
+
+`open` on the first item is likewise declarative, so nothing flashes collapsed on load while a script decides what to expand.
+
+- `trust.js` exists **only** as a fallback for browsers that render `<details>` but ignore `name` (Chrome < 120, Safari < 17.2, Firefox < 130). It is feature-detected on `'name' in document.createElement('details')` and does nothing on a current browser. There, every item can be open at once — which still works, it just is not single-open. The module carries a warning not to reimplement what the browser already does.
+- ⚠️ **No expand animation, deliberately.** `design.md` §9 budgets two motion moments and both are spent (preloader, hover/state transitions); an animated height would be a third. The plus→minus marker swap is instant for the same reason — an animated icon over an instant panel reads as a glitch, not polish.
+- One SVG, not two icons: the vertical stroke of the plus is hidden by CSS when the item is open, which turns it into the minus. Figma uses `lucide/plus` and `lucide/minus` as separate components; shipping both and toggling `display` would be the same result with more markup and a second thing to keep in sync.
+- ⚠️ `list-style: none` **and** `::-webkit-details-marker` are both required — Safari still uses the pseudo-element while Chrome and Firefox use the list marker, so dropping either leaves a stray triangle in one browser.
+- Answers come verbatim from the Divi section: the Figma frame only shows the first item expanded, so the other four had no design copy to diverge from. All five questions match Figma exactly.
+
+**`design.md` §7 "Accordion (FAQ)" was superseded, not edited away.** The old table describes the legacy Divi accordion — 16px header, bordered 44px panel, chevron — and the new pattern shares nothing with it but the word. The legacy table is kept and marked, because the **FAQ page (2440) still uses it** and has not been migrated.
+
+#### The image-mismatch pattern, now recorded as gap 20
+
+The `trust` photo is framed in Figma as an 887×1331 crop (0.666) while the attachment is 1020×1101 (0.926). That is the **third** time in this migration — after the CTA banner (frame 1.5:1, asset 2.95:1) and the services illustrations (frame 0.668, assets 1.31 / 0.72 / 1.19).
+
+Three of the four image placements were composed around artwork that was never exported. So it is no longer three separate notes but one rule: **treat Figma crop geometry in this file as a hint, check the real attachment's dimensions first, and reproduce the crop only when the ratios are close.** The `.about` portrait is the counter-example that proves it — there the ratios did match, and the exact crop was worth reproducing.
+
+#### Verified
+
+- **Behaviour, driven not assumed:** initial state `[true,false,false,false,false]`; clicking #3 leaves only #3; clicking #5 leaves only #5; re-clicking #5 collapses everything (native — the user may close the last one); keyboard Enter on #2 opens only #2. `'name' in details` is true in the test browser, so the native path is the one exercised.
+- **Desktop 1440, exact:** heading `x382 w677` (centred) · body `x32 w1376 h790` · photo `x32 w680 h790` · accordion `x744 w664` · question 24px · marker hidden when open.
+- Stacks to one column below desktop. **No element of `.trust` overflows at 375 / 641 / 768 / 1024 / 1025 / 1280 / 1440 / 1600 / 2560.** No console errors.
+- `/pt/` renders five items with Portuguese copy, first one open, Divi original gone, one `h1`.
+
+**The homepage now has ZERO Divi sections rendering** — hero, about, cta, services, trust and the calculator are all native locally. On production the calculator is still Divi and deliberately so.
