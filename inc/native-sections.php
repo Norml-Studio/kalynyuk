@@ -102,6 +102,46 @@ function ak_section_field( $key, $post_id = null ) {
 }
 
 /**
+ * Read an ACF REPEATER through the same per-language fallback as ak_section_field().
+ *
+ * ⚠️ ak_section_field() ALONE CANNOT READ A REPEATER, and a repeater cannot be skipped
+ * for this section — the `about` band is a list, and hard-coding four sets of flat fields
+ * would mean a code change to add a fifth credential.
+ *
+ * ACF flattens a repeater into one meta row per cell: `ak_about_items` holds the ROW
+ * COUNT and each cell is its own key, `ak_about_items_0_label`. That shape is what makes
+ * the fallback work at all — every cell is an independent meta key, so reading each one
+ * through ak_section_field() gives per-CELL fallback, which is finer-grained than
+ * per-row and is exactly the behaviour the multilingual rule wants: a translation that
+ * has localised two of four labels shows those two and inherits the rest, rather than
+ * choosing between "all translated" and "all default".
+ *
+ * The count falls back too, so a brand-new language renders all four rows on day one.
+ * A translation may still deliberately shorten the list by setting its own count.
+ *
+ * @param string   $key       Repeater meta key.
+ * @param string[] $subfields Sub-field names to read per row.
+ * @param int|null $post_id   Defaults to the queried object.
+ * @return array<int,array<string,mixed>>
+ */
+function ak_section_rows( $key, array $subfields, $post_id = null ) {
+	$count = (int) ak_section_field( $key, $post_id );
+	$rows  = array();
+
+	for ( $i = 0; $i < $count; $i++ ) {
+		$row = array();
+
+		foreach ( $subfields as $sub ) {
+			$row[ $sub ] = ak_section_field( $key . '_' . $i . '_' . $sub, $post_id );
+		}
+
+		$rows[] = $row;
+	}
+
+	return $rows;
+}
+
+/**
  * Every section the theme can render, slug => admin label.
  *
  * The slug is also the template name: `template-parts/sections/{slug}.php`. Filter
@@ -115,6 +155,7 @@ function ak_section_registry() {
 		'ak_section_registry',
 		array(
 			'hero'       => __( 'Hero', 'kalynyuk' ),
+			'about'      => __( 'About / credentials', 'kalynyuk' ),
 			'calculator' => __( 'Mortgage calculator', 'kalynyuk' ),
 		)
 	);
@@ -650,6 +691,138 @@ function ak_acf_page_sections_fields() {
 
 	acf_add_local_field_group(
 		array(
+			'key'      => 'group_ak_about',
+			'title'    => __( 'About / credentials', 'kalynyuk' ),
+			'location' => array(
+				array(
+					array(
+						'param'    => 'post_type',
+						'operator' => '==',
+						'value'    => 'page',
+					),
+				),
+			),
+			'fields'   => array(
+				array(
+					'key'          => 'field_ak_about_heading',
+					'label'        => __( 'Heading', 'kalynyuk' ),
+					'name'         => 'ak_about_heading',
+					'type'         => 'textarea',
+					'rows'         => 2,
+					'instructions' => __( 'Left column. Leave empty to hide the whole section — the Divi original comes back.', 'kalynyuk' ),
+				),
+				array(
+					'key'          => 'field_ak_about_intro',
+					'label'        => __( 'Intro (right of the heading)', 'kalynyuk' ),
+					'name'         => 'ak_about_intro',
+					'type'         => 'textarea',
+					'rows'         => 2,
+				),
+				array(
+					'key'          => 'field_ak_about_items',
+					'label'        => __( 'Credentials (the 01–04 rows)', 'kalynyuk' ),
+					'name'         => 'ak_about_items',
+					'type'         => 'repeater',
+					'layout'       => 'block',
+					'button_label' => __( 'Add credential', 'kalynyuk' ),
+					'instructions' => __( 'The numbers are generated from the row order — never type them. Add or remove rows freely; the design shows four but nothing is hard-coded to four.', 'kalynyuk' ),
+					'sub_fields'   => array(
+						array(
+							'key'   => 'field_ak_about_item_label',
+							'label' => __( 'Label', 'kalynyuk' ),
+							'name'  => 'label',
+							'type'  => 'text',
+						),
+						array(
+							'key'          => 'field_ak_about_item_body',
+							'label'        => __( 'Body', 'kalynyuk' ),
+							'name'         => 'body',
+							'type'         => 'wysiwyg',
+							'media_upload' => 0,
+							'tabs'         => 'visual',
+							'toolbar'      => 'basic',
+							'instructions' => __( 'Bold the facts a reader scans for — the company name, the regulator, the licence number.', 'kalynyuk' ),
+						),
+						array(
+							'key'          => 'field_ak_about_item_cta_label',
+							'label'        => __( 'Button label (optional)', 'kalynyuk' ),
+							'name'         => 'cta_label',
+							'type'         => 'text',
+							'instructions' => __( 'Only the licence row has one in the design. Leave both button fields empty for a row with no action.', 'kalynyuk' ),
+						),
+						array(
+							'key'   => 'field_ak_about_item_cta_url',
+							'label' => __( 'Button URL (optional)', 'kalynyuk' ),
+							'name'  => 'cta_url',
+							'type'  => 'url',
+						),
+					),
+				),
+				array(
+					'key'          => 'field_ak_about_bio_heading',
+					'label'        => __( 'Bio heading', 'kalynyuk' ),
+					'name'         => 'ak_about_bio_heading',
+					'type'         => 'textarea',
+					'rows'         => 2,
+					'instructions' => __( 'The second half of the section — “Досвід, якому можна довіряти”. Leave empty to render only the credentials list.', 'kalynyuk' ),
+				),
+				array(
+					'key'   => 'field_ak_about_bio_cta_label',
+					'label' => __( 'Bio button — label', 'kalynyuk' ),
+					'name'  => 'ak_about_bio_cta_label',
+					'type'  => 'text',
+				),
+				array(
+					'key'           => 'field_ak_about_bio_cta_page',
+					'label'         => __( 'Bio button — target', 'kalynyuk' ),
+					'name'          => 'ak_about_bio_cta_page',
+					'type'          => 'post_object',
+					'post_type'     => array( 'page' ),
+					'return_format' => 'id',
+					'allow_null'    => 1,
+					'ui'            => 1,
+				),
+				array(
+					'key'           => 'field_ak_about_portrait',
+					'label'         => __( 'Portrait', 'kalynyuk' ),
+					'name'          => 'ak_about_portrait',
+					'type'          => 'image',
+					'return_format' => 'id',
+					'preview_size'  => 'medium',
+					'instructions'  => __( 'Square crop, bottom of the left column. Cropped tight on the face by CSS — see design.md §7 “Portrait crop”.', 'kalynyuk' ),
+				),
+				array(
+					'key'          => 'field_ak_about_blocks',
+					'label'        => __( 'Bio prose blocks', 'kalynyuk' ),
+					'name'         => 'ak_about_blocks',
+					'type'         => 'repeater',
+					'layout'       => 'block',
+					'button_label' => __( 'Add block', 'kalynyuk' ),
+					'instructions' => __( 'The right column — “Освіта та досвід” and “Місія” in the design. A hairline is drawn between blocks automatically; do not add one.', 'kalynyuk' ),
+					'sub_fields'   => array(
+						array(
+							'key'   => 'field_ak_about_block_heading',
+							'label' => __( 'Heading', 'kalynyuk' ),
+							'name'  => 'heading',
+							'type'  => 'text',
+						),
+						array(
+							'key'          => 'field_ak_about_block_body',
+							'label'        => __( 'Body', 'kalynyuk' ),
+							'name'         => 'body',
+							'type'         => 'wysiwyg',
+							'media_upload' => 0,
+							'tabs'         => 'visual',
+							'toolbar'      => 'basic',
+						),
+					),
+				),
+			),
+		)
+	);
+
+	acf_add_local_field_group(
+		array(
 			'key'      => 'group_ak_calculator',
 			'title'    => __( 'Calculator', 'kalynyuk' ),
 			'location' => array(
@@ -746,5 +919,59 @@ function ak_hero_data() {
 				'url'   => get_permalink( ak_translate_id( $cta2_id ) ),
 			)
 			: null,
+	);
+}
+
+/**
+ * About / credentials data for the current page, or null when there is nothing to render.
+ *
+ * ⚠️ THIS SECTION REPLACES ONE DIVI SECTION THAT HELD TWO VISUAL BLOCKS, and the template
+ * keeps them as two so either can be empty:
+ *
+ *   1. the lede + the 01–04 credential rows      (Figma 1130:8820)
+ *   2. the bio — heading, CTA, portrait, prose   (Figma 1173:998 + 1136:9157 + 1130:4797)
+ *
+ * They are ONE section rather than two because the de-Divi mechanism addresses whole
+ * `[et_pb_section]` blocks: `module_id="about"` covers both blocks, so splitting them into
+ * two registry slugs would mean one slug renders and the other has no Divi section left to
+ * replace. See ak_inline_section_map().
+ *
+ * The heading is the gate for the whole section, mirroring ak_hero_data() — an empty
+ * heading means "not migrated yet", and the Divi original must come back rather than a
+ * bare cream band appearing.
+ *
+ * @return array|null
+ */
+function ak_about_data() {
+	$id = (int) get_queried_object_id();
+
+	if ( ! $id ) {
+		return null;
+	}
+
+	$heading = (string) ak_section_field( 'ak_about_heading', $id );
+
+	if ( '' === trim( $heading ) ) {
+		return null;
+	}
+
+	$bio_cta_id  = (int) ak_section_field( 'ak_about_bio_cta_page', $id );
+	$bio_cta_lbl = (string) ak_section_field( 'ak_about_bio_cta_label', $id );
+
+	return array(
+		'heading'      => $heading,
+		'intro'        => (string) ak_section_field( 'ak_about_intro', $id ),
+		'items'        => ak_section_rows( 'ak_about_items', array( 'label', 'body', 'cta_label', 'cta_url' ), $id ),
+		'bio_heading'  => (string) ak_section_field( 'ak_about_bio_heading', $id ),
+		'bio_cta'      => ( $bio_cta_id && $bio_cta_lbl )
+			? array(
+				'label' => $bio_cta_lbl,
+				'url'   => get_permalink( ak_translate_id( $bio_cta_id ) ),
+			)
+			: null,
+		// An attachment ID run through ak_translate_id(), same as the hero image — picks up
+		// a per-language media item where Polylang has one, returns the same ID where not.
+		'portrait'     => ak_translate_id( (int) ak_section_field( 'ak_about_portrait', $id ) ),
+		'blocks'       => ak_section_rows( 'ak_about_blocks', array( 'heading', 'body' ), $id ),
 	);
 }

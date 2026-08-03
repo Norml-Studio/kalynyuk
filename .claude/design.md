@@ -209,8 +209,8 @@ anything at n≤2 was folded into its nearest role.
 
 ### Base unit
 
-**8px.** The measured system is `8 · 16 · 20 · 24 · 32 · 40 · 50 · 120` — an 8px grid with
-two off-grid survivors (20 and 50) that come from Divi module defaults.
+**8px.** The measured system is `8 · 16 · 20 · 24 · 32 · 40 · 50 · 56 · 120` — an 8px grid
+with two off-grid survivors (20 and 50) that come from Divi module defaults.
 
 | Token | Value | Applies to |
 |---|---|---|
@@ -220,7 +220,15 @@ two off-grid survivors (20 and 50) that come from Divi module defaults.
 | `--space-4` | 32px | Section padding (compact bands), panel gaps |
 | `--space-5` | 40px | Section padding (standard) |
 | `--space-6` | 50px | Section padding (generous) |
+| `--space-7` | 56px | Lede → content-stack gap (added v2.1.0) |
 | `--space-8` | 120px | Hero / feature-band top padding |
+
+⚠️ **`--space-7` was added in v2.1.0**, measured on Figma `1130:3906`: the `about`
+band's heading box ends at y=1024 and its credential list starts at y=1080. It is
+`7 × 8`, so it fills the one hole in the 8px scale rather than bending it, and it was
+added here BEFORE being used — the rule in `.claude/CLAUDE.md`. Rounding to
+`--space-6` (50px) was the alternative and was rejected: 6px on a gap this size is
+visible next to the 120px band rhythm directly below it.
 
 `20px` is the **mobile gutter** (measured `custom_padding_phone="40px|20px|32px|20px"`).
 Treat it as the gutter token, not a spacing step.
@@ -507,6 +515,80 @@ On a green band, drop the fill and swap the border to `rgba(247,242,233,0.24)`.
 a green band. Caption below in `body`. Measured once (hero: "реалізованих кейсів"), so
 treat this as a one-off pattern with a defined spec rather than a component library entry.
 
+### Credential row — added v2.1.0
+
+The `about` band's 01–04 list. Figma `1130:8820` (`Frame 9092`), 1376×744, four rows of
+1376×174 with a **16px** gap. Each row: fill `--surface`, radius `--radius-lg`, padding
+`--space-4`, and **no border** — the row's stroke exists in the file but is
+`visible: false`, so this is the one panel in the system that is fill-only. Do not add
+the hairline from "Panels / cards"; the 2% luminance step is the whole separation.
+
+Three columns inside the padding box (1312px at a 1440 canvas), measured absolute
+x = 64 / 296 / 728:
+
+| Column | Width | Role | Spec |
+|---|---|---|---|
+| Numeral | 232px | `01`–`04` | H2 size (32px) / 600 / lh 116% / ls −4%, `--ink` at **opacity .4** |
+| Label | 432px | Row title | Desktop/H3 verbatim — 24px / 700 / lh 116% / ls −1%, `--ink` |
+| Body | 648px | Prose + inline `<strong>` | Desktop/Body verbatim — 20px / 400 / lh 124% / ls −1% |
+
+- **Row 1 alone carries a button** — `--accent` fill, 48px tall, radius 24, hugging its
+  label (188px), `--space-3` below the label. The other three rows have no action.
+- **The three columns are TOP-aligned (`align-items: start`).** Figma puts the numeral at
+  the padding edge (y=32) and both text columns 5px lower (y=37) — the two text tops are
+  equal to each other and the numeral is the odd one out, which is a uniform nudge rather
+  than a system rule. `align-items: baseline` was tried and **measured wrong**: it pushed
+  the label to +8 and the body to +11, and split the two text columns 3px apart, which the
+  frame does not do. `start` puts all three at 32 — numeral exact, text 5px high, text
+  columns level as drawn — and cap-aligns marginally tighter than the frame (the numeral's
+  cap lands 1.6px below the label's, against 3.4px in Figma). Do not reintroduce the 5px
+  as a literal offset: it is a function of the type sizes and would rot if either changed.
+- **Rows are equal-height by design** (all four are 174px in the file even though rows
+  2–4 hold half the copy). Reproduce with equal grid tracks, not a `min-height` literal.
+- ⚠️ **The built row is 164px, not 174px, and that is correct.** Figma's 174 = 37 + 100
+  content + 37, i.e. a 37px padding with the numeral breaking out of it by −5. The build
+  uses `--space-4` (32px) padding with everything top-aligned, giving 32 + 100 + 32 = 164.
+  32 is a token and 37 is not, and the numeral sits at exactly 32 in the frame — so 32 is
+  the intent and the 37 is the same optical text nudge described above. The four rows
+  therefore run 40px shorter in total than the frame, and everything below the list sits
+  ~40px higher. **Do not "fix" this by inventing a 37px padding step.**
+- ⚠️ **Zero the `li` margin.** Divi's global list CSS puts a bottom margin on every `li`,
+  and a grid item's margin sits *inside* its grid area — so against `grid-auto-rows: 1fr`
+  it stretches every row and pushes everything below the list down. It rendered the
+  four-row list 768px tall against the 744px its tracks and gaps add up to.
+
+### Portrait crop — added v2.1.0
+
+The `about` band's square portrait, Figma `1130:4797` (`Frame 162`): 332×332, radius
+`--radius-lg`, background `--canvas`. The image inside it is **not** a `cover` crop — it
+is a 841.55×560.90 box offset to (−277.62, −22.90), i.e. zoomed ~1.69× past `cover` and
+pulled off-centre onto the face. Express every value as a **percentage of the frame** so
+it survives a fluid container:
+
+```css
+width:     253.5%;   /* 841.55 / 332 */
+height:    168.9%;   /* 560.90 / 332 */
+left:      -83.6%;   /* -277.62 / 332 */
+top:       -6.9%;    /* -22.90  / 332 */
+max-width: none;     /* REQUIRED — see below */
+object-fit: cover;
+```
+
+Height is stated explicitly rather than left to `auto` **because Figma's fill is
+`scaleMode: FILL`**: the box aspect is fixed at 1.5:1 and the source is cropped *into* it,
+so letting the source's own aspect drive the height reproduces a different crop. The two
+crops compose — cover into a 1.5:1 box, then the frame's window over that — and the net
+visible region is a square ~39.4% of the source centred on (52.7%, 39.2%).
+
+⚠️ **`max-width: none` is load-bearing.** The base stylesheet's `img { max-width: 100% }`
+clamps the 253.5% down to the frame's own width, which leaves a ~54px sliver of the image
+inside a 332px frame and looks like a broken crop, not a CSS conflict. Any zoomed crop has
+to opt out of that guard explicitly.
+
+⚠️ The Figma layer is `blendMode: LINEAR_BURN`, which **has no CSS equivalent** — the
+`mix-blend-mode` keyword list has no linear-burn. `multiply` is the nearest neighbour and
+is what ships. Recorded in §13 as a gap, not passed off as a match.
+
 ### Header / navigation — added v2.0.0
 
 Behaviour and a11y are governed by **`vibe-frontend-standards/references/header-standard.md`**
@@ -759,6 +841,7 @@ Motion: 0.2s ease-in-out on opacity + background-color. Never `transition: all`.
   --space-4: 32px;
   --space-5: 40px;
   --space-6: 50px;
+  --space-7: 56px;
   --space-8: 120px;
   --gutter:  20px;
 
@@ -865,3 +948,15 @@ out of the URL.
     closer to the contract.
 12. **Weight 300 is loaded and unused.** Declined — do not start using it; remove it from
     the font request instead.
+13. **The `about` band has no mobile frame** — added v2.1.0. Searched the whole design
+    page: «Офіційна реєстрація» / «Читати про мене» exist only in the desktop `Main`
+    (`1130:3906`) and its stale duplicate `1163:950`. The credential row's mobile collapse
+    (numeral inline with the label, body below) is **Petr's decision of 2026-08-03**, not
+    a measurement. If a mobile frame lands later, reconcile against it.
+14. **The credential-row body copy is `#000000` in Figma** — added v2.1.0. All four rows,
+    consistently, while the label 400px to its left is `--ink` `#2A2011`. Pure black is
+    not in the palette and §2 bans it, so the build ships `--ink`. Treated as a design-file
+    slip; if it turns out to be deliberate, it belongs in §2 as a token first.
+15. **`LINEAR_BURN` has no CSS equivalent** — added v2.1.0. The portrait in the `about`
+    band uses it; `mix-blend-mode: multiply` ships as the nearest neighbour. The two are
+    not the same operation and will differ in the shadows.

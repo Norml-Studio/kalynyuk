@@ -1,0 +1,387 @@
+@use '../abstracts/tokens' as t;
+@use '../abstracts/mixins' as m;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// .about — Figma 1130:3906 ("Main"), band y=932…2732 on the 1440 canvas.
+//          Credential list 1130:8820 · bio 1173:998 + 1136:9157 · portrait 1130:4797
+//
+// 🔒 CONTAINER RULE: the band is full-bleed and owns no background — the page canvas
+// already IS $color-canvas, and design.md §5's one-canvas rule bans a per-section
+// background. Only the credential rows carry a surface.
+//
+// ⚠️ NO MOBILE FRAME EXISTS for this band (design.md §13 gap 13). The desktop layout is
+// measured; the mobile collapse — numeral inline with the label, body below, button last
+// — is Petr's decision of 2026-08-03. Do not "correct" it against the desktop frame.
+//
+// ⚠️ THE SECTION'S SPINE IS ONE VERTICAL LINE AT x=728, and holding it is why the grids
+// below use `fr` ratios taken straight from the measurements instead of round halves.
+// The lede's intro, every row's body, and the bio's prose column all start there. Two
+// grids are involved and they are nested differently — the rows are inset by a further
+// $space-4 of row padding — so a plain `1fr 1fr` in both would put the line in two
+// different places. Stating the measured ratios (664:680 outside, 232:432:648 inside)
+// lands both on 696 at a 1376 content width AND keeps them within ~2px of each other at
+// every narrower width. Do not "simplify" either to `repeat(2, 1fr)`.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// .about
+.about {
+  padding-block: t.$space-8;
+
+  // .about__inner
+  &__inner {
+    @include m.container;
+  }
+
+  // .about__lede
+  // Heading left, intro right, TOP-aligned.
+  //
+  // ⚠️ NOT `align-items: baseline`, which I tried first on the theory that Figma's 6px
+  // offset (intro y=938 against the heading's y=932) was first-baseline alignment of a
+  // 48px display face against a 20px body face. Measured: baseline puts the intro at
+  // y=952, i.e. 14px BELOW the design, because the two faces' half-leadings differ far
+  // more than 6px at those sizes. `start` lands it at 932 — 6px off, less than half the
+  // error, and with nothing to keep in sync. The design's 6px is an eyeballed nudge, not
+  // a system rule; reproducing it literally would mean a magic number that rots if either
+  // type role changes.
+  &__lede {
+    display: grid;
+    gap: t.$space-3;
+
+    @include m.bp(desktop) {
+      grid-template-columns: minmax(0, 664fr) minmax(0, 680fr);
+      column-gap: t.$space-4;
+      align-items: start;
+    }
+  }
+
+  // .about__heading
+  &__heading {
+    @include m.text-h1;
+
+    margin: 0;
+    // Divi's critical INLINE CSS carries `h1..h6 { padding-bottom: 10px }`. Being inline
+    // in <head> it beats our stylesheet, so every native section has to zero it locally.
+    // NOT hoisted to the reset on purpose — a global rule would also retighten the eight
+    // Divi sections still rendering on this page, which is a site-wide visual change and
+    // not this section's to make. See the same note in _hero.scss.
+    padding-bottom: 0;
+    color: t.$color-ink;
+    text-wrap: balance;
+
+    @include m.bp(desktop) {
+      max-width: 518px; // measured, 1130:4661
+    }
+  }
+
+  // .about__intro
+  &__intro {
+    @include m.text-body;
+
+    margin: 0;
+    color: t.$color-ink;
+
+    @include m.bp(desktop) {
+      max-width: 299px; // measured, 1130:4662
+    }
+  }
+
+  // .about__list
+  // Rows are EQUAL HEIGHT by design — all four measure 174 in Figma even though rows
+  // 2–4 hold half the copy. `grid-auto-rows: 1fr` reproduces that from the content
+  // instead of hard-coding 174px, so a longer credential grows the whole set together.
+  &__list {
+    display: grid;
+    gap: t.$space-2; // measured 16 between rows
+    margin: t.$space-5 0 0;
+    padding: 0;
+    list-style: none;
+
+    @include m.bp(desktop) {
+      grid-auto-rows: 1fr;
+      margin-top: t.$space-7; // measured 56 — heading box ends 1024, list starts 1080
+    }
+  }
+
+  // .about__item
+  // The one FILL-ONLY panel in the system: Figma's row carries a $color-border stroke
+  // that is `visible: false`, so it is surface + radius with no hairline. Do not reach
+  // for m.panel() here — it would add the border the design switched off, and the 2%
+  // luminance step against the canvas is the whole separation (design.md §4).
+  &__item {
+    display: grid;
+    // Mobile: numeral | label on row 1, body on row 2, button on row 3.
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: t.$space-2;
+    row-gap: t.$space-2;
+    // ⚠️ Divi's global list CSS puts a bottom margin on every `li`, and a grid item's
+    // margin sits INSIDE its grid area — so with `grid-auto-rows: 1fr` on the list it
+    // silently stretched every row by 6px and pushed the whole bio block 24px down.
+    // Measured, not guessed: the list rendered 768 tall against the 744 its four 174px
+    // rows and three 16px gaps add up to. Zeroed here rather than in the reset, for the
+    // same reason as the heading padding — a global `li { margin: 0 }` would retighten
+    // every Divi list still on the site.
+    margin: 0;
+    padding: t.$space-3;
+    background-color: t.$color-surface;
+    border-radius: t.$radius-lg;
+
+    @include m.bp(desktop) {
+      grid-template-columns: minmax(0, 232fr) minmax(0, 432fr) minmax(0, 648fr);
+      column-gap: 0; // the measured column starts already include their gutters
+      row-gap: 0;
+      padding: t.$space-4;
+      // ⚠️ `start`, NOT `baseline` — see the note on __lede. Figma puts the numeral at the
+      // padding edge (y=32) and BOTH text columns 5px lower (y=37), i.e. the two text
+      // tops are equal and the numeral is the odd one out. That is a uniform nudge, not
+      // baseline alignment: measured, `baseline` pushed the label to +8 and the body to
+      // +11 and split the two text columns 3px apart, which the design does not do.
+      // `start` puts all three at 32 — the numeral exactly right, the text 5px high, and
+      // the two text columns level with each other as drawn. It also cap-aligns slightly
+      // tighter than the design: the 32px numeral's cap lands 1.6px below the label's,
+      // against 3.4px in the frame.
+      align-items: start;
+    }
+  }
+
+  // .about__item-number
+  &__item-number {
+    @include m.text-h2;
+
+    grid-area: 1 / 1;
+    color: t.$color-ink;
+    // Figma applies the fade to the LAYER, not via a palette colour — there is no 0.4
+    // ink alpha in §2, and inventing one for a single decorative numeral would put a
+    // fourth ink tint in the palette. Specified in design.md §7.
+    opacity: 0.4;
+    font-variant-numeric: tabular-nums;
+
+    @include m.bp(desktop) {
+      grid-area: auto;
+    }
+  }
+
+  // .about__item-main
+  // ⚠️ `display: contents` IS THE POINT OF THIS ELEMENT ON MOBILE — it dissolves the
+  // wrapper so the label and the button become grid items of the row and can be placed
+  // on separate rows with the body between them. On desktop it re-forms as a real flex
+  // box, which is what keeps the row at three grid items and lets baseline alignment
+  // work (see the docblock in about.php).
+  //
+  // Safe on a plain <div>: the known `display: contents` accessibility bugs were about
+  // dissolving <table> and list elements, not generic containers.
+  &__item-main {
+    display: contents;
+
+    @include m.bp(desktop) {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: t.$space-3; // measured 24 — label bottom 65 → button top 89
+    }
+  }
+
+  // .about__item-label
+  &__item-label {
+    @include m.text-h3;
+
+    grid-area: 1 / 2;
+    margin: 0;
+    padding-bottom: 0; // Divi inline h1..h6 override — see __heading
+    color: t.$color-ink;
+
+    @include m.bp(desktop) {
+      grid-area: auto;
+    }
+  }
+
+  // .about__item-cta
+  // Deliberately the SHARED .btn--primary with no size modifier. Figma hugs this one at
+  // 188×48 with 16px side padding against the system's 24, but design.md §7 keeps one
+  // button system and warns off per-instance variants; a 16px-padded fork would be a
+  // fifth button for one row. The extra 8px per side is the trade.
+  &__item-cta {
+    grid-area: 3 / 1 / auto / -1;
+    justify-self: start;
+
+    @include m.bp(desktop) {
+      grid-area: auto;
+    }
+  }
+
+  // .about__item-body
+  &__item-body {
+    @include m.text-body;
+
+    grid-area: 2 / 1 / auto / -1;
+    color: t.$color-ink;
+
+    @include m.bp(desktop) {
+      grid-area: auto;
+    }
+
+    // wpautop() wraps the field in <p>, and a single-paragraph row must not inherit a
+    // trailing margin that would break the shared row height.
+    p {
+      margin: 0;
+
+      + p {
+        margin-top: t.$space-3;
+      }
+    }
+
+    strong,
+    b {
+      font-weight: t.$weight-bold;
+    }
+  }
+
+  // .about__bio
+  // Heading is its OWN row, then a two-column grid. The prose column starts level with
+  // the CTA (y=2068), not with the heading (y=1944) — modelling the heading as a row
+  // makes that fall out with no offset. See the docblock in about.php.
+  &__bio {
+    display: grid;
+    gap: t.$space-5;
+    margin-top: t.$space-8; // measured 120 — list ends 1824, bio heading 1944
+
+    @include m.bp(desktop) {
+      grid-template-columns: minmax(0, 664fr) minmax(0, 680fr);
+      column-gap: t.$space-4;
+      row-gap: t.$space-4; // measured 32 — heading box ends 2036, next row starts 2068
+    }
+  }
+
+  // .about__bio-heading
+  &__bio-heading {
+    @include m.text-h1;
+
+    margin: 0;
+    padding-bottom: 0; // Divi inline h1..h6 override — see __heading
+    color: t.$color-ink;
+    text-wrap: balance;
+
+    @include m.bp(desktop) {
+      grid-column: 1 / -1;
+      max-width: 355px; // measured, 1130:3946
+    }
+  }
+
+  // .about__bio-aside
+  // The portrait is BOTTOM-aligned with the prose column — both end at y=2612 in the
+  // frame. `margin-top: auto` on the portrait pins it there, which is also what produces
+  // the 164px gap under the CTA: that gap is a consequence of the alignment, not a
+  // spacing value, so it is deliberately not written down anywhere.
+  &__bio-aside {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: t.$space-5;
+  }
+
+  // .about__bio-cta
+  &__bio-cta {
+    // Figma fixes this one at 169px, narrower than the 224 minimum the kit's standard
+    // button carries. The shared .btn has no min-width, so it hugs — nothing to do here
+    // beyond documenting that the narrow width is intended.
+    flex: 0 0 auto;
+  }
+
+  // .about__portrait
+  &__portrait {
+    position: relative;
+    //width: 100%;
+    max-width: 332px; // measured, 1130:4797
+    aspect-ratio: 1;
+    overflow: hidden;
+    background-color: t.$color-canvas;
+    border-radius: t.$radius-lg;
+
+    @include m.bp(desktop) {
+      margin-top: auto;
+    }
+  }
+
+  // .about__portrait-img
+  // ⚠️ NOT A `cover` CROP. Figma holds the image in an 841.55×560.90 box offset to
+  // (−277.62, −22.90) inside the 332×332 frame — i.e. zoomed ~1.69× past cover and pulled
+  // off-centre onto the face. Every value is a PERCENTAGE OF THE FRAME so the crop
+  // survives a fluid container; the divisions are shown so they can be re-derived.
+  // Explicit width AND height (not `height: auto`) because Figma's fill is scaleMode
+  // FILL: the box aspect is fixed at 1.5:1 and the source is cropped INTO it, so letting
+  // the source's own aspect drive the height would reproduce a different crop.
+  // Full derivation in design.md §7 → "Portrait crop".
+  &__portrait-img {
+    //position: absolute;
+    //top: -6.9%; // -22.90 / 332
+    //left: -83.6%; // -277.62 / 332
+    display: block;
+    //width: 253.5%; // 841.55 / 332
+    //height: 168.9%; // 560.90 / 332
+    // ⚠️ REQUIRED, and the reason the crop silently failed the first time. The base
+    // stylesheet carries the usual `img { max-width: 100% }`, which clamped the 253.5%
+    // down to the frame's own 332px — so the image sat at 332×561 offset −277px and only
+    // a 54px sliver of it fell inside the frame. Any zoomed crop has to opt out of that
+    // guard explicitly.
+    max-width: none;
+    object-fit: cover;
+    object-position: center;
+    // Figma's layer is blendMode LINEAR_BURN, which has no CSS keyword. `multiply` is the
+    // nearest neighbour and will differ in the shadows — design.md §13 gap 15.
+    mix-blend-mode: multiply;
+
+    // Imagify rewrites images into <picture><source webp><img></picture> and moves the
+    // class onto the WRAPPER, where object-fit is inert. Size the inner <img> to it so the
+    // crop holds either way — the same trap that made .hero__media invisible.
+    img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
+  }
+
+  // .about__bio-prose
+  &__bio-prose {
+    display: flex;
+    flex-direction: column;
+  }
+
+  // .about__block
+  // The hairline BETWEEN blocks is drawn by the block itself so the editor never has to
+  // add one and can never leave a trailing rule under the last block. Measured 32 above
+  // and 32 below the rule (Frame 145 ends 254, rule 286, Frame 143 starts 318).
+  &__block {
+    & + & {
+      margin-top: t.$space-4;
+      padding-top: t.$space-4;
+      border-top: t.$border-width solid t.$color-border;
+    }
+  }
+
+  // .about__block-heading
+  &__block-heading {
+    @include m.text-h3;
+
+    margin: 0 0 t.$space-3; // measured 24 to the body
+    padding-bottom: 0; // Divi inline h1..h6 override — see __heading
+    color: t.$color-ink;
+    text-wrap: balance;
+  }
+
+  // .about__block-body
+  &__block-body {
+    @include m.text-body;
+
+    color: t.$color-ink;
+
+    p {
+      margin: 0;
+
+      // measured 24 between the two paragraphs of each block (Frame 144 itemSpacing)
+      + p {
+        margin-top: t.$space-3;
+      }
+    }
+  }
+}

@@ -340,3 +340,54 @@ The error runs in the **optimistic** direction: affordability is overstated by ~
 - `origin` re-pointed locally. Verified after the switch: 23 commits intact, `main` tracking `origin/main` at the same SHA `71adadc`, push clean. Also confirmed the redirect is live — `git ls-remote` against the **old** URL still returns the same ref, so a teammate's stale clone keeps working instead of silently diverging.
 - Repo access does not come with org membership; team permissions still need granting on the repo itself.
 - Corrected two stale rows in `.claude/CLAUDE.md`: source hosting said Bitbucket (it has always been GitHub) and the repo URL was still a `[fill in]` placeholder.
+
+## 2026-08-03
+
+### De-Divi migration — the `about` section (homepage section #2, under the hero)
+
+Calculator work paused. Next Divi bite: `module_id="about"`, the section directly below the hero on page 11. Figma `1130:8820` was the frame given; the band it belongs to is `1130:3906` y=932…2732.
+
+- **Scoped the section against the design before building, and the frame was only half of it.** `1130:8820` is just the four credential rows. The band it sits in also carries a lede (heading + intro), a bio heading, a CTA, a portrait and two prose blocks — five more sibling nodes, absolutely positioned on the page root rather than grouped. The Divi section being replaced covers all of it, so all of it was in scope. **The strip mechanism addresses whole `[et_pb_section]` blocks — there is no way to replace half of one, so "the Figma frame" and "the migration unit" are not the same thing and have to be reconciled first.**
+- Registered `about` in `ak_section_registry()` and wired it through the **in-place** map (`about = about`), not the leading-strip count. The section has a stable `module_id`, which is strictly better than positional addressing and needed no change to the mechanism.
+- Added `ak_section_rows()` — the repeater-aware sibling of `ak_section_field()`. ACF flattens a repeater into one meta row per cell, which is what makes the multilingual fallback work at all: reading each cell through `ak_section_field()` gives **per-cell** fallback, so a translation that has localised two of four labels shows those two and inherits the rest, instead of choosing between all-translated and all-default. The row count falls back too, so a new language renders all four rows on day one.
+- Content seeded from the copy already in the Divi section, so the section shipped populated rather than empty. Two strings are new in the redesign (`Досвід, якому можна довіряти`, `Читати про мене`); the licence button moved into row 01 and shortened to `Перевірити ліцензію`.
+- ⚠️ **The redesign drops `<h2>Анна Калинюк</h2>`.** It is not anywhere in the band — verified by searching the whole design page, not inferred. `Досвід, якому можна довіряти` takes its place. Confirmed on render: `countOldName: 0`. Flagging because it removes the person's name as an H2 from the homepage, which is an SEO-visible change that came from the design, not from this build.
+
+#### Four things only measurement found
+
+- **[BUG] The portrait crop silently collapsed to a 54px sliver.** `.about__portrait-img` is a zoomed crop — `width: 253.5%` of its frame — and the base stylesheet's `img { max-width: 100% }` clamped that to the frame's own 332px. The image then sat at 332×561 offset −277px, so almost all of it fell outside the `overflow: hidden` box. It reads as a broken image, not as a CSS conflict. `max-width: none` is now load-bearing and documented as such in `design.md` §7.
+- **[BUG] Divi's `.entry-content ol { padding-bottom: 23px }` pushed the entire bio block down.** At (0,1,1) it beats the (0,1,0) `padding: 0` on our own class, and because `.about__list` runs `grid-auto-rows: 1fr` the stray 23px sat under the last row and moved the heading, CTA, portrait and prose 23px down the page. Found by measuring the list at 726px against the 704px its four tracks and three gaps add up to. Fixed in `_divi-compat.scss` — the one file allowed to name a Divi selector, so it leaves with the partial in phase 4. **Any future native section using a `ul`/`ol` needs the same line.**
+- **[BUG] Divi also puts a bottom margin on every `li`**, and a grid item's margin sits *inside* its grid area, so against `grid-auto-rows: 1fr` it stretched every row by ~6px. Zeroed on `.about__item`, the same local-not-global reasoning as the heading `padding-bottom`.
+- **I had the row alignment wrong and the render corrected me.** I read Figma's numeral-at-32 / text-at-37 as first-baseline alignment and wrote it into `design.md` §7 that way. Measured, `align-items: baseline` pushed the label to +8 and the body to +11 **and split the two text columns 3px apart, which the frame does not do** — the frame has both text tops equal and only the numeral offset, i.e. a uniform optical nudge. Switched to `align-items: start` (numeral exact, text 5px high, text columns level) and corrected §7. Same story in the lede: baseline put the intro 14px below the design, `start` puts it 6px above.
+
+#### Decisions
+
+- [DECISION] **Mobile collapse for the credential rows: numeral inline with the label, body below, button last** (Petr). There is no mobile frame for this band anywhere in the design file — searched by content string, and `Офіційна реєстрація` appears only in the desktop `Main` and its stale duplicate `1163:950`. Recorded in `design.md` §13 gap 13 as a decision, not a measurement.
+- [DECISION] `--space-7: 56px` added to `design.md` §4 and `_tokens.scss` — the lede→list gap, measured. `7 × 8`, so it fills the one hole in the 8px scale rather than bending it. Added to the contract *before* being used. Rounding to `--space-6` (50) was rejected: 6px is visible next to the 120px band rhythm right below it.
+- [DECISION] **The built row is 164px, not Figma's 174.** Figma's 174 is `37 + 100 + 37`, with the numeral breaking out of that padding by −5. 32 is a token and 37 is not, and the numeral sits at exactly 32 in the frame, so 32 is the intent. The four rows run 40px shorter in total and everything below the list sits ~40px higher. Written into §7 so nobody invents a 37px step to close it.
+- [DECISION] The credential button stays the shared `.btn--primary` with no size modifier, so it renders 206px against Figma's 188 (24px side padding vs 16). `design.md` §7 keeps one button system; a 16px-padded fork would be a fifth button for one row.
+- [DECISION] Row body copy renders `--ink`, not the `#000000` Figma has in all four rows. Pure black is not in the palette and §2 bans it; the label 400px to its left is `--ink`. Recorded as a design-file slip in §13 gap 14.
+- [DECISION] `mix-blend-mode: multiply` for the portrait. Figma's layer is `LINEAR_BURN`, which has no CSS keyword at all — multiply is the nearest neighbour and will differ in the shadows. §13 gap 15.
+- Row body and prose bodies render `wpautop( wp_kses_post( … ) )`, which the calculator's help panel does not do. Deliberate: the seeded values carry explicit `<p>` tags, but the moment an editor opens the field in TinyMCE and saves, WordPress stores blank-line-separated text with the tags stripped, and without `wpautop` several paragraphs collapse into one blob. `wpautop` is a no-op on content that already has block tags, so it is safe both ways.
+
+#### Verified
+
+- **Desktop 1440 against the frame:** heading `x32 y932 w518` exact · intro `x728` exact · list `x32 y1079 w1376` (design 1080) · rows `1376×164` at 16px gaps · numerals `x64` · labels `x296` · bodies `x728 w648` · portrait `332×332` and bottom-aligned with the prose column to the pixel (both 2580) · row fill `#fef8ef`, radius 24, **no border** (Figma's stroke is `visible: false`) · numeral 32px at opacity .4 · label 24/700 · body 20px.
+- Divi original gone, nothing duplicated: `diviAboutPresent: false`, and exactly one each of `Засновниця` / `Освіта та досвід` / `Місія`. Still exactly one `h1` on the page (the hero's) — `ak_claim_h1()` behaved.
+- Mobile 375: numeral and label share a line, body, then button; portrait square and full width; no horizontal scroll.
+- **No overflow at 375 / 480 / 641 / 768 / 1024 / 1280 / 1440 / 1600 / 1800 / 2560.** No console errors.
+
+#### Pre-existing, found in passing — not touched
+
+- **[BUG] 2px horizontal overflow at exactly 1025px**, from `.site-header__cta` / `.site-header__actions` in the header, plus the Review Wall carousel. Nothing in `.about` overflows at any width. Not this section's to fix.
+- Attachment 101 (`IMG_3542.png`, the portrait) has **stale metadata**: WordPress records `232×232` and emits that in the `width`/`height` attributes and srcset, but the file is really `841×841`. Harmless here because the CSS sets explicit dimensions, but `wp media regenerate` on it would fix the srcset.
+- `#the-preloader-element` (The Preloader plugin) is a `position: fixed` child of `body` that is still visible after `networkidle`, so it floats into element screenshots. Confirmed not inside `.about`.
+
+### Portuguese translation of the `about` section
+
+- Page 2483 (`pt`) given its own copy for all four credential rows, both prose blocks, the lede and the bio heading. European Portuguese; currency written the local way (`18 000 000 €`, not `€18 000 000`).
+- **Three fields deliberately left unwritten so they keep inheriting**, which is the point of `ak_section_field()`:
+  - `ak_about_portrait` — the photo is language-neutral, and `ak_translate_id()` already picks up a pt media item if one is ever created.
+  - `ak_about_bio_cta_page` — page 2409 («Про мене») has **no pt translation yet** (`pll_get_post` → 0). Leaving it unset means it inherits 2409 today and starts resolving to the pt page the day that translation exists. Writing it would freeze it to the Ukrainian page forever. The button currently links to `/pro-mene/` — correct, and self-correcting.
+  - `ak_inline_sections` — inherited from page 11, and the pt Divi content carries the same `module_id="about"`, so the swap already works.
+- Verified on `/pt/`: all four labels, both block headings, the bio CTA and the licence button render in Portuguese; 4 rows, 2 blocks, one `h1`, no duplication.

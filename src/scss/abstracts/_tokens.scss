@@ -113,10 +113,17 @@ $space-3: 24px;
 $space-4: 32px;
 $space-5: 40px;
 $space-6: 50px;
+
+// Added in design.md v2.1.0 — the `about` band's heading→list gap, measured 56 on Figma
+// 1130:3906 (heading box ends 1024, list starts 1080). 7 × 8, so it fills the one hole in
+// the scale rather than bending it. Rounding to $space-6 was rejected: 6px is visible next
+// to the 120px band rhythm immediately below.
+$space-7: 56px;
+
 $space-8: 120px;
 $gutter:  20px;
 
-$spaces: (1: $space-1, 2: $space-2, 3: $space-3, 4: $space-4, 5: $space-5, 6: $space-6, 8: $space-8);
+$spaces: (1: $space-1, 2: $space-2, 3: $space-3, 4: $space-4, 5: $space-5, 6: $space-6, 7: $space-7, 8: $space-8);
 
 // ─── Shape ──────────────────────── UI Kit Buttons/Inputs (337:4158) + design.md
 // THREE steps + circle.
