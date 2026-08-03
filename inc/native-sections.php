@@ -156,6 +156,7 @@ function ak_section_registry() {
 		array(
 			'hero'       => __( 'Hero', 'kalynyuk' ),
 			'about'      => __( 'About / credentials', 'kalynyuk' ),
+			'cta'        => __( 'CTA banner', 'kalynyuk' ),
 			'calculator' => __( 'Mortgage calculator', 'kalynyuk' ),
 		)
 	);
@@ -823,6 +824,41 @@ function ak_acf_page_sections_fields() {
 
 	acf_add_local_field_group(
 		array(
+			'key'      => 'group_ak_cta',
+			'title'    => __( 'CTA banner', 'kalynyuk' ),
+			'location' => array(
+				array(
+					array(
+						'param'    => 'post_type',
+						'operator' => '==',
+						'value'    => 'page',
+					),
+				),
+			),
+			'fields'   => array(
+				array(
+					'key'          => 'field_ak_cta_heading',
+					'label'        => __( 'Heading', 'kalynyuk' ),
+					'name'         => 'ak_cta_heading',
+					'type'         => 'textarea',
+					'rows'         => 4,
+					'instructions' => __( 'The whole banner. Leave empty to hide it — the Divi original comes back. The button is NOT edited here: it is the shared site CTA, so the header, hero and this banner always agree (header-standard). Its label lives in Polylang → Strings, its URL on the Site chrome options page.', 'kalynyuk' ),
+				),
+				array(
+					'key'           => 'field_ak_cta_image',
+					'label'         => __( 'Background image', 'kalynyuk' ),
+					'name'          => 'ak_cta_image',
+					'type'          => 'image',
+					'return_format' => 'id',
+					'preview_size'  => 'medium',
+					'instructions'  => __( 'Wide, and it will be darkened — the heading sits on top of it in cream. A busy or bright photo will fight the text even with the scrim.', 'kalynyuk' ),
+				),
+			),
+		)
+	);
+
+	acf_add_local_field_group(
+		array(
 			'key'      => 'group_ak_calculator',
 			'title'    => __( 'Calculator', 'kalynyuk' ),
 			'location' => array(
@@ -973,5 +1009,38 @@ function ak_about_data() {
 		// a per-language media item where Polylang has one, returns the same ID where not.
 		'portrait'     => ak_translate_id( (int) ak_section_field( 'ak_about_portrait', $id ) ),
 		'blocks'       => ak_section_rows( 'ak_about_blocks', array( 'heading', 'body' ), $id ),
+	);
+}
+
+/**
+ * CTA banner data for the current page, or null when there is nothing to render.
+ *
+ * ⚠️ THE BUTTON IS NOT A FIELD. It is ak_primary_cta(), the shared site CTA — the same
+ * one the header, the hero and the footer use. header-standard requires those to be one
+ * funnel, and three separately-editable labels is exactly how they drift apart. It is
+ * also why this section needs no translation work for the button: the label is a Polylang
+ * string and the URL is chrome config, both already localised.
+ *
+ * @return array|null
+ */
+function ak_cta_data() {
+	$id = (int) get_queried_object_id();
+
+	if ( ! $id ) {
+		return null;
+	}
+
+	$heading = (string) ak_section_field( 'ak_cta_heading', $id );
+
+	// The banner IS the heading — without it there is nothing to show but a dark box, so
+	// render nothing and let the Divi original stand.
+	if ( '' === trim( $heading ) ) {
+		return null;
+	}
+
+	return array(
+		'heading' => $heading,
+		'image'   => ak_translate_id( (int) ak_section_field( 'ak_cta_image', $id ) ),
+		'cta'     => ak_primary_cta(),
 	);
 }

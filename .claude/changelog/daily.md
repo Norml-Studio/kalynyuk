@@ -391,3 +391,24 @@ Calculator work paused. Next Divi bite: `module_id="about"`, the section directl
   - `ak_about_bio_cta_page` — page 2409 («Про мене») has **no pt translation yet** (`pll_get_post` → 0). Leaving it unset means it inherits 2409 today and starts resolving to the pt page the day that translation exists. Writing it would freeze it to the Ukrainian page forever. The button currently links to `/pro-mene/` — correct, and self-correcting.
   - `ak_inline_sections` — inherited from page 11, and the pt Divi content carries the same `module_id="about"`, so the swap already works.
 - Verified on `/pt/`: all four labels, both block headings, the bio CTA and the licence button render in Portuguese; 4 rows, 2 blocks, one `h1`, no duplication.
+
+### De-Divi migration — the `cta` banner (homepage section #3)
+
+Figma `1130:3996` → Divi `module_id="cta-section"`. A container-width dark card with a photo background, centred cream heading and one button.
+
+- Registered `cta`, wired via the in-place map (`cta-section = cta`). Seeded uk + pt in the same pass, so the section shipped translated rather than needing a second visit.
+- **The button is not a field.** It reads `ak_primary_cta()` — the same shared CTA the header, hero and footer use, as header-standard requires. Its label is a Polylang string and its URL is chrome config, so the pt page rendered `Obter consultoria` with zero translation work.
+- **The two hairlines belong to THIS section, not to `about`.** Figma draws them as full-bleed vectors 32px either side of the card, and the Divi section carries the identical `border_width_top/bottom: 1px #D6D0C6` with 32px padding. The 120px of air above the top rule is `about`'s bottom padding. Getting this boundary wrong would have double-ruled the join.
+- **[BUG, and it is a live one] The scrim is load-bearing here, and the hero's comment is why that needed checking.** `_hero.scss` says in capitals not to re-add the `#0D0D0D` gradient element, because there it is already baked into the exported photograph. This photo has no vignette — it is a bright shot of a desk, and **the current live Divi version puts cream text straight onto it, where it is barely legible.** So the same design-system scrim that is redundant in the hero is required here. Rendered and confirmed legible.
+- ⚠️ **Scrim direction is derived, not read.** The layer's `gradientTransform` makes the ramp depend only on the vertical axis, but the node's reported origin sits exactly one height from its rendered box — the signature of a vertical flip — so the file is ambiguous about which end is dark. Shipped top-down: the heading occupies the upper two thirds and needs the contrast, the button is a solid cream fill that reads on anything. Recorded in `design.md` §13 gap 17.
+- **[BUG] `padding-inline` had to go to 0 at desktop.** The mobile gutter was eating 40px of the 925px content cap, which broke the heading onto a fifth line and grew the card from the design's 512 to 556. Caught by measuring, not by looking — at a glance a five-line heading looks intentional.
+- [DECISION] Plain `object-fit: cover` / `object-position: center` for the photo, against Figma's more specific crop. The frame holds it in a 1419×946 box (1.5:1), but **the asset that actually ships is 2560×867** — 2.95:1, very nearly the card's own 2.69:1. A percentage crop built for a 1.5:1 box would throw most of the image away, and unlike the `about` portrait this card's aspect changes with the viewport, so no fixed crop survives regardless. `design.md` §13 gap 16 — either the design file holds an older asset or the export was recropped.
+- [DECISION] Figma's `LINEAR_BURN` on this photo is **not** reproduced. Over a dark scrim it would be invisible and the scrim already does the darkening. (The `about` portrait still uses `multiply`, where it is the whole effect.)
+- `min-height`, not `height`, on the card — and Portuguese immediately proved it: the pt heading runs five lines and the card grows to 556 while uk sits at exactly 512.
+
+#### Verified
+
+- **Desktop 1440, exact against the frame:** card `x32 w1376 h512` · content `x258 w925` (design 226 inside the card) · heading 120 below the card top, `w925 h182` over four lines · button 40 below the heading · band `1px #d6d0c6` top and bottom with 32px either side.
+- Divi original gone (`#cta-section` absent), heading not duplicated, still one `h1` on the page.
+- **No element of `.cta` overflows at 375 / 641 / 768 / 1024 / 1025 / 1280 / 1440 / 1600 / 1800 / 2560.** No console errors.
+- `/pt/` renders the native banner with the Portuguese heading and `Obter consultoria`.

@@ -1,0 +1,147 @@
+@use '../abstracts/tokens' as t;
+@use '../abstracts/mixins' as m;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// .cta — Figma 1130:3996 ("Frame 37"), the dark photo banner. 1376×512 at x=32 y=2764,
+//        bracketed by full-bleed hairlines at y=2732 and y=3308.
+//
+// 🔒 CONTAINER RULE: the band is full-bleed and owns the two hairlines; the CARD is
+// container-width (1376) and owns the photo. This is the ordinary case — the design.md §6
+// exception that lets `.hero` cap at $canvas-max is for a band whose background is a
+// fixed-composition photograph, and this one is a wide environmental shot.
+//
+// ⚠️ NO MOBILE FRAME for this band either (same gap as `.about`, design.md §13 gap 13).
+// The mobile treatment — smaller vertical padding, no fixed card height, full-width
+// button — is derived, not measured.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// .cta
+.cta {
+  // Both rules are the SECTION's, drawn in the design as two full-bleed vectors 32 above
+  // and below the card — and the Divi section being replaced carries the identical
+  // `border_width_top/bottom: 1px #D6D0C6` with 32px padding. The 120px of air above the
+  // top rule belongs to `.about`, not here.
+  padding-block: t.$space-4;
+  border-top: t.$border-width solid t.$color-border;
+  border-bottom: t.$border-width solid t.$color-border;
+
+  // .cta__inner
+  &__inner {
+    @include m.container;
+  }
+
+  // .cta__card
+  &__card {
+    position: relative;
+    overflow: hidden;
+    // Shows through wherever the photo does not reach, and is what the card falls back to
+    // when no image is set. Matches the Divi row's own `background_color="#2A2011"`.
+    background-color: t.$color-ink;
+    border-radius: t.$radius-lg;
+
+    @include m.bp(desktop) {
+      // Measured 512. `min-height` rather than `height` so a longer heading — a near
+      // certainty in Portuguese, which runs longer than Ukrainian — grows the card
+      // instead of overflowing it.
+      min-height: 512px;
+    }
+  }
+
+  // .cta__media
+  // ⚠️ The class may land on a <picture>, not an <img> — Imagify rewrites images for WebP
+  // and moves the class onto the wrapper, where `object-fit` is inert. Both levels are
+  // styled so the photo behaves identically either way. Do not "simplify" to one rule;
+  // this is the bug that made `.hero__media` invisible.
+  &__media {
+    position: absolute;
+    inset: 0;
+    display: block;
+
+    &,
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      // ⚠️ PLAIN `cover`, deliberately, against Figma's more specific crop. The frame
+      // holds the photo in a 1419×946 box (1.5:1) offset upward, but the asset that
+      // actually ships is 2560×867 — 2.95:1, i.e. very nearly the card's own 2.69:1. A
+      // percentage crop built for a 1.5:1 box would throw most of that image away, and
+      // unlike the `.about` portrait this card's aspect ratio CHANGES with the viewport,
+      // so no fixed percentage crop survives anyway. Recorded in design.md §13.
+      object-position: center;
+    }
+  }
+
+  // .cta__scrim
+  // Figma's `shadow` layer: #0D0D0D, opaque → transparent, stops 0 / 11.9 / 25.6 / 63.7%.
+  //
+  // ⚠️ DIRECTION IS DERIVED, NOT READ OFF. The layer's gradientTransform makes the ramp
+  // depend only on the vertical axis, but the node's reported origin sits exactly one
+  // height away from its rendered box — the signature of a vertical flip — so the file is
+  // ambiguous about which end is dark. Top-down is the reading that serves the layout:
+  // the heading sits in the upper two thirds and is the thing that needs the contrast,
+  // while the button is a solid cream fill that is legible on anything.
+  &__scrim {
+    position: absolute;
+    inset: 0;
+    display: block;
+    background-image: linear-gradient(
+      to bottom,
+      rgba(13, 13, 13, 1) 0%,
+      rgba(13, 13, 13, 0.878) 11.9%,
+      rgba(13, 13, 13, 0.666) 25.6%,
+      rgba(13, 13, 13, 0) 63.7%
+    );
+  }
+
+  // .cta__content
+  &__content {
+    position: relative; // above the photo and the scrim
+    z-index: t.$z-base;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: t.$space-5; // measured 40 — Frame 39 itemSpacing
+    // Content is 925 wide inside a 1376 card, i.e. 226 either side. Capped rather than
+    // padded so it stays centred as the card narrows.
+    max-width: 925px;
+    margin-inline: auto;
+    padding: t.$space-5 t.$gutter;
+    text-align: center;
+
+    @include m.bp(desktop) {
+      // Measured 120 top and bottom — 512 card − 272 content = 240, split evenly.
+      // ⚠️ padding-inline goes to 0 here, and it is not cosmetic. The gutter that keeps
+      // the text off the card edge on mobile was eating 40px of the 925 cap, which broke
+      // the heading onto a FIFTH line and grew the card from the design's 512 to 556.
+      // At this width the 925 cap is the inset — there is 226px of card either side of it.
+      padding: t.$space-8 0;
+    }
+  }
+
+  // .cta__heading
+  &__heading {
+    @include m.text-h1;
+
+    margin: 0;
+    // Divi's critical INLINE CSS carries `h1..h6 { padding-bottom: 10px }` and beats our
+    // stylesheet from <head>. Zeroed per section, not globally — see _about.scss.
+    padding-bottom: 0;
+    color: t.$color-canvas;
+    text-wrap: balance;
+  }
+
+  // .cta__button
+  &__button {
+    flex: 0 0 auto;
+
+    // Full width on mobile, the kit's 224 minimum from tablet up. Same reasoning as the
+    // hero's actions: a centred 224px button in a 335px card reads as an afterthought.
+    width: 100%;
+
+    @include m.bp(tablet) {
+      width: auto;
+      min-width: t.$btn-width-min;
+    }
+  }
+}

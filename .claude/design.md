@@ -589,6 +589,44 @@ to opt out of that guard explicitly.
 `mix-blend-mode` keyword list has no linear-burn. `multiply` is the nearest neighbour and
 is what ships. Recorded in §13 as a gap, not passed off as a match.
 
+### CTA banner — added v2.1.0
+
+Figma `1130:3996` (`Frame 37`). A **container-width card, not a full-bleed band** — 1376
+wide, radius `--radius-lg`, a photo background under a dark scrim, cream type centred on
+it. The band around it is full-bleed and carries nothing but two hairlines.
+
+| Part | Spec |
+|---|---|
+| Band | `1px --border` rule top **and** bottom, `--space-4` between each rule and the card |
+| Card | 1376 × **512** (`min-height`, so a longer heading grows it), radius 24, `--ink` beneath the photo |
+| Content | 925 wide, centred, `--space-8` above and below, `--space-5` between heading and button |
+| Heading | Desktop/H1 — 48 / 600 / 95% / −4%, **centred**, `--canvas` |
+| Button | The **shared site CTA**, cream fill / ink label (`.btn--on-accent`), 224 wide |
+
+- **The hairlines belong to this section, not the one above.** Figma draws them as two
+  full-bleed vectors 32px either side of the card, and the Divi section it replaces
+  carries the identical `border_width_top/bottom: 1px #D6D0C6` with 32px padding. The
+  120px of air above the top rule is the previous section's bottom padding.
+- **`padding-inline` must go to 0 at desktop.** The mobile gutter that keeps type off the
+  card edge otherwise eats 40px of the 925 cap, breaks the heading onto a fifth line and
+  grows the card from 512 to 556.
+- **The button is never a section field.** header-standard requires header / hero / footer
+  / banner to be one funnel; this reads `ak_primary_cta()`, so its label is a Polylang
+  string and its URL is chrome config — already correct in every language.
+
+**The scrim.** `#0D0D0D`, opaque → transparent, stops `0 / 11.9 / 25.6 / 63.7%`, running
+**top-down**.
+
+⚠️ Unlike `.hero`, this scrim is a **real element and must not be removed**. The hero's
+identical gradient was dropped because it was already baked into the exported photograph;
+this photo has no vignette at all — it is a bright shot of a desk, and the live Divi
+version puts cream text straight onto it, where it is barely legible. Direction is
+*derived*: the layer's `gradientTransform` makes the ramp depend only on the vertical
+axis, but the node's reported origin sits exactly one height from its rendered box — the
+signature of a vertical flip — so the file itself is ambiguous about which end is dark.
+Top-down is the reading that serves the layout, since the heading occupies the upper two
+thirds and the button is a solid fill that needs no backdrop.
+
 ### Header / navigation — added v2.0.0
 
 Behaviour and a11y are governed by **`vibe-frontend-standards/references/header-standard.md`**
@@ -959,4 +997,16 @@ out of the URL.
     slip; if it turns out to be deliberate, it belongs in §2 as a token first.
 15. **`LINEAR_BURN` has no CSS equivalent** — added v2.1.0. The portrait in the `about`
     band uses it; `mix-blend-mode: multiply` ships as the nearest neighbour. The two are
-    not the same operation and will differ in the shadows.
+    not the same operation and will differ in the shadows. The CTA banner's photo carries
+    the same blend mode in Figma and does **not** reproduce it — over a dark scrim it
+    would be invisible, and the scrim already does the darkening.
+16. **The CTA banner's Figma crop does not match the shipped asset** — added v2.1.0. The
+    frame holds the photo in a 1419×946 box (1.5:1) offset upward, but the attachment that
+    actually ships is **2560×867** — 2.95:1, very nearly the card's own 2.69:1. A
+    percentage crop built for a 1.5:1 box would discard most of the image, and the card's
+    aspect ratio changes with the viewport anyway, so plain `object-fit: cover` +
+    `object-position: center` ships instead. Either the design file holds an older asset
+    or the export was recropped; worth reconciling if the photo is ever replaced.
+17. **The scrim direction on the CTA banner is derived, not read** — added v2.1.0. See §7
+    → "CTA banner". If the Figma layer's flip state is ever confirmed, check this against
+    it rather than assuming the build is right.
