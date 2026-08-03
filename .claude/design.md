@@ -81,6 +81,7 @@ Measured by frequency across the rendered homepage. `n` = element count.
 | `--accent-light` | `#609079` | **Stroke on a GREEN background** — kit swatch, role from its own label. Hairline only, never a fill. Added v2.0.0. | 1 |
 | `--border` | `#D6D0C6` | **Stroke on a LIGHT background** — kit swatch, role from its own label | 21 |
 | `--ink-muted` | `rgba(42,32,17,0.56)` | Secondary text on cream | 30 |
+| `--ink-soft` | `rgba(42,32,17,0.50)` | **Part of the same line**, de-emphasised — the tail of a `Label: gloss` heading. Added v2.1.0 (Petr, 2026-08-03). | — |
 | `--border-soft` | `rgba(42,32,17,0.24)` | Hairline on cream, lighter variant | 7 |
 | `--canvas-muted` | `rgba(247,242,233,0.56)` | Secondary text on green | 4 |
 | `--border-inverse` | `rgba(247,242,233,0.24)` | Hairline on green | 4 |
@@ -849,6 +850,7 @@ Motion: 0.2s ease-in-out on opacity + background-color. Never `transition: all`.
   /* ── Colour ─────────────────────────────────────── */
   --ink:            #2A2011;
   --ink-muted:      rgba(42, 32, 17, 0.56);
+  --ink-soft:       rgba(42, 32, 17, 0.50);  /* part of the SAME line — see §2 */
   --canvas:         #F7F2E9;   /* the page */
   --canvas-muted:   rgba(247, 242, 233, 0.56);
   --surface:        #FEF8EF;   /* panels, inputs */

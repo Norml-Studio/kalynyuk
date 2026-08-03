@@ -46,7 +46,15 @@ $color-border:         #d6d0c6;  // stroke on a LIGHT background
 // Alpha derivations. Not swatches — measured on production and kept because the
 // kit has no opacity tokens. The 0.56 matches the kit's input-placeholder opacity.
 $color-ink-muted:      rgba(42, 32, 17, 0.56);     // secondary text on cream
+$color-ink-soft:       rgba(42, 32, 17, 0.5);      // de-emphasised HALF of a line — see below
 $color-ink-faint:      rgba(42, 32, 17, 0.24);     // hairline on cream, lighter
+
+// ⚠️ $color-ink-soft is a THIRD ink alpha and it is deliberate, not drift. Set by Petr
+// 2026-08-03 for the run-on half of a two-part heading ("Освіта та досвід: …"), where the
+// label before the colon stays full strength and the descriptive tail drops back. It sits
+// 0.06 from $color-ink-muted, which is close enough to look like a mistake — the
+// distinction is by ROLE, not by contrast: -muted is for a separate secondary ELEMENT,
+// -soft is for part of the SAME line. Do not merge them without asking.
 $color-canvas-muted:   rgba(247, 242, 233, 0.56);  // secondary text on green
 $color-canvas-faint:   rgba(247, 242, 233, 0.24);  // hairline on green
 

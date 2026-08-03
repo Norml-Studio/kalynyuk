@@ -175,7 +175,27 @@ $ak_portrait = (int) $ak_about['portrait'];
 						<?php foreach ( $ak_about['blocks'] as $ak_block ) : ?>
 							<div class="about__block">
 								<?php if ( $ak_block['heading'] ) : ?>
-									<h3 class="about__block-heading"><?php echo esc_html( $ak_block['heading'] ); ?></h3>
+									<?php
+									/*
+									 * TWO-PART HEADING. These read "Label: descriptive tail" — the label
+									 * carries the meaning and the tail is a gloss, so the tail drops to
+									 * $color-ink-soft while the label stays full strength (Petr,
+									 * 2026-08-03).
+									 *
+									 * Split in PHP rather than asking the editor to mark it up: the split
+									 * point is a colon they are already typing, so the effect is automatic
+									 * and cannot be applied inconsistently across languages. A heading with
+									 * no colon simply renders whole — explode() with a limit of 2 returns a
+									 * single element and the span is never emitted.
+									 *
+									 * The colon stays with the LABEL. The tail keeps its leading space, so
+									 * the two spans join into normal text for selection and screen readers.
+									 */
+									$ak_head = explode( ':', $ak_block['heading'], 2 );
+									?>
+									<h3 class="about__block-heading">
+										<?php echo esc_html( $ak_head[0] ); ?><?php if ( isset( $ak_head[1] ) ) : ?>:<span class="about__block-heading-rest"><?php echo esc_html( $ak_head[1] ); ?></span><?php endif; ?>
+									</h3>
 								<?php endif; ?>
 
 								<?php if ( $ak_block['body'] ) : ?>

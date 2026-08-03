@@ -369,6 +369,14 @@
     text-wrap: balance;
   }
 
+  // .about__block-heading-rest
+  // The half of a two-part heading that follows the colon — a gloss on the label, so it
+  // drops back while the label holds full strength (Petr, 2026-08-03). Emitted by the
+  // template only when the heading actually contains a colon; see about.php.
+  &__block-heading-rest {
+    color: t.$color-ink-soft;
+  }
+
   // .about__block-body
   &__block-body {
     @include m.text-body;

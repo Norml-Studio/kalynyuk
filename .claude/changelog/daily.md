@@ -452,3 +452,10 @@ Also corrected there: **production has no page cache.** WP Rocket and Imagify ar
 - `about` — 4 rows, 2 prose blocks, portrait 332×332. `cta` — card 1376×512 (uk) and 1376×556 (pt, five-line heading, which is why it is `min-height`), button `Отримати консультацію` / `Obter consultoria` from the shared chrome CTA.
 - Backups kept on the server: `~/backup-theme-20260803.tgz` and `~/backup-akmeta-20260803.tsv`.
 - Rollback is one restore plus clearing the added meta keys — `post_content` is never modified, so clearing `ak_inline_sections` alone brings every Divi original straight back.
+
+### Two-part headings in `about` — the tail after the colon drops back
+
+`.about__block-heading` reads "Label: descriptive tail". The tail now renders at `--ink-soft` while the label holds full strength (Petr).
+
+- Split in PHP on the first colon rather than asking the editor to mark it up: the split point is a character they already type, so the effect is automatic and cannot be applied inconsistently across four languages. A heading with no colon renders whole — `explode()` with a limit of 2 returns one element and the span is never emitted. The colon stays with the label; the tail keeps its leading space so the two spans join into normal text for selection and screen readers. Verified working in Ukrainian and Portuguese.
+- [DECISION] `--ink-soft: rgba(42,32,17,0.50)` added to `design.md` §2 and `_tokens.scss`. It is a **third** ink alpha and sits only 0.06 from `--ink-muted` (0.56), which is close enough to look like drift — so the distinction is recorded as one of ROLE, not contrast: `--ink-muted` is a separate secondary *element*, `--ink-soft` is part of the *same line*. Do not merge them without asking.
