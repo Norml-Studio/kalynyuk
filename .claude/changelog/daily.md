@@ -487,3 +487,11 @@ Both selectors now live together in `_divi-compat.scss` with the reasoning, and 
 - **Desktop 1440, exact:** grid `x32 w1376 h1058` · cards `448` wide at x 32 / 496 / 960 · all nine `342` tall · lede `x450 w540` · illustrations at positions 3, 4, 8 · service cards `--surface` with a transparent border, illustration cards transparent with `#d6d0c6` · title 24px · description opacity 0.8.
 - Columns collapse 3 → 2 → 1 at the three structural breakpoints. **No element of `.services` overflows at 375 / 641 / 768 / 1024 / 1025 / 1280 / 1440 / 1600 / 2560.** No console errors.
 - `/pt/` renders all nine cards with Portuguese copy, Divi original gone, one `h1`.
+
+#### Illustration slots corrected
+
+Petr swapped the illustrations in grid slots 3 and 4 by eye — closing `design.md` §13 gap 19, which had flagged the assignment as inferred rather than known. The first pass used Divi's render order and got these two the wrong way round.
+
+**Canonical order is now `Group-16`, `Group-17`, `Group-18` → slots 3, 4, 8** (woman at a laptop top-right, walking woman below-left, woman signing in the bottom row). Applied to uk and pt. ⚠️ **Any re-seed — production included — must use this order, not Divi's**; the gap entry says so too, because the seeding script is the obvious place to reintroduce the mistake.
+
+Content-only: the swap is two `ak_services_items_{n}_image` values per language, no code change and no rebuild.

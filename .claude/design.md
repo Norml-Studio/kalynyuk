@@ -1047,8 +1047,10 @@ out of the URL.
     composed around, so no crop reproduces it, and the build centres them inside the card
     instead. **To get the bleeding composition, the illustrations must be re-exported from
     Figma at the frame's dimensions**; the CSS then becomes a per-card offset.
-19. **Which illustration goes in which slot is inferred** — added v2.1.0. The Figma frames
-    are named after ChatGPT export timestamps and the library files after `Group-1x`, so
-    there is nothing to match on. They are assigned in the order Divi already renders them
-    (`Group-17`, `Group-16`, `Group-18` → slots 3, 4, 8). All three are ACF fields, so a
-    swap is a five-second edit if any is in the wrong place.
+19. ~~**Which illustration goes in which slot is inferred**~~ — **CLOSED 2026-08-03.** The
+    Figma frames are named after ChatGPT export timestamps and the library files after
+    `Group-1x`, so there was nothing to match on; the first pass assigned them in the order
+    Divi renders them and got slots 3 and 4 the wrong way round. Petr corrected it by eye.
+    **The canonical order is `Group-16`, `Group-17`, `Group-18` → slots 3, 4, 8** — i.e.
+    the woman at a laptop top-right, the walking woman below-left, the woman signing in the
+    bottom row. Any re-seed (production included) must use this order, not Divi's.
