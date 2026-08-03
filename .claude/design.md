@@ -628,6 +628,32 @@ signature of a vertical flip — so the file itself is ambiguous about which end
 Top-down is the reading that serves the layout, since the heading occupies the upper two
 thirds and the button is a solid fill that needs no backdrop.
 
+### Services grid — added v2.1.0
+
+Figma `1136:9156`. A centred lede over a **3 × 3 grid of 448×342 cards, gap 16**
+(448·3 + 16·2 = 1376 exactly). Band `--space-8` top / `--space-6` bottom with a **bottom
+rule only** — the hairline above it belongs to the CTA banner, which draws both of its own.
+
+| Part | Spec |
+|---|---|
+| Lede | 540 wide, centred; H1 + Body, both centred, `--space-3` apart, `--space-7` to the grid |
+| Service card | `--surface` fill, radius 24, **no border**, padding `--space-3`; icon 48×48 at the top, text pinned to the **bottom** |
+| Title | Desktop/H3 — 24 / 700 / 116% / −1%, `--ink` |
+| Description | Desktop/Body at **80% layer opacity** (Figma fades the layer, as with the credential numeral — reproduce as `opacity`, not a new tint) |
+| Illustration card | **Transparent with a 1px `--border` hairline**, artwork centred |
+
+🔒 **The illustration card deliberately INVERTS the panel rule.** Every other panel in this
+system is a fill with no border (§4 — "distinguished by radius and hairline, not by
+contrast"); these are the reverse, so the artwork reads as sitting *on the page* rather
+than inside a card. **That contrast between the two card shapes is the point of the grid**,
+and it is exactly what the current Divi version loses by filling all nine identically.
+
+- **Card order is the composition.** Illustrations sit at positions 3, 4 and 8 so the grid
+  reads as a checkerboard rather than "cards, then pictures". One list, not two.
+- **Zero the `li` padding AND margin.** Divi indents `.entry-content ul` from the left, and
+  on a grid that comes out of the *tracks*: every card rendered 448 → 443 and the whole
+  grid sat 16px right of the container. See the `--about` note in §7 and `_divi-compat.scss`.
+
 ### Header / navigation — added v2.0.0
 
 Behaviour and a11y are governed by **`vibe-frontend-standards/references/header-standard.md`**
@@ -1012,3 +1038,17 @@ out of the URL.
 17. **The scrim direction on the CTA banner is derived, not read** — added v2.1.0. See §7
     → "CTA banner". If the Figma layer's flip state is ever confirmed, check this against
     it rather than assuming the build is right.
+18. **The services illustrations do not match their Figma frames** — added v2.1.0, and this
+    one is a real asset gap rather than a note. The frame bleeds each illustration out of a
+    box that overhangs the card differently per card — `362×542` at (43, −62), `265×397` at
+    (356, −14), `342×511` at (405, −62) — all three at a **0.668** ratio. The SVGs that
+    actually ship are `Group-17` 200×277, `Group-16` 292×223 and `Group-18` 288×243:
+    **three different ratios, none of them 0.668.** They are not the artwork the frame was
+    composed around, so no crop reproduces it, and the build centres them inside the card
+    instead. **To get the bleeding composition, the illustrations must be re-exported from
+    Figma at the frame's dimensions**; the CSS then becomes a per-card offset.
+19. **Which illustration goes in which slot is inferred** — added v2.1.0. The Figma frames
+    are named after ChatGPT export timestamps and the library files after `Group-1x`, so
+    there is nothing to match on. They are assigned in the order Divi already renders them
+    (`Group-17`, `Group-16`, `Group-18` → slots 3, 4, 8). All three are ACF fields, so a
+    swap is a five-second edit if any is in the wrong place.

@@ -459,3 +459,31 @@ Also corrected there: **production has no page cache.** WP Rocket and Imagify ar
 
 - Split in PHP on the first colon rather than asking the editor to mark it up: the split point is a character they already type, so the effect is automatic and cannot be applied inconsistently across four languages. A heading with no colon renders whole — `explode()` with a limit of 2 returns one element and the span is never emitted. The colon stays with the label; the tail keeps its leading space so the two spans join into normal text for selection and screen readers. Verified working in Ukrainian and Portuguese.
 - [DECISION] `--ink-soft: rgba(42,32,17,0.50)` added to `design.md` §2 and `_tokens.scss`. It is a **third** ink alpha and sits only 0.06 from `--ink-muted` (0.56), which is close enough to look like drift — so the distinction is recorded as one of ROLE, not contrast: `--ink-muted` is a separate secondary *element*, `--ink-soft` is part of the *same line*. Do not merge them without asking.
+
+### De-Divi migration — the `services` grid (homepage section #4)
+
+Figma `1136:9156` → Divi `module_id="services"`. A centred lede over a 3 × 3 grid of 448×342 cards.
+
+- [DECISION] **Figma's copy wins over Divi's** (Petr). The two diverged for the first time in this migration: Divi carries 8 long, keyword-dense cards («Юридичний та податковий супровід угоди», «Формування ідеального кредитного досьє», …) and one of them — «Детальний розрахунок можливостей на іпотеку в Португалії» — is **duplicated**, a pre-existing content bug. Figma carries 6 short ones with different headings. The grid is a fixed 3 × 3 with three slots taken by illustrations, so 8 long cards do not fit — it was a content choice, not a layout one. **The Divi copy is not deleted**; `post_content` is untouched, so clearing `ak_inline_sections` restores it whole.
+- **The two card shapes are ONE repeater.** Illustrations sit at positions 3, 4 and 8 so the grid reads as a checkerboard rather than "cards, then pictures" — the order *is* the composition, and two lists could not express the interleaving without a third field to merge them. A `type` sub-field picks the shape; ACF conditional logic hides the fields that do not apply.
+- 🔒 **The illustration card deliberately inverts the panel rule.** Every other panel in this system is a fill with no border (`design.md` §4); these are transparent with a hairline, so the artwork sits *on the page* instead of inside a card. That contrast is the point of the grid, and it is exactly what the live Divi version loses by filling all nine cards identically.
+- Icons and illustrations are the SVGs **already in the library** — nothing new uploaded. The seed resolves every attachment **by slug**, not by a hardcoded ID, which is the direct fix for the stale-portrait bug earlier today.
+
+#### [BUG] Divi indents `ul` too, and on a grid it comes out of the tracks
+
+`.entry-content ul` carries a left indent that beats our `padding: 0` at (0,1,1) — the same shape as the `ol` bottom-padding found with `.about__list`, but it fails differently: the 16px came out of the **grid tracks**, so every card rendered **443 wide against the design's 448** and the whole grid sat 16px right of its container. Caught by measuring, not by looking — a 5px card is invisible by eye.
+
+Both selectors now live together in `_divi-compat.scss` with the reasoning, and the note is explicit that **every future native section using a `ul`/`ol` needs its selector added there**.
+
+#### Recorded, not solved — the illustrations do not match their frames
+
+`design.md` §13 gains two gaps worth reading before anyone "fixes" this section:
+
+- **Gap 18.** Figma bleeds each illustration out of a box that overhangs the card differently per card (`362×542` at (43,−62) · `265×397` at (356,−14) · `342×511` at (405,−62)) — all three at a 0.668 ratio. The shipped SVGs are 200×277, 292×223 and 288×243: **three different ratios, none of them 0.668.** They are not the artwork the frame was composed around, so no crop reproduces it. The build centres them instead. **To get the bleeding composition the illustrations have to be re-exported from Figma at the frame's dimensions.**
+- **Gap 19.** Which illustration belongs in which slot is *inferred* — the Figma frames are named after ChatGPT export timestamps and the library files after `Group-1x`, so there is nothing to match on. Assigned in the order Divi already renders them. All three are ACF fields, so a swap is a five-second edit.
+
+#### Verified
+
+- **Desktop 1440, exact:** grid `x32 w1376 h1058` · cards `448` wide at x 32 / 496 / 960 · all nine `342` tall · lede `x450 w540` · illustrations at positions 3, 4, 8 · service cards `--surface` with a transparent border, illustration cards transparent with `#d6d0c6` · title 24px · description opacity 0.8.
+- Columns collapse 3 → 2 → 1 at the three structural breakpoints. **No element of `.services` overflows at 375 / 641 / 768 / 1024 / 1025 / 1280 / 1440 / 1600 / 2560.** No console errors.
+- `/pt/` renders all nine cards with Portuguese copy, Divi original gone, one `h1`.

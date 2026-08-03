@@ -1,0 +1,183 @@
+@use '../abstracts/tokens' as t;
+@use '../abstracts/mixins' as m;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// .services — Figma 1136:9156 ("Frame 9128"), 1376×1305 at x=32 y=3428.
+//             Lede 1130:3947 · grid 1136:9154 (3 × 3 of 448×342, gap 16)
+//
+// 🔒 CONTAINER RULE: full-bleed band, container() on __inner, no background — the page
+// canvas already IS $color-canvas (design.md §5).
+//
+// ⚠️ NO MOBILE FRAME, same as every section in this band (design.md §13 gap 13). The
+// column counts below are derived from the three structural breakpoints, not measured.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// .services
+.services {
+  // Divi's own section carries `custom_padding="120px||50px"` and a bottom rule only —
+  // the hairline ABOVE this section belongs to the CTA banner, which draws both of its
+  // own. Figma measures 64 below the grid rather than 50; 50 is the token and the value
+  // the live section already uses, so it wins over a 14px difference.
+  padding-block: t.$space-8 t.$space-6;
+  border-bottom: t.$border-width solid t.$color-border;
+
+  // .services__inner
+  &__inner {
+    @include m.container;
+  }
+
+  // .services__lede
+  // Centred, and narrow on purpose — 540 in a 1376 container is under 40%, which is what
+  // keeps a 48px heading to two lines instead of one very wide one.
+  &__lede {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: t.$space-3; // measured 24 — heading box ends 92, intro starts 116
+    max-width: 540px; // measured, 1130:3947
+    margin-inline: auto;
+    text-align: center;
+  }
+
+  // .services__heading
+  &__heading {
+    @include m.text-h1;
+
+    margin: 0;
+    padding-bottom: 0; // Divi inline h1..h6 override — see _about.scss
+    color: t.$color-ink;
+    text-wrap: balance;
+  }
+
+  // .services__intro
+  &__intro {
+    @include m.text-body;
+
+    margin: 0;
+    color: t.$color-ink;
+    text-wrap: pretty;
+  }
+
+  // .services__grid
+  // One column on mobile, two on tablet, three from desktop. `grid-auto-rows: 1fr` keeps
+  // every card in a row the same height regardless of how much copy it carries — the
+  // design draws all nine at 342 and the illustration cards have no text at all to
+  // stretch them.
+  &__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: t.$space-2; // measured 16 — 448·3 + 16·2 = 1376
+    grid-auto-rows: 1fr;
+    margin: t.$space-5 0 0;
+    padding: 0;
+    list-style: none;
+
+    @include m.bp(tablet) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @include m.bp(desktop) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-top: t.$space-7; // measured 56 — lede ends 191, grid starts 247
+    }
+  }
+
+  // .services__card
+  // Filled, borderless — the same one-off as `.about__item`: Figma's stroke on these is
+  // `visible: false`, so m.panel() would add a hairline the design switched off.
+  //
+  // Icon at the top, text pinned to the BOTTOM. `space-between` rather than a margin,
+  // because the gap between them is whatever is left over — in the frame the text block
+  // starts at y=163 on one card and y=188 on another, purely because their copy differs.
+  &__card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: t.$space-3;
+    // Divi's global `li` margin sits INSIDE a grid item's area and stretches every row —
+    // the same trap as `.about__item`, and it bites harder here because of
+    // `grid-auto-rows: 1fr`.
+    margin: 0;
+    padding: t.$space-3; // measured 24 on all four sides
+    background-color: t.$color-surface;
+    border: t.$border-width solid transparent; // keeps both card types the same size
+    border-radius: t.$radius-lg;
+
+    @include m.bp(desktop) {
+      // Measured 342. `min-height` so a longer service description grows the row rather
+      // than overflowing — Portuguese runs longer than Ukrainian and these are tight.
+      min-height: 342px;
+    }
+  }
+
+  // .services__card--media
+  // ⚠️ INVERTS THE PANEL RULE ON PURPOSE. Every other panel in this system is a fill with
+  // no border (design.md §4, "distinguished by radius and hairline, not by contrast");
+  // these are the reverse — transparent with a hairline — so the artwork reads as sitting
+  // ON the page rather than inside a card. That contrast between the two card shapes is
+  // the whole point of the grid, and it is what the current Divi version loses by filling
+  // all nine identically.
+  &__card--media {
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    border-color: t.$color-border;
+  }
+
+  // .services__art
+  // ⚠️ CONTAINED AND CENTRED, not bled — a deliberate divergence from the frame, forced by
+  // the assets. Figma clips each illustration out of a 0.668-ratio box that overhangs the
+  // card by a different amount per card (362×542 at x=43,y=-62 · 265×397 at x=356,y=-14 ·
+  // 342×511 at x=405,y=-62). The SVGs that actually ship are 200×277, 292×223 and 288×243
+  // — three different aspect ratios, none of them 0.668 — so they are NOT the artwork the
+  // frame was composed around and no crop reproduces it. Recorded in design.md §13.
+  //
+  // If the bleeding composition is wanted, the illustrations have to be re-exported from
+  // Figma at the frame's dimensions; then this rule becomes a per-card offset.
+  &__art {
+    display: block;
+    max-width: 100%;
+    // Cap against the card's own height so a tall illustration cannot force the row
+    // taller than its siblings.
+    max-height: 294px; // 342 card − 2 × 24 padding
+    width: auto;
+    height: auto;
+    object-fit: contain;
+  }
+
+  // .services__icon
+  &__icon {
+    display: block;
+    flex: 0 0 auto;
+    width: 48px; // measured — the Vuesax linear set is drawn on a 48 grid
+    height: 48px;
+  }
+
+  // .services__body
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: t.$space-3; // measured 24 between title and description
+  }
+
+  // .services__title
+  &__title {
+    @include m.text-h3;
+
+    margin: 0;
+    padding-bottom: 0; // Divi inline h1..h6 override — see _about.scss
+    color: t.$color-ink;
+    text-wrap: balance;
+  }
+
+  // .services__text
+  // Figma fades the LAYER to 80% rather than using a palette colour — the same choice as
+  // the credential numeral's 0.4. Reproduced as opacity so no fifth ink tint enters §2.
+  &__text {
+    @include m.text-body;
+
+    margin: 0;
+    color: t.$color-ink;
+    opacity: 0.8;
+  }
+}

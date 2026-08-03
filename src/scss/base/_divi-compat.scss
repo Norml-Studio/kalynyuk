@@ -27,22 +27,30 @@
   margin-top: 0 !important; // beats Divi's JS-written inline style
 }
 
-// .entry-content .about__list
-// Divi ships `.entry-content ol { padding-bottom: 23px }`, and at (0,1,1) it beats the
-// (0,1,0) `padding: 0` on our own class. Our native sections render INSIDE the_content,
-// so `.entry-content` wraps them and the rule applies.
+// .entry-content .about__list, .entry-content .services__grid
+// Divi ships list padding on BOTH `.entry-content ol` (`padding-bottom: 23px`) and
+// `.entry-content ul` (a left indent), and at (0,1,1) each beats the (0,1,0) `padding: 0`
+// on our own class. Our native sections render INSIDE the_content, so `.entry-content`
+// wraps them and the rules apply.
 //
-// It is not cosmetic: `.about__list` runs `grid-auto-rows: 1fr`, and the stray 23px sat
-// below the last row and pushed the entire bio block — heading, CTA, portrait, prose —
-// 23px down the page. Found by measuring the list at 726px against the 704px its four
-// tracks and three gaps add up to, not by reading the CSS.
+// Neither is cosmetic, because both lists are CSS grids:
 //
-// It lives HERE rather than in _about.scss because out-specifying it requires naming
-// `.entry-content`, and that is this file's whole job. Removed with the partial in
+//   - `.about__list` runs `grid-auto-rows: 1fr`, and the stray 23px sat below the last row
+//     and pushed the entire bio block — heading, CTA, portrait, prose — 23px down the
+//     page. Found by measuring the list at 726px against the 704px its four tracks and
+//     three gaps add up to.
+//   - `.services__grid` lost 16px of its left edge to the `ul` indent, which came out of
+//     the TRACKS: every card rendered 443 wide against the design's 448, and the whole
+//     grid sat 16px right of the container. Found the same way — by measuring, not by
+//     reading the CSS.
+//
+// They live HERE rather than in the section partials because out-specifying them requires
+// naming `.entry-content`, and that is this file's whole job. Removed with the partial in
 // phase 4, when nothing renders inside the_content any more.
 //
-// ⚠️ Any future native section that uses a `ul`/`ol` will need the same line. Prefer
-// adding the selector here over bumping specificity inside the section partial.
-.entry-content .about__list {
+// ⚠️ Every future native section that uses a `ul`/`ol` needs its selector added here.
+// Prefer that over bumping specificity inside the section partial.
+.entry-content .about__list,
+.entry-content .services__grid {
   padding: 0;
 }

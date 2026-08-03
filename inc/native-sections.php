@@ -157,6 +157,7 @@ function ak_section_registry() {
 			'hero'       => __( 'Hero', 'kalynyuk' ),
 			'about'      => __( 'About / credentials', 'kalynyuk' ),
 			'cta'        => __( 'CTA banner', 'kalynyuk' ),
+			'services'   => __( 'Services grid', 'kalynyuk' ),
 			'calculator' => __( 'Mortgage calculator', 'kalynyuk' ),
 		)
 	);
@@ -859,6 +860,129 @@ function ak_acf_page_sections_fields() {
 
 	acf_add_local_field_group(
 		array(
+			'key'      => 'group_ak_services',
+			'title'    => __( 'Services grid', 'kalynyuk' ),
+			'location' => array(
+				array(
+					array(
+						'param'    => 'post_type',
+						'operator' => '==',
+						'value'    => 'page',
+					),
+				),
+			),
+			'fields'   => array(
+				array(
+					'key'          => 'field_ak_services_heading',
+					'label'        => __( 'Heading', 'kalynyuk' ),
+					'name'         => 'ak_services_heading',
+					'type'         => 'textarea',
+					'rows'         => 2,
+					'instructions' => __( 'Centred above the grid. Leave empty to hide the whole section — the Divi original comes back.', 'kalynyuk' ),
+				),
+				array(
+					'key'   => 'field_ak_services_intro',
+					'label' => __( 'Intro', 'kalynyuk' ),
+					'name'  => 'ak_services_intro',
+					'type'  => 'textarea',
+					'rows'  => 3,
+				),
+				array(
+					'key'          => 'field_ak_services_items',
+					'label'        => __( 'Cards', 'kalynyuk' ),
+					'name'         => 'ak_services_items',
+					'type'         => 'repeater',
+					'layout'       => 'block',
+					'button_label' => __( 'Add card', 'kalynyuk' ),
+					'instructions' => __( 'The grid is 3 across on desktop and fills in reading order, so the order here IS the layout. The design alternates service cards with illustration cards — positions 3, 4 and 8 are illustrations. Nothing enforces that; it is a rhythm, and you can change it by reordering.', 'kalynyuk' ),
+					'sub_fields'   => array(
+						array(
+							'key'           => 'field_ak_services_item_type',
+							'label'         => __( 'Card type', 'kalynyuk' ),
+							'name'          => 'type',
+							'type'          => 'select',
+							'choices'       => array(
+								'text'  => __( 'Service — icon, title, description', 'kalynyuk' ),
+								'media' => __( 'Illustration only', 'kalynyuk' ),
+							),
+							'default_value' => 'text',
+							'return_format' => 'value',
+						),
+						array(
+							'key'               => 'field_ak_services_item_icon',
+							'label'             => __( 'Icon', 'kalynyuk' ),
+							'name'              => 'icon',
+							'type'              => 'image',
+							'return_format'     => 'id',
+							'preview_size'      => 'thumbnail',
+							'instructions'      => __( '48×48 SVG from the Vuesax linear set, to match the ones already in the library.', 'kalynyuk' ),
+							'conditional_logic' => array(
+								array(
+									array(
+										'field'    => 'field_ak_services_item_type',
+										'operator' => '==',
+										'value'    => 'text',
+									),
+								),
+							),
+						),
+						array(
+							'key'               => 'field_ak_services_item_title',
+							'label'             => __( 'Title', 'kalynyuk' ),
+							'name'              => 'title',
+							'type'              => 'text',
+							'conditional_logic' => array(
+								array(
+									array(
+										'field'    => 'field_ak_services_item_type',
+										'operator' => '==',
+										'value'    => 'text',
+									),
+								),
+							),
+						),
+						array(
+							'key'               => 'field_ak_services_item_body',
+							'label'             => __( 'Description', 'kalynyuk' ),
+							'name'              => 'body',
+							'type'              => 'textarea',
+							'rows'              => 3,
+							'conditional_logic' => array(
+								array(
+									array(
+										'field'    => 'field_ak_services_item_type',
+										'operator' => '==',
+										'value'    => 'text',
+									),
+								),
+							),
+						),
+						array(
+							'key'               => 'field_ak_services_item_image',
+							'label'             => __( 'Illustration', 'kalynyuk' ),
+							'name'              => 'image',
+							'type'              => 'image',
+							'return_format'     => 'id',
+							'preview_size'      => 'medium',
+							'instructions'      => __( 'Drawn centred inside the card, which is transparent with a hairline rather than filled.', 'kalynyuk' ),
+							'conditional_logic' => array(
+								array(
+									array(
+										'field'    => 'field_ak_services_item_type',
+										'operator' => '==',
+										'value'    => 'media',
+									),
+								),
+							),
+						),
+					),
+				),
+			),
+		)
+	);
+
+	acf_add_local_field_group(
+		array(
 			'key'      => 'group_ak_calculator',
 			'title'    => __( 'Calculator', 'kalynyuk' ),
 			'location' => array(
@@ -1042,5 +1166,50 @@ function ak_cta_data() {
 		'heading' => $heading,
 		'image'   => ak_translate_id( (int) ak_section_field( 'ak_cta_image', $id ) ),
 		'cta'     => ak_primary_cta(),
+	);
+}
+
+/**
+ * Services-grid data for the current page, or null when there is nothing to render.
+ *
+ * ⚠️ THE GRID MIXES TWO CARD SHAPES and they are ONE repeater, not two. The design lays
+ * out six service cards and three illustration cards in a single 3×3 grid, and their
+ * ORDER is the composition — illustrations sit at positions 3, 4 and 8 so the grid reads
+ * as a checkerboard rather than as "cards, then pictures". Two separate repeaters could
+ * not express that interleaving without a third field to merge them.
+ *
+ * The `type` sub-field therefore decides which shape a row renders as, and ACF's
+ * conditional logic hides the fields that do not apply. Rows with no usable content are
+ * dropped in the template rather than here, so a half-filled row is visibly missing in
+ * the grid instead of silently shifting every card after it.
+ *
+ * @return array|null
+ */
+function ak_services_data() {
+	$id = (int) get_queried_object_id();
+
+	if ( ! $id ) {
+		return null;
+	}
+
+	$heading = (string) ak_section_field( 'ak_services_heading', $id );
+
+	if ( '' === trim( $heading ) ) {
+		return null;
+	}
+
+	$items = ak_section_rows( 'ak_services_items', array( 'type', 'icon', 'title', 'body', 'image' ), $id );
+
+	foreach ( $items as $i => $item ) {
+		// Media rows carry an attachment ID that Polylang may have a per-language twin for;
+		// icons go through the same call so a localised icon set would work too.
+		$items[ $i ]['icon']  = ak_translate_id( (int) $item['icon'] );
+		$items[ $i ]['image'] = ak_translate_id( (int) $item['image'] );
+	}
+
+	return array(
+		'heading' => $heading,
+		'intro'   => (string) ak_section_field( 'ak_services_intro', $id ),
+		'items'   => $items,
 	);
 }
