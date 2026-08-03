@@ -495,3 +495,20 @@ Petr swapped the illustrations in grid slots 3 and 4 by eye — closing `design.
 **Canonical order is now `Group-16`, `Group-17`, `Group-18` → slots 3, 4, 8** (woman at a laptop top-right, walking woman below-left, woman signing in the bottom row). Applied to uk and pt. ⚠️ **Any re-seed — production included — must use this order, not Divi's**; the gap entry says so too, because the seeding script is the obvious place to reintroduce the mistake.
 
 Content-only: the swap is two `ak_services_items_{n}_image` values per language, no code change and no rebuild.
+
+### 🚀 Production deploy #2 — services grid + the two-part heading fade
+
+Both live on `https://www.kalynyuk.com`, uk and pt. Calculator still held back.
+
+**Files went FIRST this time, and that was a deliberate reversal of the rule from deploy #1.** The meta-first sequence exists because production carried a legacy `ak_native_sections` that would have stripped the hero with nothing to replace it. Nothing like that applies here: without `ak_services_*` meta the new code simply renders no native services section, so Divi's keeps rendering and the page is unchanged. **The order is not a ritual — it follows from what the old code does with the new meta, and here the safe direction is the opposite one.**
+
+It also sidesteps the ACF trap: `update_field()` on a repeater whose field group is not yet registered stores a serialised array instead of the flattened count-plus-cells, so a repeater cannot be pre-written the way a plain value can. Deploying the code first registers `group_ak_services`, and the seed then writes the correct shape.
+
+Verified between the two steps, which is the point of splitting them: after the file sync and before seeding, production showed `.hero`/`.about`/`.cta` native, `services` still Divi, the new heading fade already live at `rgba(42,32,17,0.5)` in both languages, zero console errors.
+
+- Seed resolved all nine SVGs **by slug** — all present on production with the same IDs as local — and used the **corrected** illustration order (`Group-16`, `Group-17`, `Group-18` → slots 3, 4, 8), not the one the local seed originally shipped.
+- **Post-deploy meta diff, local vs production** — now standard after the stale-portrait bug. Every difference accounted for: six `ak_about_*_body` values (local's `<p>` stripped by TinyMCE, identical rendering via `wpautop`), `ak_about_portrait` (2570 vs 2567 — same file, different IDs per environment), and `ak_inline_sections` (local carries `calculator = calculator`, production deliberately does not). **Zero mismatches in `ak_services_*`.**
+- Production render is exact: grid `x32 w1376 h1058`, all nine cards `448×342`, illustrations in slots 3/4/8, one `h1`, no overflow, no console errors, both languages.
+- Backups: `~/backup-theme-20260803b.tgz` + `~/backup-akmeta-20260803b.tsv` (the pre-deploy-#1 pair is still there too).
+
+Homepage now has ONE Divi section left — `trust`. The calculator remains Divi on both page 11 and `/calc/`.
