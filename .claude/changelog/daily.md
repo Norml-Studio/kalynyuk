@@ -547,4 +547,14 @@ Three of the four image placements were composed around artwork that was never e
 - Stacks to one column below desktop. **No element of `.trust` overflows at 375 / 641 / 768 / 1024 / 1025 / 1280 / 1440 / 1600 / 2560.** No console errors.
 - `/pt/` renders five items with Portuguese copy, first one open, Divi original gone, one `h1`.
 
-**The homepage now has ZERO Divi sections rendering** — hero, about, cta, services, trust and the calculator are all native locally. On production the calculator is still Divi and deliberately so.
+⚠️ **CORRECTION — I first wrote "the homepage now has ZERO Divi sections" here, and that was wrong.** Measured immediately after: **three Divi sections remain**, and they were invisible to the earlier survey because that survey listed `.et_pb_section[id]` and none of these three carries a `module_id`:
+
+| # | admin_label | Heading |
+|---|---|---|
+| 7 | `Order` | Замовте професійну консультацію |
+| 8 | `Reviews` | *(no heading — 838 bytes)* |
+| 9 | `FAQ` | Іпотека в Португалії 2026 — Чесні відповіді на складні питання |
+
+**They cannot use the in-place map at all**, which addresses sections by `module_id` — so migrating them needs either a CSS ID added in the Divi builder first, or a different addressing scheme. That is the next real decision on this page, and it is worth knowing before someone plans the work.
+
+What IS true: hero, about, cta, services, trust and the calculator are all native locally, and the six sections that had a `module_id` are done. On production the calculator is still Divi and deliberately so.
