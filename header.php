@@ -55,7 +55,16 @@ wp_head();
 <body <?php body_class(); ?>>
 <?php wp_body_open(); ?>
 
-<a class="u-skip-link" href="#ak-content"><?php esc_html_e( 'Skip to content', 'kalynyuk' ); ?></a>
+<?php
+/*
+ * ⚠️ ak_str(), NOT __(). The theme calls load_child_theme_textdomain() but ships no
+ * languages/ folder, so every __() string renders as its English source in all four
+ * languages. For admin labels that is harmless. This one is VISIBLE — it is the first
+ * thing a keyboard user focuses on — so it goes through Polylang like every other
+ * front-end string (CLAUDE.md multilingual rule 3).
+ */
+?>
+<a class="u-skip-link" href="#ak-content"><?php echo esc_html( ak_str( 'ak_skip_link', 'Перейти до вмісту' ) ); ?></a>
 
 <div id="page-container">
 

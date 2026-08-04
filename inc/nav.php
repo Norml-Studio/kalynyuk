@@ -188,7 +188,18 @@ function ak_language_switcher() {
 			'raw'                    => 1,
 			'hide_if_no_translation' => 0,
 			'hide_current'           => 0,
-			'display_names_as'       => 'slug',
+			/*
+			 * ⚠️ 'name', NOT 'slug'. This was 'slug', and since the switcher is flags-only the
+			 * name is never drawn — it exists solely in the two u-visually-hidden spans. So a
+			 * screen reader announced the list as "uk, pt, en" and the trigger as "Language: uk",
+			 * which is the one place a language MUST be named in words. 'name' gives Polylang's
+			 * own localised names ("Українська", "Português"), each already inside a
+			 * lang="…" element so it is pronounced correctly.
+			 *
+			 * The 'slug' key below is untouched and still drives hreflang, lang and the flag
+			 * lookup — nothing that needs a machine-readable code lost it.
+			 */
+			'display_names_as'       => 'name',
 		)
 	);
 

@@ -36,7 +36,8 @@ $ak_socials = ak_socials();
 <div class="nav-drawer" id="ak-drawer" hidden data-ak-drawer>
 	<div class="nav-drawer__scrim" data-ak-drawer-scrim></div>
 
-	<div class="nav-drawer__dialog" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e( 'Menu', 'kalynyuk' ); ?>">
+	<?php // ak_str(), not __() — see the note on the skip link in header.php. Same source string as the toggle. ?>
+	<div class="nav-drawer__dialog" role="dialog" aria-modal="true" aria-label="<?php echo esc_attr( ak_str( 'ak_menu_open', 'Меню' ) ); ?>">
 
 		<div class="nav-drawer__panels">
 

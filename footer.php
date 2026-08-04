@@ -102,7 +102,8 @@ $ak_row = static function ( $label, $url = '' ) {
 
 				<div class="site-footer__cols">
 					<?php if ( $ak_nav ) : ?>
-						<nav class="site-footer__nav" aria-label="<?php esc_attr_e( 'Footer navigation', 'kalynyuk' ); ?>">
+						<?php // ak_str(), not __() — see the note on the skip link in header.php. ?>
+						<nav class="site-footer__nav" aria-label="<?php echo esc_attr( ak_str( 'ak_footer_nav', 'Навігація у футері' ) ); ?>">
 							<ul class="site-footer__list">
 								<?php foreach ( $ak_nav as $ak_item ) : ?>
 									<li>
@@ -191,7 +192,9 @@ $ak_row = static function ( $label, $url = '' ) {
 						printf(
 							'© %1$s %2$s',
 							esc_html( date_i18n( 'Y' ) ),
-							esc_html( ak_str( 'ak_copyright', 'Todos os direitos reservados.' ) )
+							// ⚠️ Ukrainian, not Portuguese — ak_str() resolves by source string, so the
+							// default here IS the Ukrainian copy. See the note in acf-options.php.
+							esc_html( ak_str( 'ak_copyright', 'Усі права захищено.' ) )
 						);
 						?>
 					</p>

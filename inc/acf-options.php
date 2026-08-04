@@ -240,7 +240,14 @@ function ak_register_pll_strings() {
 
 	$strings = array(
 		'ak_cta_label'    => 'Отримати консультацію',
-		'ak_copyright'    => 'Todos os direitos reservados.',
+		/*
+		 * ⚠️ The source must be UKRAINIAN. This read 'Todos os direitos reservados.' — the
+		 * Portuguese — so the Ukrainian site rendered "© 2026 Todos os direitos reservados."
+		 * and Portuguese looked right only by accident, because the source doubled as the pt
+		 * translation. ak_str() resolves by SOURCE string, and Polylang always returns the
+		 * source for the default language, so no translation could have fixed it.
+		 */
+		'ak_copyright'    => 'Усі права захищено.',
 		'ak_privacy'      => 'Конфіденційність',
 		'ak_menu_open'    => 'Меню',
 		'ak_menu_close'   => 'Закрити меню',
@@ -282,8 +289,43 @@ function ak_register_pll_strings() {
 		'ak_faq_all'        => 'Усі запитання і відповіді',
 	);
 
+	// Assistive-technology strings. They were __() with the theme text domain, which never
+	// translated — the theme ships no languages/ folder — so a Portuguese screen-reader user
+	// heard them in English. Only ak_skip_link is ever visible (on keyboard focus).
+	$strings += array(
+		'ak_skip_link'   => 'Перейти до вмісту',
+		'ak_footer_nav'  => 'Навігація у футері',
+		// A FORMAT STRING — %s is the current language name.
+		'ak_lang_switch' => 'Мова: %s. Змінити мову',
+	);
+
 	foreach ( $strings as $name => $default ) {
 		pll_register_string( $name, $default, 'kalynyuk' );
+	}
+
+	/*
+	 * The socials repeater, registered from its ACF rows rather than from the list above.
+	 *
+	 * `ak_telegram` / `ak_instagram` are already there and already translated, and because
+	 * ak_str() looks up by SOURCE string those two work whichever way they are registered.
+	 * This loop is for the row an editor adds LATER: without it, a fifth social would render
+	 * in Ukrainian on every language and never appear in the Strings screen, so nobody would
+	 * even see that it needed translating — the same silent failure the labels just had.
+	 *
+	 * ⚠️ ADMIN ONLY. Registration only populates the Strings screen; translation itself does
+	 * not need it. Reading an ACF options repeater on every front-end request to build a
+	 * screen no visitor opens is not worth it.
+	 */
+	if ( is_admin() && function_exists( 'get_field' ) ) {
+		$rows = get_field( 'ak_socials', 'option' );
+
+		if ( is_array( $rows ) ) {
+			foreach ( $rows as $i => $row ) {
+				if ( ! empty( $row['label'] ) ) {
+					pll_register_string( 'ak_social_' . $i, (string) $row['label'], 'kalynyuk' );
+				}
+			}
+		}
 	}
 }
 add_action( 'init', 'ak_register_pll_strings' );
@@ -401,7 +443,19 @@ function ak_socials() {
 		foreach ( $rows as $row ) {
 			if ( ! empty( $row['url'] ) && ! empty( $row['label'] ) ) {
 				$out[] = array(
-					'label' => (string) $row['label'],
+					/*
+					 * ⚠️ THROUGH ak_str(), because this repeater lives on an ACF OPTIONS page —
+					 * which is global, one value for every language. That is precisely what
+					 * CLAUDE.md's multilingual rule 3 warns against, and the labels shipped as
+					 * «Телеграм» / «Інстаграм» on /pt/ because of it. The legacy fallback below
+					 * always translated; the repeater that replaced it did not, so the fix went
+					 * out with the feature that introduced it.
+					 *
+					 * ak_str() looks up by SOURCE string, so nothing needs to know which row
+					 * this is — an editor adding a fifth social gets it in Polylang → Strings
+					 * as soon as the registration below runs.
+					 */
+					'label' => ak_str( 'ak_social_label', (string) $row['label'] ),
 					'url'   => (string) $row['url'],
 				);
 			}

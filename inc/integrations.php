@@ -121,3 +121,212 @@ function ak_gform_force_ajax( $form_args ) {
 	return $form_args;
 }
 add_filter( 'gform_form_args', 'ak_gform_force_ajax' );
+
+/**
+ * Translate Gravity Forms field content through Polylang.
+ *
+ * ⚠️ GRAVITY FORMS HAS NO POLYLANG INTEGRATION AT ALL, and this is the answer to why
+ * the footer form stayed Ukrainian on /pt/ while everything around it translated.
+ *
+ * Two different layers were being confused:
+ *
+ *   1. GF's OWN interface strings — "0 of 600 max characters", validation messages,
+ *      "This field is required" — are ordinary WordPress i18n. Polylang switches the
+ *      locale per language, GF loads its matching .mo, and they translate with no work
+ *      from us. That is why the character counter already read "0 de 600 máximo de
+ *      caracteres" while the labels beside it did not.
+ *   2. FORM CONTENT — labels, placeholders, choice text, the submit button — is entered
+ *      by an editor and lives in GF's OWN database tables, not in options or posts.
+ *      Polylang's string scanner never sees it, and there is no official Polylang addon
+ *      (Gravity Forms Multilingual is a WPML product).
+ *
+ * The usual workaround is one duplicated form per language, picked at render time. It was
+ * rejected: four forms means four entry streams to read, four notification configs to keep
+ * in sync, and a field added to one and forgotten in the others — for a four-field contact
+ * form. The cost lands on whoever maintains it, forever.
+ *
+ * This filters the form OBJECT instead, so there stays exactly ONE form, one entry stream,
+ * one set of notifications, and the labels become translatable in Polylang → Translations
+ * → Strings alongside every other UI string on the site (CLAUDE.md multilingual rule 3).
+ *
+ * ⚠️ ALL THREE HOOKS ARE REQUIRED. `gform_pre_render` alone translates what the visitor
+ * sees but not what the validator and the submission handler work with, so a failed
+ * validation would re-render the form with the ORIGINAL labels and the notification email
+ * would carry them too. The trio keeps display, validation and submission consistent.
+ *
+ * Deliberately NOT hooked on `gform_admin_pre_render`: the editor must keep seeing the
+ * source strings, or they would end up editing a translation and creating a new, untracked
+ * source string every time they saved.
+ *
+ * @param array $form Gravity Forms form object.
+ * @return array
+ */
+function ak_gform_translate( $form ) {
+	if ( ! function_exists( 'pll__' ) || empty( $form['fields'] ) ) {
+		return $form;
+	}
+
+	foreach ( $form['fields'] as $field ) {
+		foreach ( array( 'label', 'placeholder', 'description', 'errorMessage' ) as $prop ) {
+			if ( ! empty( $field->$prop ) ) {
+				$field->$prop = pll__( $field->$prop );
+			}
+		}
+
+		// Choice text carries the consent sentence, HTML link and all — pll__() is a plain
+		// string lookup, so the markup survives untouched.
+		if ( ! empty( $field->choices ) && is_array( $field->choices ) ) {
+			foreach ( $field->choices as $i => $choice ) {
+				if ( ! empty( $choice['text'] ) ) {
+					$field->choices[ $i ]['text'] = pll__( $choice['text'] );
+				}
+			}
+		}
+	}
+
+	if ( ! empty( $form['button']['text'] ) ) {
+		$form['button']['text'] = pll__( $form['button']['text'] );
+	}
+
+	/*
+	 * The thank-you message. It reaches the visitor through `gform_pre_submission_filter`,
+	 * because GFFormDisplay::process_form() picks the confirmation out of the form object it
+	 * gets back from that filter (form_display.php — handle_submission() at ~line 210).
+	 *
+	 * ⚠️ NOT the `gform_confirmation` filter, which is the more obvious hook: by the time it
+	 * fires the message is already merged with the entry and wrapped in GF's markup, so the
+	 * string handed to pll__() would be per-submission HTML that matches no registered source.
+	 * Translating the stored message keeps the lookup key a stable, editor-authored sentence.
+	 *
+	 * NOTIFICATIONS are deliberately left alone. They go to Anna, not to the visitor, so they
+	 * belong in her language regardless of which language the form was filled in.
+	 */
+	if ( ! empty( $form['confirmations'] ) && is_array( $form['confirmations'] ) ) {
+		foreach ( $form['confirmations'] as $id => $confirmation ) {
+			if ( ! empty( $confirmation['message'] ) ) {
+				$form['confirmations'][ $id ]['message'] = pll__( $confirmation['message'] );
+			}
+		}
+	}
+
+	return $form;
+}
+add_filter( 'gform_pre_render', 'ak_gform_translate' );
+add_filter( 'gform_pre_validation', 'ak_gform_translate' );
+add_filter( 'gform_pre_submission_filter', 'ak_gform_translate' );
+
+/**
+ * Register every Gravity Forms string with Polylang so it appears in the Strings screen.
+ *
+ * ⚠️ ADMIN ONLY, and that is not an oversight. pll__() translates by looking the SOURCE
+ * string up in the language's compiled .mo — it does not need the string to be registered.
+ * Registration exists purely so the string shows up in Translations → Strings for someone
+ * to fill in. Doing that on the front end would mean a GFAPI::get_forms() database read on
+ * every page view to populate a screen no visitor ever opens.
+ *
+ * Registered for ALL forms, not just the footer one, so the calculator's form is ready when
+ * its own migration comes. Untranslated strings simply return their source.
+ *
+ * @return void
+ */
+function ak_gform_register_strings() {
+	if ( ! is_admin() || ! class_exists( 'GFAPI' ) || ! function_exists( 'pll_register_string' ) ) {
+		return;
+	}
+
+	foreach ( GFAPI::get_forms() as $form ) {
+		$group = 'kalynyuk';
+
+		foreach ( $form['fields'] as $field ) {
+			foreach ( array( 'label', 'placeholder', 'description', 'errorMessage' ) as $prop ) {
+				if ( ! empty( $field->$prop ) ) {
+					pll_register_string( 'gf_' . $form['id'] . '_' . $field->id . '_' . $prop, $field->$prop, $group, 'description' === $prop );
+				}
+			}
+
+			if ( ! empty( $field->choices ) && is_array( $field->choices ) ) {
+				foreach ( $field->choices as $i => $choice ) {
+					if ( ! empty( $choice['text'] ) ) {
+						pll_register_string( 'gf_' . $form['id'] . '_' . $field->id . '_choice' . $i, $choice['text'], $group, true );
+					}
+				}
+			}
+		}
+
+		if ( ! empty( $form['button']['text'] ) ) {
+			pll_register_string( 'gf_' . $form['id'] . '_button', $form['button']['text'], $group );
+		}
+
+		if ( ! empty( $form['confirmations'] ) && is_array( $form['confirmations'] ) ) {
+			$i = 0;
+			foreach ( $form['confirmations'] as $confirmation ) {
+				if ( ! empty( $confirmation['message'] ) ) {
+					pll_register_string( 'gf_' . $form['id'] . '_confirmation' . $i, $confirmation['message'], $group, true );
+				}
+				$i++;
+			}
+		}
+	}
+}
+add_action( 'init', 'ak_gform_register_strings', 20 );
+
+/**
+ * Keep the privacy-policy link alive in languages the page has not been translated into.
+ *
+ * ⚠️ POLYLANG RETURNS 0, NOT THE ORIGINAL. It filters `option_wp_page_for_privacy_policy`
+ * at priority 20 and hands back the translated page — or 0 when there is none. Every caller
+ * treats 0 as "no privacy policy configured", so on /pt/, /en/ and /ru/ the footer link
+ * silently vanished, and so did WP core's own `get_privacy_policy_url()` (login screen,
+ * `the_privacy_policy_link()`, the personal-data export mails).
+ *
+ * A missing translation should degrade to the Ukrainian page, not to nothing: the link still
+ * works, it is merely untranslated. For a credit intermediary the privacy policy has to be
+ * reachable from every page in every language, so "no link at all" is the one outcome that
+ * is not acceptable.
+ *
+ * Done at the OPTION level rather than in footer.php on purpose — the footer was where it was
+ * noticed, but core and any plugin reading the option had the same hole.
+ *
+ * Implemented as capture-at-19 / restore-at-21 so Polylang's filter is left completely alone.
+ * Reading the raw value inside the filter instead would mean either recursing through
+ * get_option() or tearing out another plugin's callback.
+ *
+ * @param int|string $value Option value.
+ * @return int|string
+ */
+function ak_privacy_page_capture( $value ) {
+	ak_privacy_page_stash( (int) $value );
+
+	return $value;
+}
+add_filter( 'option_wp_page_for_privacy_policy', 'ak_privacy_page_capture', 19 );
+
+/**
+ * Restore the captured id when Polylang blanked it.
+ *
+ * @param int|string $value Option value, post-Polylang.
+ * @return int|string
+ */
+function ak_privacy_page_restore( $value ) {
+	return $value ? $value : ak_privacy_page_stash();
+}
+add_filter( 'option_wp_page_for_privacy_policy', 'ak_privacy_page_restore', 21 );
+
+/**
+ * Holder for the untranslated privacy-policy page id.
+ *
+ * A static rather than a global: the stored option cannot change mid-request, and the
+ * capture/restore pair is the only thing that has any business touching it.
+ *
+ * @param int|null $value Id to stash, or null to read.
+ * @return int
+ */
+function ak_privacy_page_stash( $value = null ) {
+	static $raw = 0;
+
+	if ( null !== $value ) {
+		$raw = $value;
+	}
+
+	return $raw;
+}

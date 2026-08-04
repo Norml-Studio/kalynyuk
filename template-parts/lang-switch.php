@@ -37,9 +37,10 @@ $ak_rest    = array_slice( $ak_langs, 1 );
 	>
 		<span class="u-visually-hidden">
 			<?php
+			// ak_str(), not __() — see the note on the skip link in header.php.
 			printf(
 				/* translators: %s: current language name. */
-				esc_html__( 'Language: %s. Change language', 'kalynyuk' ),
+				esc_html( ak_str( 'ak_lang_switch', 'Мова: %s. Змінити мову' ) ),
 				esc_html( $ak_current['name'] )
 			);
 			?>
