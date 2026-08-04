@@ -135,3 +135,7 @@ Backups before anything ran: `~/backup-theme-20260804b.tgz` and `~/backup-string
 - No console errors beyond the known Review Wall `remodal.min.js` one.
 
 Rollback is the tarball plus `backup-strings-20260804.json`, which restores both the `PLL_MO` entries and the form object.
+
+- **[DECISION] The consent-record behaviour stays as it is** (Petr): entries keep storing the Ukrainian consent text in every language, because only `choices[].text` is translated and never `value`. Recorded here rather than changed — if the record ever needs to show what a Portuguese visitor actually read, the lever is translating `value` too (which splits the entry stream by language) or adding a language field to the form.
+- The **happy-path submission on production was not run**. It creates a real entry and sends a real notification to Anna, so it needs an explicit go-ahead rather than being inferred; the validation path was exercised instead and proves the same three hooks.
+- ⚠️ **Side effect worth knowing: translating form 1 also translated part of form 3.** `pll__()` matches on the SOURCE string, and the calculator form's consent sentence is byte-identical to the footer form's — so it picked up the Portuguese translation for free, without form 3 being seeded. Anything sharing a source string across forms translates together; that is the mechanism working as designed, but it means "form 3 is untranslated" is not quite true any more.
