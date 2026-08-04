@@ -685,3 +685,35 @@ the label itself is translated.
   three strings the plugin could not translate.
 
 **One Divi section left on the homepage: `FAQ`.**
+
+### De-Divi migration — `faq` (homepage section #9). **The homepage is now fully native.**
+
+Figma `1136:9152` → the Divi section labelled `FAQ`, addressed with `label:FAQ = faq`. Same native `<details name="…">` accordion as `trust`, reskinned: outlined pills at radius 16 rather than hairline-separated rows, and a rotating chevron rather than a plus/minus.
+
+⚠️ **The two accordions carry DIFFERENT `name` values, and that is load-bearing.** `<details>` grouping is document-wide, so a shared name would make opening a FAQ answer close whichever trust item was open — 4 000px up the page and completely out of sight. Verified by driving both: clicking FAQ #4 left the trust accordion untouched.
+
+#### [DECISION] The questions are Divi's, not Figma's (Petr)
+
+The design carries **eight** questions but only **one** answer — the other seven are drawn collapsed, so no answer text exists for them anywhere. Four of the eight have no counterpart in the Divi content either, so shipping the design's list would have meant *writing* interest rates, IMT bands and eligibility rules for a licensed credit intermediary. Divi's seven Q&A are complete and already reviewed, so they ship. `design.md` §13 gap 22 records the design's list for whenever the answers exist.
+
+The seeding script **extracts the answers from `post_content` rather than retyping them** — they carry rates (3,5–4%), IMT bands (0–8%), stamp duty (0,8% / 0,6%) and fee ranges, and hand-copying is exactly where a transcription slip becomes a factual error on a regulated page. The script also refuses to run unless it parses exactly 7 items.
+
+#### [BUG in my own docs] "Leave empty and the Divi original comes back" was false in 8 places
+
+The A/B test used to isolate an unrelated artifact accidentally proved it: clearing `ak_faq_heading` did **not** restore the Divi FAQ — the section vanished entirely, and `.et_pb_section` stayed at 0.
+
+That is correct mechanism behaviour and I had documented the opposite. The **map** is what removes the Divi section; the template merely declines to draw. So for every in-place section an empty heading means "render nothing", not "fall back". Only the leading-strip route (`ak_sections`, the hero) actually restores.
+
+All eight ACF instructions corrected to say what really happens and how to actually restore Divi — delete the section's line from *Sections replaced in place*. **Editor-facing instructions that are confidently wrong are worse than absent ones**, because they get trusted.
+
+#### Pre-existing, NOT introduced here
+
+While screenshotting, a Gravity Forms consent checkbox appeared to overlap FAQ items 6–7. Chased it properly rather than assuming: **it is present with the native FAQ switched off as well**, at the same relative position (8683 → 9411 when the section is on, i.e. shifted by exactly the FAQ's 727px height). Not caused by this section, and out of scope here — but it belongs on the list for whoever picks up the calculator, which is where `gform_3` lives.
+
+#### Verified
+
+- **Desktop 1440, exact:** lede 664 track / list 680 at the shared x=696 spine · items radius 16, transparent, `#d6d0c6` border · question row 57 · answer `rgba(42,32,17,0.56)`.
+- First item open on load, exclusive within the FAQ, trust accordion unaffected. Columns 2 → 1 below desktop. **No `.faq` element overflows at 375 / 641 / 768 / 1024 / 1025 / 1280 / 1440 / 1600 / 2560.** No console errors.
+- `/pt/` renders the Portuguese heading, intro and «Todas as perguntas e respostas»; the `ak_faq_all` string was translated into pt/en/ru rather than merely registered.
+
+**`.et_pb_section` count on the homepage: 0, on both languages.** Hero, about, cta, services, trust, order, testimonials, faq and the calculator are all native locally. Production still runs the calculator on Divi, deliberately.

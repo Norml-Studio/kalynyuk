@@ -1,0 +1,195 @@
+@use '../abstracts/tokens' as t;
+@use '../abstracts/mixins' as m;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// .faq — Figma 1136:9152 ("Frame 9125"), 1376×615 at x=32 y=9228.
+//        Lede 1136:9151 (470 wide) · list 1130:4185 (680 wide at x=696)
+//
+// 🔒 CONTAINER RULE: full-bleed band, container() on __inner, no background.
+//
+// ⚠️ THE SAME NATIVE <details name="…"> ACCORDION AS `.trust`, including the
+// ::details-content animation. The reasoning lives in _trust.scss and trust.php and is
+// not repeated; what differs here is only the skin — outlined pills at radius 16 instead
+// of hairline-separated rows, and a rotating chevron instead of a plus/minus.
+//
+// ⚠️ NO MOBILE FRAME (design.md §13 gap 13). The stack is derived.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// .faq
+.faq {
+  // See _trust.scss — this is what makes `block-size: auto` animatable, and it is scoped
+  // per section rather than set on :root.
+  interpolate-size: allow-keywords;
+  // Divi's own section has no vertical padding, only a 30px top margin; Figma measures 120
+  // from the rule above. The section below owns its own top space, so the bottom is 0.
+  padding-block: t.$space-8 0;
+
+  // .faq__inner
+  &__inner {
+    @include m.container;
+
+    @include m.bp(desktop) {
+      display: grid;
+      // Lede 470 in a 664 track, list 680 starting at x=696 — the same spine as `.about`,
+      // `.order` and the services rows, so all four line up down the page.
+      grid-template-columns: minmax(0, 664fr) minmax(0, 680fr);
+      column-gap: t.$space-4;
+      align-items: start;
+    }
+  }
+
+  // .faq__lede
+  &__lede {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: t.$space-4; // measured 32 — heading→intro and intro→button are both 32
+  }
+
+  // .faq__heading
+  &__heading {
+    @include m.text-h1;
+
+    margin: 0;
+    padding-bottom: 0; // Divi inline h1..h6 override — see _about.scss
+    color: t.$color-ink;
+    text-wrap: balance;
+
+    @include m.bp(desktop) {
+      max-width: 470px; // measured, 1130:4314
+    }
+  }
+
+  // .faq__intro
+  &__intro {
+    @include m.text-body;
+
+    margin: 0;
+    color: t.$color-ink;
+
+    @include m.bp(desktop) {
+      max-width: 403px; // measured, 1130:4315
+    }
+  }
+
+  // .faq__all
+  &__all {
+    flex: 0 0 auto;
+  }
+
+  // .faq__list
+  &__list {
+    display: grid;
+    gap: 12px; // measured, 1130:4185 itemSpacing — below the 8px base unit, so stated
+    margin-top: t.$space-5;
+
+    @include m.bp(desktop) {
+      margin-top: 0; // the two columns start level once side by side
+    }
+  }
+
+  // .faq__item
+  // ⚠️ OUTLINED AND radius 16, which is the opposite of every other card in this build.
+  // Elsewhere a panel is a `--surface` fill at radius 24 with no border; here Figma has
+  // the fill switched OFF and the stroke ON, at `--radius-md`. That is deliberate in the
+  // design — these read as form controls rather than as cards — so do not "correct" it to
+  // match the others.
+  &__item {
+    background-color: transparent;
+    border: t.$border-width solid t.$color-border;
+    border-radius: t.$radius-md;
+
+    &::details-content {
+      block-size: 0;
+      overflow: hidden;
+      transition:
+        block-size t.$dur-slow t.$ease,
+        content-visibility t.$dur-slow t.$ease allow-discrete;
+    }
+
+    &[open]::details-content {
+      block-size: auto;
+    }
+  }
+
+  // .faq__question
+  // `list-style: none` AND the -webkit pseudo-element — Safari uses one, Chrome and
+  // Firefox the other, and dropping either leaves a stray triangle in one browser.
+  &__question {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: t.$space-2;
+    // Measured 57 collapsed, with the question optically centred in it. `min-height` so a
+    // question that wraps to two lines grows the row instead of overflowing it.
+    min-height: 57px;
+    padding-inline: 20px 16px; // measured — the insets are NOT symmetrical
+    cursor: pointer;
+    list-style: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &:focus-visible {
+      @include m.focus-ring;
+    }
+  }
+
+  // .faq__question-text
+  &__question-text {
+    @include m.text-body-sm;
+
+    color: t.$color-ink;
+  }
+
+  // .faq__marker
+  // A chevron that flips rather than two icons swapped. Figma uses `vuesax/linear/
+  // arrow-down` on every row, including the open one — so the rotation is ours, and it is
+  // the state transition §9 clause 2 already allows on an interactive element.
+  &__marker {
+    flex: 0 0 auto;
+    width: 20px; // measured, 1130:4188
+    height: 20px;
+    color: t.$color-ink;
+    transition: transform t.$dur-base t.$ease;
+  }
+
+  // .faq__item[open] .faq__marker
+  &__item[open] &__marker {
+    transform: rotate(180deg);
+  }
+
+  // .faq__answer
+  &__answer {
+    @include m.text-body-sm;
+
+    padding: 0 16px 20px 20px; // measured — matches the question's asymmetric insets
+    color: t.$color-ink-muted; // Figma fades it to 56%, which IS this token exactly
+
+    p {
+      margin: 0;
+
+      + p {
+        margin-top: t.$space-2;
+      }
+    }
+  }
+
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Reduced motion — same requirement as `.trust`: the one thing that moves must be
+// switchable off (design.md §9).
+// ─────────────────────────────────────────────────────────────────────────────
+@media (prefers-reduced-motion: reduce) {
+  // .faq__item
+  .faq__item::details-content {
+    transition: none;
+  }
+
+  // .faq__marker
+  .faq__marker {
+    transition: none;
+  }
+}

@@ -161,6 +161,7 @@ function ak_section_registry() {
 			'trust'      => __( 'Why us (accordion)', 'kalynyuk' ),
 			'order'      => __( 'Book a consultation', 'kalynyuk' ),
 			'testimonials' => __( 'Testimonials (Google reviews)', 'kalynyuk' ),
+			'faq'        => __( 'FAQ', 'kalynyuk' ),
 			'calculator' => __( 'Mortgage calculator', 'kalynyuk' ),
 		)
 	);
@@ -751,7 +752,7 @@ function ak_acf_page_sections_fields() {
 					'name'         => 'ak_about_heading',
 					'type'         => 'textarea',
 					'rows'         => 2,
-					'instructions' => __( 'Left column. Leave empty to hide the whole section — the Divi original comes back.', 'kalynyuk' ),
+					'instructions' => __( 'Left column. Leave empty and the section renders NOTHING — it does not fall back to the Divi original, because the in-place map is what removes that. To restore Divi, delete this section\'s line from “Sections replaced in place”.', 'kalynyuk' ),
 				),
 				array(
 					'key'          => 'field_ak_about_intro',
@@ -883,7 +884,7 @@ function ak_acf_page_sections_fields() {
 					'name'         => 'ak_cta_heading',
 					'type'         => 'textarea',
 					'rows'         => 4,
-					'instructions' => __( 'The whole banner. Leave empty to hide it — the Divi original comes back. The button is NOT edited here: it is the shared site CTA, so the header, hero and this banner always agree (header-standard). Its label lives in Polylang → Strings, its URL on the Site chrome options page.', 'kalynyuk' ),
+					'instructions' => __( 'The whole banner. Leave empty and the section renders NOTHING — it does not fall back to Divi; remove its line from “Sections replaced in place” for that. The button is NOT edited here: it is the shared site CTA, so the header, hero and this banner always agree (header-standard). Its label lives in Polylang → Strings, its URL on the Site chrome options page.', 'kalynyuk' ),
 				),
 				array(
 					'key'           => 'field_ak_cta_image',
@@ -918,7 +919,7 @@ function ak_acf_page_sections_fields() {
 					'name'         => 'ak_services_heading',
 					'type'         => 'textarea',
 					'rows'         => 2,
-					'instructions' => __( 'Centred above the grid. Leave empty to hide the whole section — the Divi original comes back.', 'kalynyuk' ),
+					'instructions' => __( 'Centred above the grid. Leave empty and the section renders NOTHING — it does not fall back to the Divi original, because the in-place map is what removes that. To restore Divi, delete this section\'s line from “Sections replaced in place”.', 'kalynyuk' ),
 				),
 				array(
 					'key'   => 'field_ak_services_intro',
@@ -1041,7 +1042,7 @@ function ak_acf_page_sections_fields() {
 					'name'         => 'ak_trust_heading',
 					'type'         => 'textarea',
 					'rows'         => 2,
-					'instructions' => __( 'Centred above the two columns. Leave empty to hide the whole section — the Divi original comes back.', 'kalynyuk' ),
+					'instructions' => __( 'Centred above the two columns. Leave empty and the section renders NOTHING — it does not fall back to the Divi original, because the in-place map is what removes that. To restore Divi, delete this section\'s line from “Sections replaced in place”.', 'kalynyuk' ),
 				),
 				array(
 					'key'           => 'field_ak_trust_image',
@@ -1102,7 +1103,7 @@ function ak_acf_page_sections_fields() {
 					'name'         => 'ak_order_heading',
 					'type'         => 'textarea',
 					'rows'         => 2,
-					'instructions' => __( 'Sits on the page ABOVE the green card, not inside it. Leave empty to hide the whole section — the Divi original comes back.', 'kalynyuk' ),
+					'instructions' => __( 'Sits on the page ABOVE the green card, not inside it. Leave empty and the section renders NOTHING — it does not fall back to the Divi original, because the in-place map is what removes that. To restore Divi, delete this section\'s line from “Sections replaced in place”.', 'kalynyuk' ),
 				),
 				array(
 					'key'   => 'field_ak_order_intro',
@@ -1174,7 +1175,7 @@ function ak_acf_page_sections_fields() {
 					'label'        => __( 'Heading', 'kalynyuk' ),
 					'name'         => 'ak_testimonials_heading',
 					'type'         => 'text',
-					'instructions' => __( 'Leave empty to hide the whole section — the Divi original comes back. This is a PER-PAGE field, so every language has its own; Review Wall\'s own title was one global setting shared by all four.', 'kalynyuk' ),
+					'instructions' => __( 'Leave empty and the section renders NOTHING — it does not fall back to the Divi original, because the in-place map is what removes that. To restore Divi, delete this section\'s line from “Sections replaced in place”. This is a PER-PAGE field, so every language has its own; Review Wall\'s own title was one global setting shared by all four.', 'kalynyuk' ),
 				),
 				array(
 					'key'           => 'field_ak_testimonials_page',
@@ -1195,6 +1196,76 @@ function ak_acf_page_sections_fields() {
 					'min'           => 1,
 					'default_value' => 9,
 					'instructions'  => __( 'Newest first, from Review Wall\'s own table. Three are visible at a time; the rest are reachable with the arrows.', 'kalynyuk' ),
+				),
+			),
+		)
+	);
+
+	acf_add_local_field_group(
+		array(
+			'key'      => 'group_ak_faq',
+			'title'    => __( 'FAQ', 'kalynyuk' ),
+			'location' => array(
+				array(
+					array(
+						'param'    => 'post_type',
+						'operator' => '==',
+						'value'    => 'page',
+					),
+				),
+			),
+			'fields'   => array(
+				array(
+					'key'          => 'field_ak_faq_heading',
+					'label'        => __( 'Heading', 'kalynyuk' ),
+					'name'         => 'ak_faq_heading',
+					'type'         => 'textarea',
+					'rows'         => 2,
+					'instructions' => __( 'Left column. Leave empty and the section renders NOTHING — it does not fall back to the Divi original, because the in-place map is what removes that. To restore Divi, delete this section\'s line from “Sections replaced in place”.', 'kalynyuk' ),
+				),
+				array(
+					'key'   => 'field_ak_faq_intro',
+					'label' => __( 'Intro', 'kalynyuk' ),
+					'name'  => 'ak_faq_intro',
+					'type'  => 'textarea',
+					'rows'  => 3,
+				),
+				array(
+					'key'           => 'field_ak_faq_page',
+					'label'         => __( '“All questions” target', 'kalynyuk' ),
+					'name'          => 'ak_faq_page',
+					'type'          => 'post_object',
+					'post_type'     => array( 'page' ),
+					'return_format' => 'id',
+					'allow_null'    => 1,
+					'ui'            => 1,
+					'instructions'  => __( 'The FAQ page. The label is a Polylang string (ak_faq_all), translated in Translations → Strings.', 'kalynyuk' ),
+				),
+				array(
+					'key'          => 'field_ak_faq_items',
+					'label'        => __( 'Questions', 'kalynyuk' ),
+					'name'         => 'ak_faq_items',
+					'type'         => 'repeater',
+					'layout'       => 'block',
+					'button_label' => __( 'Add question', 'kalynyuk' ),
+					'instructions' => __( 'THE FIRST ONE IS OPEN on load, and opening any other closes it — the browser does that, not a setting, so it follows this order automatically.', 'kalynyuk' ),
+					'sub_fields'   => array(
+						array(
+							'key'   => 'field_ak_faq_item_question',
+							'label' => __( 'Question', 'kalynyuk' ),
+							'name'  => 'question',
+							'type'  => 'text',
+						),
+						array(
+							'key'          => 'field_ak_faq_item_answer',
+							'label'        => __( 'Answer', 'kalynyuk' ),
+							'name'         => 'answer',
+							'type'         => 'wysiwyg',
+							'media_upload' => 0,
+							'tabs'         => 'visual',
+							'toolbar'      => 'basic',
+						),
+					),
 				),
 			),
 		)
@@ -1551,6 +1622,37 @@ function ak_testimonials_data() {
 	return array(
 		'heading' => $heading,
 		'reviews' => $reviews,
+		'all_url' => $page_id ? get_permalink( ak_translate_id( $page_id ) ) : '',
+	);
+}
+
+/**
+ * FAQ data for the current page, or null when there is nothing to render.
+ *
+ * Same native-<details> accordion as `trust`; see that template for why the behaviour is
+ * the browser's rather than ours.
+ *
+ * @return array|null
+ */
+function ak_faq_data() {
+	$id = (int) get_queried_object_id();
+
+	if ( ! $id ) {
+		return null;
+	}
+
+	$heading = (string) ak_section_field( 'ak_faq_heading', $id );
+
+	if ( '' === trim( $heading ) ) {
+		return null;
+	}
+
+	$page_id = (int) ak_section_field( 'ak_faq_page', $id );
+
+	return array(
+		'heading' => $heading,
+		'intro'   => (string) ak_section_field( 'ak_faq_intro', $id ),
+		'items'   => ak_section_rows( 'ak_faq_items', array( 'question', 'answer' ), $id ),
 		'all_url' => $page_id ? get_permalink( ak_translate_id( $page_id ) ) : '',
 	);
 }

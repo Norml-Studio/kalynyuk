@@ -279,6 +279,7 @@ function ak_register_pll_strings() {
 		// A FORMAT STRING, like ak_read_minutes_* — word order round a number is not the same
 		// in every language, and 'Avaliação 5,0' is right where '5,0 Avaliação' is not.
 		'ak_reviews_rating' => '%s Оцінка',
+		'ak_faq_all'        => 'Усі запитання і відповіді',
 	);
 
 	foreach ( $strings as $name => $default ) {

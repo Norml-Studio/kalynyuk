@@ -732,6 +732,31 @@ right) over a scrolling row of **448×480** cards, gap 16 — three visible at a
 - ⚠️ **The footer uses named grid areas.** Mixing one explicitly-placed child with three
   auto-placed siblings put the rating under the avatar instead of under the stars.
 
+### FAQ accordion — added v2.1.0
+
+Figma `1136:9152`. Lede left (heading · intro · accent button, `--space-4` apart), list
+right at the shared **x=696** spine, items 12 apart.
+
+| Part | Spec |
+|---|---|
+| Item | **OUTLINED** — transparent fill, 1px `--border`, **radius 16** (`--radius-md`) |
+| Question | Body Small, `--ink`, row `min-height: 57px` |
+| Insets | 20 left / 16 right — **not symmetrical** |
+| Answer | Body Small at `--ink-muted` (Figma's 56% IS that token exactly) |
+| Marker | 20×20 chevron, rotated 180° when open |
+
+🔒 **The same native `<details name="…">` accordion as the trust band**, including the
+`::details-content` animation — see that entry rather than duplicating the reasoning.
+
+⚠️ **The two accordions must carry DIFFERENT `name` values.** `<details>` grouping is
+document-wide, so a shared name would make opening a FAQ answer close whichever trust item
+was open — halfway up the page and out of sight.
+
+⚠️ **This item style inverts the house panel.** Everywhere else a panel is a `--surface`
+fill at radius 24 with no border; these are transparent, outlined, and at radius 16, so
+they read as form controls rather than as cards. That is deliberate in the design — do not
+"correct" it to match the other sections.
+
 ### Header / navigation — added v2.0.0
 
 Behaviour and a11y are governed by **`vibe-frontend-standards/references/header-standard.md`**
@@ -1166,3 +1191,9 @@ out of the URL.
     constant under every name would be inventing an attribution for a real, named person,
     so the line is **not rendered**. It needs either a data source or a design change, and
     the footer grid already leaves the cell for it.
+22. **The FAQ design's question list has no answers** — added v2.1.0. Figma `1136:9152`
+    carries eight questions but only ONE answer, because the other seven are drawn
+    collapsed; four of those eight have no counterpart in the Divi content either. Shipping
+    the design's list would have meant WRITING interest rates, IMT bands and eligibility
+    rules for a licensed credit intermediary. **Divi's seven complete Q&A ship instead**
+    (Petr, 2026-08-04). The design's list can be adopted once the answers exist.
