@@ -53,3 +53,21 @@ Pre-flight checks all passed before anything was written: both photos present by
 **Verified on production, both languages:** nine native sections; `.et_pb_section` down to 1 (`calculator`); trust marker `rgb(48,113,85)`; 5 trust items, 5 order items, 9 testimonial cards, 7 FAQ items, 4 SEO blocks; SEO heading 506 wide; one `h1`; no overflow at 1440 or 375; **zero console errors**.
 
 Backups: `~/backup-theme-20260804.tgz` + `~/backup-akmeta-20260804.tsv` (the two earlier pairs are still there). Rollback stays cheap — `post_content` has never been modified, so clearing `ak_inline_sections` and `ak_append_sections` returns every Divi original.
+
+### Header submenu spacing — the gap was never the problem
+
+Reported as "the gap between items should be 16px". It already was — `.site-nav__sublist` had `gap: $space-2` all along. What was wrong is that each item was **40px tall instead of the design's 20**, so the list measured 208 against Figma's 128 (`1163:1809`: four 20px rows, `itemSpacing: 16`). Bigger rows read as bigger spacing.
+
+The 40 came from `min-height: $tap-min` plus 8px block padding, added for header-standard §5's ≥40px target — and `$tap-min`'s own note says in as many words **not** to shrink a target to match the art. So both requirements were real and in conflict.
+
+**Resolved by separating flow height from hit area.** The row keeps the design's 20px in flow; an absolutely-positioned `::after` grows the clickable box ±8 into the gaps, which are dead space anyway. That gives **36×321 per item** at zero layout cost — comfortably over WCAG 2.2 AA's 24px floor, on a pointer-only menu (mobile uses the drawer, never this panel).
+
+⚠️ **±8 is the maximum that does not overlap:** the gap is 16, so adjacent targets meet exactly and tile the list with no ambiguous region. Do not raise it chasing 40.
+
+Verified by probing `elementFromPoint`: on-text hits its own row, 4px into the gap still hits the row above, and the boundary resolves cleanly to the row below — no dead pixels, no overlap. List now 130 against the design's 128 (the 0.48px line-height rounding).
+
+### FAQ translated into Portuguese
+
+Page 2483 was showing the Ukrainian questions and answers under a Portuguese heading — the seed had deliberately let them inherit, and nobody had translated them since.
+
+⚠️ **Translation only.** Every figure was carried across unchanged and then spot-checked programmatically: 10–20% / 30–40%, TAEG 3,5–4,5%, fixa 3,5–4%, 18–35 anos, 15%, 450 000 €, 83 696 €, 7–10%, IMT 0–8%, 316 272 €, Imposto do Selo 0,8% / 0,6%, 1500–2500 €, 10–15%, 3–6 meses, 1 ano. Nothing rounded, restated or "improved" — this is regulated copy for a licensed credit intermediary and the Ukrainian original is the reviewed source. Portuguese terminology uses the local names (IMT — Imposto Municipal sobre as Transmissões, contrato sem termo, declarações de IRS).

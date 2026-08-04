@@ -248,14 +248,35 @@
   }
 
   // .site-nav__sublink
+  // ⚠️ THE HIT AREA IS EXPANDED BY A PSEUDO-ELEMENT, NOT BY HEIGHT — and that resolves a
+  // real conflict rather than dodging one.
+  //
+  // Figma (1163:1809) draws four 20px text rows 16 apart, so the list is 128 tall. This
+  // used `min-height: $tap-min` + 8px block padding for header-standard §5's ≥40px target,
+  // which made every row 40 and the list 208 — 80px taller than drawn, and the reason the
+  // spacing read as wrong even though the 16px gap was already correct.
+  //
+  // Shrinking the target to match the art is explicitly forbidden (see the note on
+  // $tap-min). So the row keeps the design's 20px in FLOW and an absolutely-positioned
+  // ::after grows the clickable box ±8 into the gaps, which are dead space anyway. That is
+  // 36×321 per item — comfortably over WCAG 2.2 AA's 24px floor, on a pointer-only menu
+  // (mobile uses the drawer, never this panel) — at zero layout cost.
+  //
+  // ±8 is the maximum that does NOT overlap: the gap is 16, so adjacent targets meet
+  // exactly and tile the list with no ambiguous region. Do not raise it to reach 40.
   &__sublink {
     @include m.text-body-sm;
 
+    position: relative;
     display: block;
-    min-height: t.$tap-min;
-    padding-block: t.$space-1;
     color: t.$color-ink;
     transition: color t.$dur-base t.$ease;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: -#{t.$space-1} 0;
+    }
 
     &:hover {
       color: t.$color-accent;
