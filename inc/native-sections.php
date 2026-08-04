@@ -160,6 +160,7 @@ function ak_section_registry() {
 			'services'   => __( 'Services grid', 'kalynyuk' ),
 			'trust'      => __( 'Why us (accordion)', 'kalynyuk' ),
 			'order'      => __( 'Book a consultation', 'kalynyuk' ),
+			'testimonials' => __( 'Testimonials (Google reviews)', 'kalynyuk' ),
 			'calculator' => __( 'Mortgage calculator', 'kalynyuk' ),
 		)
 	);
@@ -1156,6 +1157,51 @@ function ak_acf_page_sections_fields() {
 
 	acf_add_local_field_group(
 		array(
+			'key'      => 'group_ak_testimonials',
+			'title'    => __( 'Testimonials (Google reviews)', 'kalynyuk' ),
+			'location' => array(
+				array(
+					array(
+						'param'    => 'post_type',
+						'operator' => '==',
+						'value'    => 'page',
+					),
+				),
+			),
+			'fields'   => array(
+				array(
+					'key'          => 'field_ak_testimonials_heading',
+					'label'        => __( 'Heading', 'kalynyuk' ),
+					'name'         => 'ak_testimonials_heading',
+					'type'         => 'text',
+					'instructions' => __( 'Leave empty to hide the whole section — the Divi original comes back. This is a PER-PAGE field, so every language has its own; Review Wall\'s own title was one global setting shared by all four.', 'kalynyuk' ),
+				),
+				array(
+					'key'           => 'field_ak_testimonials_page',
+					'label'         => __( '“All reviews” target', 'kalynyuk' ),
+					'name'          => 'ak_testimonials_page',
+					'type'          => 'post_object',
+					'post_type'     => array( 'page' ),
+					'return_format' => 'id',
+					'allow_null'    => 1,
+					'ui'            => 1,
+					'instructions'  => __( 'Usually the Відгуки page. The label itself is a Polylang string (ak_reviews_all), not a field, so it is translated in Translations → Strings.', 'kalynyuk' ),
+				),
+				array(
+					'key'           => 'field_ak_testimonials_limit',
+					'label'         => __( 'How many reviews', 'kalynyuk' ),
+					'name'          => 'ak_testimonials_limit',
+					'type'          => 'number',
+					'min'           => 1,
+					'default_value' => 9,
+					'instructions'  => __( 'Newest first, from Review Wall\'s own table. Three are visible at a time; the rest are reachable with the arrows.', 'kalynyuk' ),
+				),
+			),
+		)
+	);
+
+	acf_add_local_field_group(
+		array(
 			'key'      => 'group_ak_calculator',
 			'title'    => __( 'Calculator', 'kalynyuk' ),
 			'location' => array(
@@ -1440,5 +1486,71 @@ function ak_order_data() {
 		'image'        => ak_translate_id( (int) ak_section_field( 'ak_order_image', $id ) ),
 		'items'        => ak_section_rows( 'ak_order_items', array( 'title', 'body' ), $id ),
 		'cta'          => ak_primary_cta(),
+	);
+}
+
+/**
+ * Google reviews, read from the Review Wall plugin's own table.
+ *
+ * ⚠️ WHY THIS SECTION WAS REBUILT AT ALL, since the plugin already renders one: Review
+ * Wall stores its heading and its button label as `get_option()` — ONE global string for
+ * the whole site. On a four-language Polylang install that is not a limitation to work
+ * around, it is a defect with no setting to fix: the shipped values are
+ * "Подивіться, що кажуть наші клієнти" and "Review us on Google", and every language gets
+ * both regardless. Its shortcode takes no arguments either.
+ *
+ * So the split is: the plugin keeps owning the DATA (it syncs from Google and refreshes
+ * on its own schedule — duplicating that into ACF would mean reviews going stale the day
+ * someone forgets), and the theme owns every string around it. Heading is a per-page
+ * field, the button label is a Polylang string, and both are therefore per-language.
+ *
+ * ⚠️ THE COUPLING IS DELIBERATE AND NARROW. We touch exactly one public method,
+ * `get_google_reviews()`, and read four columns off it. If the plugin is deactivated the
+ * class is simply gone and the section renders its chrome with no cards rather than
+ * fatally — which is why the class_exists() guard is not optional.
+ *
+ * @return array|null
+ */
+function ak_testimonials_data() {
+	$id = (int) get_queried_object_id();
+
+	if ( ! $id ) {
+		return null;
+	}
+
+	$heading = (string) ak_section_field( 'ak_testimonials_heading', $id );
+
+	if ( '' === trim( $heading ) ) {
+		return null;
+	}
+
+	$reviews = array();
+
+	if ( class_exists( 'Review_Wall_Helper' ) ) {
+		$limit = (int) ak_section_field( 'ak_testimonials_limit', $id );
+		$limit = $limit > 0 ? $limit : 9;
+		$rows  = (array) Review_Wall_Helper::get_db_instance()->get_google_reviews();
+
+		foreach ( array_slice( $rows, 0, $limit ) as $row ) {
+			$reviews[] = array(
+				'author' => (string) $row->review_author,
+				'text'   => (string) $row->review_content,
+				'rating' => (float) $row->review_rating,
+				/*
+				 * The column holds an attachment ID, and "0" for the reviewers Google has no
+				 * photo for — 2 of the 20 currently. Cast and let the template fall back to
+				 * an initial rather than rendering a broken image.
+				 */
+				'photo'  => (int) $row->review_author_photo,
+			);
+		}
+	}
+
+	$page_id = (int) ak_section_field( 'ak_testimonials_page', $id );
+
+	return array(
+		'heading' => $heading,
+		'reviews' => $reviews,
+		'all_url' => $page_id ? get_permalink( ak_translate_id( $page_id ) ) : '',
 	);
 }

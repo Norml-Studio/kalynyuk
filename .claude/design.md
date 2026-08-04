@@ -708,6 +708,30 @@ was right.
   platform, and is announced as "white heavy check mark". An inline SVG inherits
   `currentColor` and is `aria-hidden`, so the list reads as a list.
 
+### Testimonial card — added v2.1.0
+
+Figma `1130:9143`. Header (heading left · "all reviews" button + two 48px round arrows
+right) over a scrolling row of **448×480** cards, gap 16 — three visible at a time.
+
+| Part | Spec |
+|---|---|
+| Card | `--surface` fill, radius 24, **no border**, inset `--space-3` |
+| Quote mark | 24×24, `--ink`, `--space-3` above the text |
+| Text | Desktop/Body, clamped to **10 lines** |
+| Rule | 1px `--border` across the card, `--space-3` above the footer |
+| Avatar | 56px circle; falls back to an initial on `--surface-sunken` |
+| Name | Desktop/H3 · Rating Body Small `--ink-muted` · five 24px stars, gap 4, `--accent` |
+
+- **It is a scroller, not a slider.** Scroll-snapping overflow row plus `scrollBy()` — no
+  transform, no index state, no library. It works with a trackpad, a swipe and the keyboard
+  before any JS runs, and a failed script degrades to a scrollable row rather than a frozen
+  carousel. Arrows are hidden below desktop, where swiping is the native gesture.
+- ⚠️ **Track columns must be a DEFINITE size, never `minmax(0, …)`.** With a zero minimum
+  the columns shrink to share the container instead of overflowing it: measured, every card
+  came out 139px wide and the row never scrolled.
+- ⚠️ **The footer uses named grid areas.** Mixing one explicitly-placed child with three
+  auto-placed siblings put the rating under the avatar instead of under the stars.
+
 ### Header / navigation — added v2.0.0
 
 Behaviour and a11y are governed by **`vibe-frontend-standards/references/header-standard.md`**
@@ -1136,3 +1160,9 @@ out of the URL.
     not, plain `object-fit: cover` is the honest answer — and the `.about` portrait is the
     counter-example proving the rule, since there the ratios did match and the crop was
     worth reproducing exactly.
+21. **The testimonial card's location line has no data source** — added v2.1.0. The design
+    puts a place under each reviewer's name ("Португалія"); Review Wall's table has exactly
+    four columns — author, photo, content, rating — and nothing resembling one. Printing a
+    constant under every name would be inventing an attribution for a real, named person,
+    so the line is **not rendered**. It needs either a data source or a design change, and
+    the footer grid already leaves the cell for it.

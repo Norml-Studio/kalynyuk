@@ -52,6 +52,7 @@
 // Prefer that over bumping specificity inside the section partial.
 .entry-content .about__list,
 .entry-content .order__list,
-.entry-content .services__grid {
+.entry-content .services__grid,
+.entry-content .testimonials__track {
   padding: 0;
 }

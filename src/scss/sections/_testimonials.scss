@@ -1,0 +1,280 @@
+@use '../abstracts/tokens' as t;
+@use '../abstracts/mixins' as m;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// .testimonials — Figma 1130:9143 ("Frame 9119"), 1376×584 at x=32 y=8460.
+//                 Header 1130:9142 · track 1130:3950 (three 448×480 cards, gap 16)
+//
+// ⚠️ NAMED `testimonials`, NOT `reviews`, ON PURPOSE. `sections/_reviews.scss` already
+// exists and is something else entirely — the page-2133 override for the Review Wall
+// WIDGET's own markup. Two files both called "reviews", one styling our block and one
+// patching a third-party one, would be a trap for whoever greps next.
+//
+// 🔒 CONTAINER RULE: full-bleed band, container() on __inner, no background.
+//
+// ⚠️ NO MOBILE FRAME (design.md §13 gap 13). The single-column stack is derived.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// .testimonials
+.testimonials {
+  // Divi's own section: `custom_padding="120px||0px"`, no rule.
+  padding-block: t.$space-8 0;
+
+  // .testimonials__inner
+  &__inner {
+    @include m.container;
+  }
+
+  // .testimonials__head
+  &__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: t.$space-3;
+  }
+
+  // .testimonials__heading
+  &__heading {
+    @include m.text-h1;
+
+    margin: 0;
+    padding-bottom: 0; // Divi inline h1..h6 override — see _about.scss
+    color: t.$color-ink;
+    text-wrap: balance;
+  }
+
+  // .testimonials__actions
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: t.$space-3; // measured 24 between the button and the arrow pair
+  }
+
+  // .testimonials__all
+  &__all {
+    flex: 0 0 auto;
+  }
+
+  // .testimonials__nav
+  &__nav {
+    display: none; // the track scrolls by touch below desktop; the arrows are pointer UI
+
+    @include m.bp(desktop) {
+      display: flex;
+      gap: 6px; // measured, 1130:4213 itemSpacing
+    }
+  }
+
+  // .testimonials__arrow
+  &__arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: t.$btn-height; // 48 — measured, and already the system's control height
+    height: t.$btn-height;
+    padding: 0;
+    background-color: transparent;
+    border: t.$border-width solid t.$color-border;
+    border-radius: t.$radius-circle;
+    color: t.$color-ink;
+    cursor: pointer;
+    transition:
+      background-color t.$dur-base t.$ease,
+      border-color t.$dur-base t.$ease,
+      color t.$dur-base t.$ease;
+
+    &:hover {
+      background-color: t.$color-ink;
+      border-color: t.$color-ink;
+      color: t.$color-canvas;
+    }
+
+    &:focus-visible {
+      @include m.focus-ring;
+    }
+
+    // Set by testimonials.js when the track cannot scroll further that way. Kept
+    // focusable rather than [disabled] so focus is not silently dropped mid-interaction.
+    &[aria-disabled='true'] {
+      opacity: 0.32;
+      pointer-events: none;
+    }
+  }
+
+  // .testimonials__track
+  // ⚠️ A SCROLLER, NOT A SLIDER. There is no transform, no index state and no library:
+  // the cards are a scroll-snapping overflow row, and the arrows call scrollBy(). That
+  // means it works with a trackpad, a touch swipe and the keyboard before any JS runs,
+  // and a broken script degrades to a scrollable row rather than to a frozen carousel.
+  &__track {
+    display: grid;
+    grid-auto-flow: column;
+    // ⚠️ A DEFINITE TRACK SIZE, NOT `minmax(0, …)`. With a 0 minimum the nine columns
+    // shrink to share the container instead of overflowing it — measured, every card came
+    // out 139px wide and the track never scrolled, which also left both arrows correctly
+    // but uselessly disabled. A single definite size is what makes the row overflow, and
+    // overflow is what the whole scroller depends on.
+    grid-auto-columns: 85%;
+    gap: t.$space-2; // measured 16
+    margin: t.$space-5 0 0;
+    padding: 0;
+    list-style: none;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    // The scrollbar would sit under the cards and fight the 24px radius; the region is
+    // keyboard-focusable and arrow-driven, so nothing is lost by hiding it.
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    &:focus-visible {
+      @include m.focus-ring;
+    }
+
+    @include m.bp(tablet) {
+      grid-auto-columns: 48%;
+    }
+
+    @include m.bp(desktop) {
+      // Three across the container: (1376 − 2×16) / 3 = 448, as measured.
+      grid-auto-columns: calc((100% - 2 * #{t.$space-2}) / 3);
+      margin-top: t.$space-7; // measured 56 — header ends 48, track starts 104
+    }
+  }
+
+  // .testimonials__card
+  // Fill-only, like `.about__item` and the services cards — Figma's stroke on it is
+  // `visible: false`, so m.panel() would add a hairline the design switched off.
+  &__card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin: 0;
+    padding: t.$space-3; // measured 24
+    background-color: t.$color-surface;
+    border-radius: t.$radius-lg;
+    scroll-snap-align: start;
+
+    @include m.bp(desktop) {
+      min-height: 480px; // measured, 1130:3951
+    }
+  }
+
+  // .testimonials__quote
+  &__quote {
+    flex: 0 0 auto;
+    width: 24px; // measured, 1130:3956
+    height: 24px;
+    margin-bottom: t.$space-3; // measured 24 — mark at y=24, text at y=72
+    color: t.$color-ink;
+  }
+
+  // .testimonials__text
+  // ⚠️ CLAMPED, and the number is a real constraint rather than a taste call: the stored
+  // reviews run from 14 to 1019 characters, and the card is a fixed 480 in the design. Ten
+  // lines is what fits between the quote mark and the footer. The full text is one click
+  // away on the reviews page, which is what the button beside the heading is for.
+  &__text {
+    @include m.text-body;
+
+    margin: 0 0 t.$space-3;
+    color: t.$color-ink;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 10;
+    overflow: hidden;
+  }
+
+  // .testimonials__foot
+  // Pinned to the bottom of the card so the footers line up across a row whatever the
+  // review lengths are. Two columns: avatar, then name over rating.
+  // ⚠️ NAMED AREAS, not auto-placement. The first attempt placed `.testimonials__stars`
+  // explicitly and left its three siblings to auto-placement, and the two passes fought:
+  // the stars claimed row 1 / column 2 before auto-placement ran, so the rating was pushed
+  // under the AVATAR instead of under the stars. Measured, not guessed — it was visible in
+  // the render. Four items in a fixed 2×3 grid cannot drift like that.
+  //
+  // Column 3 row 1 / row 2 is where the design also puts a location line; see the note in
+  // testimonials.php about why that is not rendered.
+  &__foot {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'avatar name   stars'
+      'avatar name   rating';
+    align-items: center;
+    gap: 0 t.$space-2;
+    width: 100%;
+    margin-top: auto;
+    padding-top: t.$space-3; // measured 24 above the rule
+    border-top: t.$border-width solid t.$color-border;
+  }
+
+  // .testimonials__avatar
+  &__avatar {
+    grid-area: avatar;
+    width: 56px; // measured, 1130:3957
+    height: 56px;
+    border-radius: t.$radius-circle;
+    object-fit: cover;
+  }
+
+  // .testimonials__avatar--initial
+  // Google supplies no photo for some reviewers. An initial holds the footer's grid; an
+  // <img> with no src would collapse the row and shift the name.
+  &__avatar--initial {
+    @include m.text-h3;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: t.$color-surface-sunken;
+    color: t.$color-ink;
+    text-transform: uppercase;
+  }
+
+  // .testimonials__author
+  &__author {
+    @include m.text-h3;
+
+    grid-area: name;
+    align-self: end;
+    margin: 0;
+    color: t.$color-ink;
+  }
+
+  // .testimonials__rating
+  &__rating {
+    @include m.text-body-sm;
+
+    grid-area: rating;
+    align-self: start;
+    justify-self: end;
+    margin: 0;
+    color: t.$color-ink-muted;
+  }
+
+  // .testimonials__stars
+  &__stars {
+    display: flex;
+    grid-area: stars;
+    align-self: end;
+    gap: 4px; // measured, 1130:3960 itemSpacing
+  }
+
+  // .testimonials__star
+  &__star {
+    width: 24px; // measured — five 24s and four 4s make the frame's 136
+    height: 24px;
+    color: t.$color-accent;
+  }
+
+  // .testimonials__star--empty
+  &__star--empty {
+    color: t.$color-ink-faint;
+  }
+}

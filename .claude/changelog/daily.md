@@ -606,3 +606,82 @@ This unblocks the two remaining unnamed sections (`Reviews`, `FAQ`) as well.
 - `/pt/` renders the whole section in Portuguese with `Obter consultoria` from the shared CTA; the Divi original is gone on both languages.
 
 **Two Divi sections left on the homepage** — `Reviews` and `FAQ`, both addressable now via `label:`.
+
+### De-Divi migration — `testimonials` (homepage section #8)
+
+Figma `1130:9143` → the Divi section labelled `Reviews`, which was nothing but
+`[review_wall_google_reviews]`. Addressed with `label:Reviews = testimonials`, the scheme
+added for the `order` section — second use, no new mechanism.
+
+#### Why it was rebuilt at all, given the plugin already renders a section
+
+Petr asked how "Що кажуть клієнти" and "Усі відгуки" get translated. Checked, and the
+answer is that they cannot:
+
+| Review Wall setting | Storage |
+|---|---|
+| `review_wall_widget_title` | `get_option()` — **one global value for all four languages** |
+| `review_wall_widget_btn_text` | same |
+
+The shipped values were «Подивіться, що кажуть наші клієнти» and — on a Ukrainian site —
+**"Review us on Google"**, in English. Its shortcode takes no arguments either. This is the
+same defect the project already rejected an ACF options page over: a global store cannot
+hold a per-language string.
+
+**So the split is: the plugin keeps the DATA, the theme owns every string.** Reviews are
+read from `Review_Wall_Helper::get_db_instance()->get_google_reviews()` so the Google sync
+keeps working — copying 20 reviews into ACF would mean they go stale the first time someone
+forgets to re-copy. The heading is a per-page field, the button label and the arrow labels
+are Polylang strings.
+
+⚠️ **The coupling is deliberate and narrow** — one public method, four columns, behind a
+`class_exists()` guard so a deactivated plugin renders chrome with no cards rather than a
+fatal.
+
+**Translations were filled in, not just enabled.** Registering a string only makes it
+translatable; it renders the Ukrainian source until a translation exists. Leaving them
+empty would have relocated the defect rather than fixed it. `pt` / `en` / `ru` written for
+all four via `PLL_MO`.
+
+⚠️ The rating label is a FORMAT STRING (`%s Оцінка` → `Avaliação %s`), following the
+existing `ak_read_minutes_*` convention. Word order around a number is not the same in every
+language, and concatenating the halves in PHP would make that untranslatable however well
+the label itself is translated.
+
+#### Notable decisions
+
+- **It is a scroller, not a slider.** Scroll-snapping overflow row + `scrollBy()` — no
+  transform, no index, no library. Works with trackpad, swipe and keyboard before any JS
+  runs; a failed script degrades to a scrollable row rather than a frozen carousel. The
+  arrows render only when there is something to scroll to — a disabled control that is
+  never enabled is worse than an absent one.
+- **[BUG] `minmax(0, …)` on the track columns silently killed the scroller.** With a zero
+  minimum the nine columns shrank to share the container instead of overflowing it: every
+  card measured 139px against the design's 448, the row never scrolled, and both arrows
+  were therefore correctly but uselessly disabled. A definite track size is what makes the
+  overflow — which the whole component depends on — exist at all.
+- **[BUG] The card footer put the rating under the avatar.** One explicitly-placed child
+  (`__stars`) among three auto-placed siblings, and the two placement passes fought.
+  Rewritten with named grid areas; four items in a fixed 2×3 grid cannot drift.
+- **Named `testimonials`, not `reviews`** — `sections/_reviews.scss` already exists and is
+  the page-2133 override for the WIDGET's own markup. Two files called "reviews", one
+  styling our block and one patching a third-party one, is a trap for whoever greps next.
+- Text is clamped to 10 lines: the stored reviews run 14–1019 characters against a fixed
+  480px card. The full text is one click away behind the button beside the heading.
+- 4 of the 9 newest reviewers have no Google photo, so the avatar falls back to an initial —
+  an `<img>` with no src would collapse the footer row and shift the name.
+- ⚠️ **The design's location line ("Португалія") is not rendered** — the plugin's table has
+  no such column, and printing a constant under every real named person would be inventing
+  an attribution. `design.md` §13 gap 21; the footer grid leaves the cell for it.
+
+#### Verified
+
+- **Desktop 1440, exact:** cards 448 wide, track 1376, three visible, gap 16. Arrows drive
+  it: prev disabled at rest, `next` → 464 (one card + gap), again → 928, `prev` → back to
+  464, and the end state disables `next`.
+- Columns 3 → 2 → 1 across the breakpoints; arrows hidden below desktop. **No chrome
+  overflow at 375 / 641 / 768 / 1024 / 1025 / 1280 / 1440 / 1600 / 2560.** No console errors.
+- `/pt/` renders «O que dizem os clientes», «Todos os testemunhos», «Avaliação 5,0» — the
+  three strings the plugin could not translate.
+
+**One Divi section left on the homepage: `FAQ`.**

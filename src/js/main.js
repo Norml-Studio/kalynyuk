@@ -13,12 +13,14 @@ import { initHeader } from './header.js';
 import { initArticle } from './article.js';
 import { initCalculator } from './calculator.js';
 import { initTrust } from './trust.js';
+import { initTestimonials } from './testimonials.js';
 
 const boot = () => {
   initHeader();
   initArticle();
   initCalculator();
   initTrust();
+  initTestimonials();
   // Marker so a Playwright run can confirm the built bundle actually executed,
   // rather than inferring it from styles Divi might also be providing.
   document.documentElement.dataset.akTheme = 'ready';

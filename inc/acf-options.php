@@ -269,6 +269,18 @@ function ak_register_pll_strings() {
 		'ak_calc_help'      => 'Довідка',
 	);
 
+	// Testimonials — Figma 1130:9143. These replace Review Wall's own strings, which are
+	// plain get_option() values: ONE global string for all four languages, which is the
+	// whole reason that section was rebuilt.
+	$strings += array(
+		'ak_reviews_all'    => 'Усі відгуки',
+		'ak_reviews_prev'   => 'Попередні відгуки',
+		'ak_reviews_next'   => 'Наступні відгуки',
+		// A FORMAT STRING, like ak_read_minutes_* — word order round a number is not the same
+		// in every language, and 'Avaliação 5,0' is right where '5,0 Avaliação' is not.
+		'ak_reviews_rating' => '%s Оцінка',
+	);
+
 	foreach ( $strings as $name => $default ) {
 		pll_register_string( $name, $default, 'kalynyuk' );
 	}
