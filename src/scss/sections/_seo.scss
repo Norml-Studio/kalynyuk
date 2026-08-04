@@ -15,9 +15,10 @@
 
 // .seo
 .seo {
-  // Figma puts 120 above this block, and it is the last thing before the footer, so the
-  // footer's own top spacing closes it — hence 0 at the bottom rather than another 120.
-  padding-block: t.$space-8 0;
+  // 120 above AND below (Petr). The footer has no top padding of its own, so a 0 here put
+  // the last paragraph hard against the green band — the one place on the page where two
+  // blocks touch with nothing between them.
+  padding-block: t.$space-8;
 
   // .seo__inner
   &__inner {
