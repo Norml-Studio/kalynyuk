@@ -113,3 +113,25 @@ Registration is **admin-only** — `pll_register_string()` only populates the St
 - Forms **2 and 3** (calculator) are now registered in Polylang but deliberately left untranslated — form 2's confirmation is in English on a Ukrainian site. That belongs to the calculator session.
 
 ⚠️ **This work is not deployable by file sync alone.** Production needs the same DB seeding: the `PLL_MO` strings, and the GF form-1 `errorMessage` source rewritten to Ukrainian. Deploying files without it leaves production with an English error message whose source no translation matches.
+
+### 🚀 Production deploy #4 — footer translation
+
+Seven PHP files (`footer`, `header`, `acf-options`, `integrations`, `nav`, `lang-switch`, `nav-drawer`) plus a DB seed. **No `dist/` change** — nothing touched SCSS or JS.
+
+⚠️ **File sync alone would have been wrong here**, which is what makes this deploy different from #1–#3. Two of the fixes rewrite *source* strings (`ak_copyright`, the email `errorMessage`), and Polylang matches on the source — so shipping the code without re-seeding would have left production with strings whose translations no longer resolve.
+
+**Every source string was read out of production's own database rather than reconstructed.** The consent sentence embeds an absolute privacy URL that differs per environment (`kalynyuk.loc` vs `www.kalynyuk.com`), and the confirmation carries a cream `<span style="…">` wrapper. The seed pulls production's `<a …>` tag and its span verbatim and only swaps the words between them, so a scheme or trailing-slash difference cannot silently seed a translation that nothing ever looks up. It aborts if any source reads empty or if the consent text has no anchor. **This is the discipline the deploy-#2 attachment-ID bug bought** — resolve from the target environment, never from local.
+
+Backups before anything ran: `~/backup-theme-20260804b.tgz` and `~/backup-strings-20260804.json` (the full `PLL_MO` table for all four languages plus the complete form-1 object).
+
+⚠️ **The strings backup was written into the docroot first and was briefly reachable over HTTP.** Moved to `~/` immediately; the webroot was then confirmed clean. `ABSPATH` is a webroot — dump files belong in the home directory. Worth remembering before the next seed script.
+
+**Verified live on `https://www.kalynyuk.com`, both languages:**
+- `/pt/` footer has **zero Cyrillic left** — text nodes and `aria-label` / `alt` / `placeholder` alike.
+- The privacy link **renders again** on `/pt/` ("Privacidade"); it had been absent entirely.
+- Consent `href` survives translation on both languages: `https://www.kalynyuk.com/privacy-policy/`.
+- Copyright now reads «© 2026 Усі права захищено.» on uk and "Todos os direitos reservados." on pt — previously Portuguese on both.
+- Validation path exercised on both: errors come back in the page language and the re-rendered form keeps its translated labels and button. **No entries created** (103 before and after) and no notification sent — the happy path was deliberately not run on production.
+- No console errors beyond the known Review Wall `remodal.min.js` one.
+
+Rollback is the tarball plus `backup-strings-20260804.json`, which restores both the `PLL_MO` entries and the form object.
