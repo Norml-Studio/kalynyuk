@@ -51,6 +51,7 @@
 // ⚠️ Every future native section that uses a `ul`/`ol` needs its selector added here.
 // Prefer that over bumping specificity inside the section partial.
 .entry-content .about__list,
+.entry-content .order__list,
 .entry-content .services__grid {
   padding: 0;
 }

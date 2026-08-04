@@ -159,6 +159,7 @@ function ak_section_registry() {
 			'cta'        => __( 'CTA banner', 'kalynyuk' ),
 			'services'   => __( 'Services grid', 'kalynyuk' ),
 			'trust'      => __( 'Why us (accordion)', 'kalynyuk' ),
+			'order'      => __( 'Book a consultation', 'kalynyuk' ),
 			'calculator' => __( 'Mortgage calculator', 'kalynyuk' ),
 		)
 	);
@@ -324,8 +325,16 @@ function ak_strip_leading_divi_sections( $content, $strip ) {
  * this is a migration control that developers operate, and a line of text is easier
  * to read, diff and grep than an ACF repeater.
  *
+ * A line may also address a section by its Divi ADMIN LABEL, for the sections that have
+ * no CSS ID at all — see ak_replace_divi_section_by_id() for why that second form exists
+ * and why `module_id` is still the one to prefer:
+ *
+ *     calculator  = calculator     module_id="calculator"
+ *     label:Order = order          admin_label="Order"
+ *
  * @param int|null $post_id Defaults to the queried object.
- * @return array<string,string> module_id => section slug
+ * @return array<string,string> selector => section slug, where selector is a module_id
+ *                              or `label:{admin_label}`
  */
 function ak_inline_section_map( $post_id = null ) {
 	$raw = (string) ak_section_field( 'ak_inline_sections', $post_id );
@@ -383,8 +392,37 @@ function ak_replace_divi_section_by_id( $content, $module_id, $replacement ) {
 			return $content;
 		}
 
+		/*
+		 * ⚠️ TWO ADDRESSING SCHEMES, and the second one exists because the homepage ran
+		 * out of the first. `module_id` is the good identifier — an editor sets it in
+		 * Divi under Advanced → CSS ID and it is stable. But three sections on page 11
+		 * (`Order`, `Reviews`, `FAQ`) simply do not have one, and they are not leading
+		 * sections either, so NEITHER existing mechanism could reach them.
+		 *
+		 * The options were: add a CSS ID to each in the builder — which edits
+		 * `post_content`, the exact thing this whole file is built to avoid; or match on
+		 * something already in the shortcode. `admin_label` is already there, is what the
+		 * builder shows in its layers panel, and costs no database write at all.
+		 *
+		 * So a map line may be either form:
+		 *
+		 *     calculator      = calculator     → matches module_id="calculator"
+		 *     label:Order     = order          → matches admin_label="Order"
+		 *
+		 * `module_id` stays the DEFAULT and the preferred one: admin_label is a display
+		 * name an editor can rename without realising it addresses anything. Prefer
+		 * giving a section a CSS ID when you can; use `label:` when you cannot.
+		 */
+		if ( 0 === strpos( $module_id, 'label:' ) ) {
+			$attribute = 'admin_label';
+			$needle    = substr( $module_id, strlen( 'label:' ) );
+		} else {
+			$attribute = 'module_id';
+			$needle    = $module_id;
+		}
+
 		$is_match = (bool) preg_match(
-			'/\bmodule_id="' . preg_quote( $module_id, '/' ) . '"/',
+			'/\b' . $attribute . '="' . preg_quote( $needle, '/' ) . '"/',
 			substr( $content, $start, $tag_end - $start )
 		);
 
@@ -1045,6 +1083,79 @@ function ak_acf_page_sections_fields() {
 
 	acf_add_local_field_group(
 		array(
+			'key'      => 'group_ak_order',
+			'title'    => __( 'Book a consultation', 'kalynyuk' ),
+			'location' => array(
+				array(
+					array(
+						'param'    => 'post_type',
+						'operator' => '==',
+						'value'    => 'page',
+					),
+				),
+			),
+			'fields'   => array(
+				array(
+					'key'          => 'field_ak_order_heading',
+					'label'        => __( 'Heading', 'kalynyuk' ),
+					'name'         => 'ak_order_heading',
+					'type'         => 'textarea',
+					'rows'         => 2,
+					'instructions' => __( 'Sits on the page ABOVE the green card, not inside it. Leave empty to hide the whole section — the Divi original comes back.', 'kalynyuk' ),
+				),
+				array(
+					'key'   => 'field_ak_order_intro',
+					'label' => __( 'Intro', 'kalynyuk' ),
+					'name'  => 'ak_order_intro',
+					'type'  => 'textarea',
+					'rows'  => 4,
+				),
+				array(
+					'key'          => 'field_ak_order_card_heading',
+					'label'        => __( 'Card heading', 'kalynyuk' ),
+					'name'         => 'ak_order_card_heading',
+					'type'         => 'text',
+					'instructions' => __( 'Inside the green card, above the checklist — “Вам до мене, якщо:”.', 'kalynyuk' ),
+				),
+				array(
+					'key'           => 'field_ak_order_image',
+					'label'         => __( 'Photo', 'kalynyuk' ),
+					'name'          => 'ak_order_image',
+					'type'          => 'image',
+					'return_format' => 'id',
+					'preview_size'  => 'medium',
+					'instructions'  => __( 'The right half of the green card, cropped to a tall portrait. A landscape photo works — it is centre-cropped.', 'kalynyuk' ),
+				),
+				array(
+					'key'          => 'field_ak_order_items',
+					'label'        => __( 'Checklist', 'kalynyuk' ),
+					'name'         => 'ak_order_items',
+					'type'         => 'repeater',
+					'layout'       => 'block',
+					'button_label' => __( 'Add reason', 'kalynyuk' ),
+					'instructions' => __( 'The check mark is drawn by the theme — do not type ✅ into the title.', 'kalynyuk' ),
+					'sub_fields'   => array(
+						array(
+							'key'   => 'field_ak_order_item_title',
+							'label' => __( 'Title', 'kalynyuk' ),
+							'name'  => 'title',
+							'type'  => 'text',
+						),
+						array(
+							'key'   => 'field_ak_order_item_body',
+							'label' => __( 'Description', 'kalynyuk' ),
+							'name'  => 'body',
+							'type'  => 'textarea',
+							'rows'  => 3,
+						),
+					),
+				),
+			),
+		)
+	);
+
+	acf_add_local_field_group(
+		array(
 			'key'      => 'group_ak_calculator',
 			'title'    => __( 'Calculator', 'kalynyuk' ),
 			'location' => array(
@@ -1298,5 +1409,36 @@ function ak_trust_data() {
 		'heading' => $heading,
 		'image'   => ak_translate_id( (int) ak_section_field( 'ak_trust_image', $id ) ),
 		'items'   => ak_section_rows( 'ak_trust_items', array( 'question', 'answer' ), $id ),
+	);
+}
+
+/**
+ * "Book a consultation" data for the current page, or null when there is nothing to render.
+ *
+ * The button is ak_primary_cta() — the shared site CTA, as everywhere else. See
+ * ak_cta_data() for why that is not a per-section field.
+ *
+ * @return array|null
+ */
+function ak_order_data() {
+	$id = (int) get_queried_object_id();
+
+	if ( ! $id ) {
+		return null;
+	}
+
+	$heading = (string) ak_section_field( 'ak_order_heading', $id );
+
+	if ( '' === trim( $heading ) ) {
+		return null;
+	}
+
+	return array(
+		'heading'      => $heading,
+		'intro'        => (string) ak_section_field( 'ak_order_intro', $id ),
+		'card_heading' => (string) ak_section_field( 'ak_order_card_heading', $id ),
+		'image'        => ak_translate_id( (int) ak_section_field( 'ak_order_image', $id ) ),
+		'items'        => ak_section_rows( 'ak_order_items', array( 'title', 'body' ), $id ),
+		'cta'          => ak_primary_cta(),
 	);
 }

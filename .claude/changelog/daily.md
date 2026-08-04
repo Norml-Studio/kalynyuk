@@ -569,3 +569,40 @@ Two conditions came with it and both are met: it is the **only** thing that move
 Done in pure CSS on `::details-content`, so none of the native behaviour is given up. Worth recording *why* the usual tricks don't apply here: a closed `<details>`'s content is not merely hidden but skipped by the browser, so the `grid-template-rows: 0fr → 1fr` wrapper trick cannot see it, and a JS height measurement would mean owning open/close state again and losing everything `name` provides. `interpolate-size: allow-keywords` is what makes `block-size: auto` animatable at all — scoped to the section, not `:root`, since it changes every keyword-sized transition in its subtree. Browsers without it degrade to the instant behaviour that shipped yesterday.
 
 Verified by sampling the element height mid-transition: `93 → 168 → 228 → 238`.
+
+### De-Divi migration — the `order` section (homepage section #7)
+
+Figma `1136:9153` → Divi `admin_label="Order"`. A lede on cream over a full-width green card holding a five-item checklist, the CTA and a photo. Calculator skipped, as asked.
+
+#### The mechanism had to grow a second addressing scheme
+
+This section **has no `module_id`**, and it is not a leading section — so *neither* existing mechanism could reach it. That was flagged when the trust section landed; here it became blocking.
+
+The options were to add a CSS ID in the Divi builder — which writes to `post_content`, the exact thing `native-sections.php` exists to avoid — or to match on something already in the shortcode. **`admin_label` is already there**, is what the builder shows in its layers panel, and costs no database write. So a map line may now be either form:
+
+```
+calculator  = calculator     → module_id="calculator"
+label:Order = order          → admin_label="Order"
+```
+
+⚠️ **`module_id` stays the default and the preferred one.** `admin_label` is a display name an editor can rename without realising it addresses anything. Give a section a CSS ID when you can; use `label:` when you cannot. Both the function docblock and the map field say so.
+
+This unblocks the two remaining unnamed sections (`Reviews`, `FAQ`) as well.
+
+#### The section itself
+
+- **The redesign lifts the lede OUT of the green card.** In Divi the heading and intro sit inside the panel; now they sit on the cream page above it and the card holds only the checklist, button and photo. Everything else is a restyle.
+- 🔒 **First correct use of `--accent-light`.** §2 defines it as "stroke on a green background", and v1.0.0 had dismissed it as noise because production used it exactly once. Here it is the row rule inside the green card — doing precisely its stated job, which confirms the v2.0.0 correction.
+- ⚠️ **The check mark is drawn, not typed.** The Divi original opens every title with a literal ✅ emoji — a colour glyph that ignores the palette, differs per platform, and is announced as "white heavy check mark". An inline SVG inherits `currentColor` and is `aria-hidden`, so the list reads as a list. The ACF instructions tell the editor not to type one.
+- Content and photo carry **different insets** (40 vs 24), so the padding lives on the two children rather than on the card — one card padding cannot express both.
+- Third section to need its `ul` padding zeroed in `_divi-compat.scss`. The note there predicted it.
+- Photo: gap 20 again, and the starkest case yet — the frame crops a 696×1043 box (0.667) while the attachment is 909×684 (**1.329, landscape where the frame is portrait**). Checked the live Divi section first, which already centre-crops the same file to 609×960, so plain `cover` is both the honest answer and what ships today.
+
+#### Verified
+
+- **Desktop 1440, exact:** card 1376 · content track 696 · photo 656 · heading 506 · intro 680 at the shared x=696 spine · card fill `#307155` · row rule `#609079` · title `--canvas` · body opacity 0.7 · CTA `Отримати консультацію` from the shared chrome.
+- The card runs 850 tall against the frame's 763 — the checklist wraps a little wider than Figma's text metrics assumed. Content-driven, so it grows rather than clipping.
+- Collapses to one column below desktop. **No element of `.order` overflows at 375 / 641 / 768 / 1024 / 1025 / 1280 / 1440 / 1600 / 2560.** No console errors.
+- `/pt/` renders the whole section in Portuguese with `Obter consultoria` from the shared CTA; the Divi original is gone on both languages.
+
+**Two Divi sections left on the homepage** — `Reviews` and `FAQ`, both addressable now via `label:`.

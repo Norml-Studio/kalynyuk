@@ -678,6 +678,36 @@ and it is exactly what the current Divi version loses by filling all nine identi
   on a grid that comes out of the *tracks*: every card rendered 448 → 443 and the whole
   grid sat 16px right of the container. See the `--about` note in §7 and `_divi-compat.scss`.
 
+### Inverted card — "Book a consultation" — added v2.1.0
+
+Figma `1136:9153`. A lede on the cream page over a **full-container green card** — the
+band itself has no background, the card does. `--space-8` above, `0` below.
+
+| Part | Spec |
+|---|---|
+| Lede | heading 506 left · intro 680 starting at **x=696**, the shared section spine |
+| Card | 1376 wide, fill `--accent`, radius `--radius-lg`, `--space-7` below the lede |
+| Content column | 696 track, inset `--space-5` (40) — card heading (H2, `--canvas`), checklist, CTA |
+| Photo column | 680 track, inset `--space-3` (24) on its three OUTER edges only |
+| Checklist row | 20×20 `lucide/check` + title (Body Small SemiBold) / body (Body Small at **70%**), gap 12 |
+| Row rule | 1px **`--accent-light`** between rows, `--space-3` either side |
+| CTA | `.btn--on-accent` — cream fill on green, the shared site CTA |
+
+🔒 **This is the first correct use of `--accent-light`.** §2 defines it as *"stroke on a
+green background"* and v1.0.0 had dismissed it as noise because production used it once.
+Here it is doing exactly its stated job, which is the confirmation the v2.0.0 correction
+was right.
+
+- **The lede sits OUTSIDE the card.** In the Divi original the heading and intro are inside
+  the green panel; the redesign lifts them onto the cream page and leaves the card holding
+  only the checklist, button and photo. That is the actual change — the rest is a restyle.
+- **The two insets differ (40 content / 24 photo)**, so the padding belongs on the two
+  children, not on the card. One card padding cannot express both.
+- ⚠️ **The check mark is drawn, never typed.** The Divi original opens each title with a
+  literal ✅ emoji: a colour glyph that ignores the palette, renders differently per
+  platform, and is announced as "white heavy check mark". An inline SVG inherits
+  `currentColor` and is `aria-hidden`, so the list reads as a list.
+
 ### Header / navigation — added v2.0.0
 
 Behaviour and a11y are governed by **`vibe-frontend-standards/references/header-standard.md`**

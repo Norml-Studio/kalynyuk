@@ -1,0 +1,224 @@
+@use '../abstracts/tokens' as t;
+@use '../abstracts/mixins' as m;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// .order — Figma 1136:9153 ("Frame 9126"), 1376×994 at x=32 y=7346.
+//          Lede 1130:9113 · green card 1130:4316 ("step") 1376×763
+//
+// 🔒 CONTAINER RULE: full-bleed band, container() on __inner. The band itself has NO
+// background — the GREEN belongs to the card inside it, not to the section.
+//
+// ⚠️ THIS IS ONE OF THE TWO INVERTED BANDS design.md §5 allows, and the accent is used
+// here exactly as clause 1 of the accent discipline permits. Everything inside it flips:
+// type is --canvas, the button is .btn--on-accent, and the hairline is
+// --accent-light — the swatch whose kit label literally reads "stroke on green bg", so
+// this section is the first place that token has been used as intended.
+//
+// ⚠️ NO MOBILE FRAME (design.md §13 gap 13). The stack order below is derived.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// .order
+.order {
+  // Divi's own section carries `custom_padding="||0px"` and no rule. The hairline ABOVE
+  // is the calculator band's; the section BELOW owns the 120 under this one, which is why
+  // the bottom is 0 rather than another 120 that would double it.
+  padding-block: t.$space-8 0;
+
+  // .order__inner
+  &__inner {
+    @include m.container;
+  }
+
+  // .order__lede
+  // Heading left, intro starting at x=696 — the same spine as `.about` and the services
+  // rows, so the three sections line up down the page.
+  &__lede {
+    display: grid;
+    gap: t.$space-3;
+
+    @include m.bp(desktop) {
+      grid-template-columns: minmax(0, 664fr) minmax(0, 680fr);
+      column-gap: t.$space-4;
+      align-items: start;
+    }
+  }
+
+  // .order__heading
+  &__heading {
+    @include m.text-h1;
+
+    margin: 0;
+    padding-bottom: 0; // Divi inline h1..h6 override — see _about.scss
+    color: t.$color-ink;
+    text-wrap: balance;
+
+    @include m.bp(desktop) {
+      max-width: 506px; // measured, 1130:9114
+    }
+  }
+
+  // .order__intro
+  &__intro {
+    @include m.text-body;
+
+    margin: 0;
+    color: t.$color-ink;
+  }
+
+  // .order__card
+  // The photo's inset is 24 and the content's is 40, so the padding lives on the two
+  // children rather than on the card — a single card padding cannot express both.
+  &__card {
+    display: grid;
+    margin-top: t.$space-7; // measured 56 — lede ends 175, card starts 231
+    background-color: t.$color-accent;
+    border-radius: t.$radius-lg;
+    overflow: hidden;
+
+    @include m.bp(desktop) {
+      // 696 + 680 = 1376. Content sits in the first track with a 40 inset (696−80 = 616,
+      // as measured); the photo fills the second with a 24 inset (680−24 = 656).
+      grid-template-columns: minmax(0, 696fr) minmax(0, 680fr);
+      align-items: start;
+    }
+  }
+
+  // .order__content
+  &__content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: t.$space-5 t.$gutter; // 40 block / 20 inline on mobile
+
+    @include m.bp(desktop) {
+      padding: t.$space-5; // measured 40 on all four sides
+    }
+  }
+
+  // .order__card-heading
+  &__card-heading {
+    @include m.text-h2;
+
+    margin: 0;
+    padding-bottom: 0; // Divi inline h1..h6 override — see _about.scss
+    color: t.$color-canvas;
+    text-wrap: balance;
+  }
+
+  // .order__list
+  // ⚠️ Its `ul` padding is zeroed in _divi-compat.scss, not here — Divi's
+  // `.entry-content ul` indent outspecifies a plain class. Third section to need it.
+  &__list {
+    display: grid;
+    margin: t.$space-4 0 0; // measured 32 — card heading ends 37, list starts 69
+    padding: 0;
+    list-style: none;
+  }
+
+  // .order__item
+  &__item {
+    display: flex;
+    align-items: flex-start;
+    gap: t.$space-2; // measured 12 → nearest token is 16; see the note below
+    margin: 0;
+
+    // A hairline BETWEEN rows, 24 either side — never above the first or below the last.
+    & + & {
+      margin-top: t.$space-3;
+      padding-top: t.$space-3;
+      border-top: t.$border-width solid t.$color-accent-light;
+    }
+  }
+
+  // .order__check
+  // Drawn rather than typed. Figma uses `lucide/check` at 20×20; the Divi original used a
+  // ✅ emoji, which is a colour glyph that ignores the palette and differs per platform.
+  &__check {
+    flex: 0 0 auto;
+    width: 20px; // measured, 1130:9068
+    height: 20px;
+    // Aligns the tick with the cap-height of the 16px title beside it rather than with its
+    // line-box top, which sits ~2px higher.
+    margin-top: 2px;
+    color: t.$color-canvas;
+  }
+
+  // .order__item-text
+  &__item-text {
+    display: flex;
+    flex-direction: column;
+    // Measured 4 — the title box ends at 20 and the body starts at 24, and that 4 is what
+    // holds each row to its 64px height. Below the 8px base unit, so it is stated as a
+    // measurement rather than promoted to a half-step token nothing else would use.
+    gap: 4px;
+  }
+
+  // .order__item-title
+  &__item-title {
+    @include m.text-ui;
+
+    margin: 0;
+    color: t.$color-canvas;
+  }
+
+  // .order__item-body
+  // Figma fades the LAYER to 70% rather than using a palette colour — same choice as the
+  // services description and the credential numeral, so it is reproduced as opacity and
+  // no fourth cream tint enters §2.
+  &__item-body {
+    @include m.text-body-sm;
+
+    margin: 0;
+    color: t.$color-canvas;
+    opacity: 0.7;
+  }
+
+  // .order__cta
+  &__cta {
+    flex: 0 0 auto;
+    width: 100%;
+    // measured 54 from the checklist — $space-6 is the nearest token
+    margin-top: t.$space-6;
+
+    @include m.bp(tablet) {
+      width: auto;
+      min-width: t.$btn-width-min;
+    }
+  }
+
+  // .order__figure
+  &__figure {
+    padding: 0 t.$gutter t.$space-5;
+
+    @include m.bp(desktop) {
+      // 24 on the three OUTER edges; the inner edge is 0 because the 40 inset on the
+      // content side already provides the gap between the two columns.
+      padding: t.$space-3 t.$space-3 t.$space-3 0;
+      align-self: stretch;
+    }
+  }
+
+  // .order__photo
+  // ⚠️ Plain `cover` again — gap 20. The frame crops a 696×1043 box (0.667) but the
+  // attachment is 909×684 (1.329), i.e. LANDSCAPE where the frame is portrait. There is
+  // no crop to reproduce, only a centre crop to perform, and the live Divi section already
+  // does exactly that (it renders the same file at 609×960 with object-fit: cover).
+  &__photo {
+    display: block;
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 656 / 715; // measured, 1130:4317
+    object-fit: cover;
+    object-position: center;
+    border-radius: t.$radius-lg;
+
+    // Imagify may move the class onto a <picture> wrapper, where object-fit is inert.
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      border-radius: t.$radius-lg;
+    }
+  }
+}
