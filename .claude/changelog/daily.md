@@ -139,3 +139,31 @@ Rollback is the tarball plus `backup-strings-20260804.json`, which restores both
 - **[DECISION] The consent-record behaviour stays as it is** (Petr): entries keep storing the Ukrainian consent text in every language, because only `choices[].text` is translated and never `value`. Recorded here rather than changed — if the record ever needs to show what a Portuguese visitor actually read, the lever is translating `value` too (which splits the entry stream by language) or adding a language field to the form.
 - The **happy-path submission on production was not run**. It creates a real entry and sends a real notification to Anna, so it needs an explicit go-ahead rather than being inferred; the validation path was exercised instead and proves the same three hooks.
 - ⚠️ **Side effect worth knowing: translating form 1 also translated part of form 3.** `pll__()` matches on the SOURCE string, and the calculator form's consent sentence is byte-identical to the footer form's — so it picked up the Portuguese translation for free, without form 3 being seeded. Anything sharing a source string across forms translates together; that is the mechanism working as designed, but it means "form 3 is untranslated" is not quite true any more.
+
+### Why the calculator is broken on `/pt/` — diagnosed on production, not fixed
+
+Petr reported the calculator "съехал" on the Portuguese homepage: the label «Процентна ставка (річна)» sits *underneath* the radio row, and the result panel has lost its card styling.
+
+**Root cause: `_et_pb_custom_css` is post META, and Polylang never copied it.** Divi's *Page Settings → Custom CSS* is stored in post meta, not in `post_content`. Page 11 (uk home) carries **24 163 chars** of it; pages **2483 (pt), 2484 (en) and 2485 (ru) all carry 0**. The `post_content` of 11 and 2483 is otherwise all but identical — same 9 sections, same module ids, 63 vs 64 `custom_css_*` attributes, 4146 vs 4176 chars — so the markup was duplicated faithfully and only the meta was left behind.
+
+Measured, rather than inferred:
+
+| | uk (11) | pt (2483) |
+|---|---|---|
+| `et-builder-module-design-*-cached-inline-styles` | **17 118 chars** | **158 chars** |
+| computed `.input-block.interest-rate` | `display: flex` (column) | `display: block` |
+| `.interest-rate-wrapper` box | y 7006, h 50 | y **7024**, h 30 |
+| `.input-block.interest-rate` label box | y 6982 | y **7038** |
+
+The overlap follows mechanically. `.input-block { display: flex; flex-direction: column; gap: 38px }` lives in the missing 24 KB, so on pt the block falls back to `display: block` — while `.interest-rate-wrapper { margin-top: -34px !important }` **survives**, because that one is in the Code module's own inline `<style>`, which *is* part of `post_content`. With no flex column left to absorb it, the negative margin drags the radio row 34px up and straight over the label. 111 selectors are missing in total, including `.calculator-form`, `.calculator-result`, `.item`, the custom radio `::before`, and the Gravity Forms styling inside the result panel.
+
+⚠️ **Ruled out before landing on this**, because each was the more obvious suspect:
+- **Not our footer deploy.** Nothing in it touches the calculator, and the breakage is a missing stylesheet, not changed markup.
+- **Not Divi's file cache.** `et-cache/11/` and `et-cache/2483/` hold byte-identical files (52 983 + 12 789 each).
+- **Not the native-sections mechanism.** Both pages strip the same 8 sections and keep `calculator`; 2483's `ak_*` meta is empty and resolves through the default-language fallback exactly as designed.
+
+⚠️ **A verbatim copy of the meta is only a HALF fix, and I checked before recommending one.** The 24 KB contains **40 Cyrillic runs** — the tooltip bodies and the «років» suffix are written as CSS `content:` strings (single-quoted, which a first pass with a double-quote regex missed). Copying it would fix the layout and simultaneously ship Ukrainian tooltip text onto the Portuguese page. The calculator's Divi markup on 2483 is untranslated anyway, so `/pt/` has **two** problems, not one: it is unstyled *and* it is in Ukrainian.
+
+**Recommendation: don't patch it — the native calculator migration already in progress fixes both at the root** (labels through `ak_section_field()` / `ak_str()`, layout in SCSS that is language-agnostic by construction), and a copy would put 24 KB of Ukrainian-bearing CSS onto three more pages that then have to be remembered and deleted afterwards. If the live breakage cannot wait, the stopgap is one `update_post_meta( 2483, '_et_pb_custom_css', … )` and is reversible by setting it back to `''`. **Left for Petr to call; nothing was changed on production.**
+
+📌 **The general lesson, and it outlives the calculator: a Polylang translation copies `post_content`, not post meta.** Any Divi page-level custom CSS, and anything else living in meta, silently does not exist on the translation. Page **#566 (Калькулятор, 22 867 chars)** carries the same kind of payload and is only safe because it has no translations *yet* — translate it and it breaks the same way.
