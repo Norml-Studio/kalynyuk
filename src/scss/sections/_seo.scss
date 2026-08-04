@@ -1,0 +1,97 @@
+@use '../abstracts/tokens' as t;
+@use '../abstracts/mixins' as m;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// .seo — Figma 1146:12634, 1376×1333 at x=32 y=9963. The long-form ranking copy that
+//        closes the homepage.
+//
+// 🔒 CONTAINER RULE: full-bleed band, container() on __inner, no background.
+//
+// ⚠️ THE ONLY SECTION WITH NO DIVI ORIGINAL — it is appended rather than swapped in. See
+// seo.php and ak_append_section_slugs().
+//
+// ⚠️ NO MOBILE FRAME (design.md §13 gap 13). The stack is derived.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// .seo
+.seo {
+  // Figma puts 120 above this block, and it is the last thing before the footer, so the
+  // footer's own top spacing closes it — hence 0 at the bottom rather than another 120.
+  padding-block: t.$space-8 0;
+
+  // .seo__inner
+  &__inner {
+    @include m.container;
+
+    @include m.bp(desktop) {
+      display: grid;
+      // Heading 506 in a 664 track, copy 680 starting at x=696 — the same spine as
+      // `.about`, `.order` and `.faq`, so the whole page reads down one line.
+      grid-template-columns: minmax(0, 664fr) minmax(0, 680fr);
+      column-gap: t.$space-4;
+      align-items: start;
+    }
+  }
+
+  // .seo__heading
+  &__heading {
+    @include m.text-h1;
+
+    margin: 0;
+    padding-bottom: 0; // Divi inline h1..h6 override — see _about.scss
+    color: t.$color-ink;
+    text-wrap: balance;
+
+    @include m.bp(desktop) {
+      max-width: 506px; // measured, 1146:12613
+      // ⚠️ NOT sticky, though the copy column runs ~1440px and it is tempting. A Figma
+      // frame cannot express scroll behaviour either way, so "the design doesn't say" is
+      // not permission — it would be a behaviour nobody asked for, on the one section
+      // whose job is to be read straight through. Left static, as drawn.
+    }
+  }
+
+  // .seo__body
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: t.$space-5;
+
+    @include m.bp(desktop) {
+      // Measured 80 between blocks — 2 × $space-5. Deliberately larger than any gap inside
+      // a block, so four sub-headings read as four topics rather than one long list.
+      gap: t.$space-5 * 2;
+    }
+  }
+
+  // .seo__block-heading
+  &__block-heading {
+    @include m.text-h2;
+
+    margin: 0 0 t.$space-4; // measured 32 to the body
+    padding-bottom: 0; // Divi inline h1..h6 override — see _about.scss
+    color: t.$color-ink;
+    text-wrap: balance;
+  }
+
+  // .seo__block-body
+  &__block-body {
+    @include m.text-body;
+
+    color: t.$color-ink;
+
+    p {
+      margin: 0;
+
+      // measured 32 between paragraphs inside a block (Frame 9121 itemSpacing)
+      + p {
+        margin-top: t.$space-4;
+      }
+    }
+
+    strong,
+    b {
+      font-weight: t.$weight-bold;
+    }
+  }
+}

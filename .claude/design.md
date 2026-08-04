@@ -757,6 +757,34 @@ fill at radius 24 with no border; these are transparent, outlined, and at radius
 they read as form controls rather than as cards. That is deliberate in the design — do not
 "correct" it to match the other sections.
 
+### SEO copy block — added v2.1.0
+
+Figma `1146:12634`. The long-form ranking copy that closes the homepage: heading left,
+prose right at the shared **x=696** spine.
+
+| Part | Spec |
+|---|---|
+| Heading | Desktop/H1, max 506, `--ink` |
+| Column | 680 wide, blocks **80 apart** (2 × `--space-5`) |
+| Sub-heading | Desktop/H2 — 32 / 600 / 116% / −4%, `--space-4` to its body |
+| Body | Desktop/Body, paragraphs `--space-4` apart |
+
+⚠️ **This is the only section with no Divi original**, so it is placed by
+`ak_append_sections` rather than by replacing anything — a third placement mechanism added
+for exactly this case. Inventing a Divi section in `post_content` purely to have something
+to replace was rejected: it would write to the blob the whole mechanism exists to leave
+alone, and leave a decoy for the next person.
+
+- **Heading levels are load-bearing here.** The section takes an H2 and each block an H3,
+  so the outline stays one level deep rather than flattening into a wall of equal
+  headings — this is the one block whose job is to be read by a crawler as well as a
+  person.
+- **Block spacing is deliberately larger than anything inside a block** (80 vs 32), so four
+  sub-headings read as four topics rather than one long list.
+- ⚠️ **The heading is NOT sticky**, though the copy column runs ~1440px and it is tempting.
+  A Figma frame cannot express scroll behaviour either way, so "the design doesn't say" is
+  not permission.
+
 ### Header / navigation — added v2.0.0
 
 Behaviour and a11y are governed by **`vibe-frontend-standards/references/header-standard.md`**

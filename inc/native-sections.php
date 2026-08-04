@@ -162,6 +162,7 @@ function ak_section_registry() {
 			'order'      => __( 'Book a consultation', 'kalynyuk' ),
 			'testimonials' => __( 'Testimonials (Google reviews)', 'kalynyuk' ),
 			'faq'        => __( 'FAQ', 'kalynyuk' ),
+			'seo'        => __( 'SEO copy block', 'kalynyuk' ),
 			'calculator' => __( 'Mortgage calculator', 'kalynyuk' ),
 		)
 	);
@@ -539,6 +540,56 @@ function ak_render_inline_sections( $content ) {
 add_filter( 'the_content', 'ak_render_inline_sections', 20 );
 
 /**
+ * Sections APPENDED after the content, in order.
+ *
+ * ⚠️ A THIRD PLACEMENT MECHANISM, and it exists because the design grew a section the
+ * Divi page never had. The other two both need an existing Divi section to anchor to:
+ * `ak_sections` strips the leading N and draws in their place, and `ak_inline_sections`
+ * swaps one out where it sits. A section that is NEW has nothing to replace.
+ *
+ * The alternative was to invent a Divi section in `post_content` purely so there would be
+ * something to replace — writing to the blob this whole file exists to leave alone, and
+ * leaving a decoy section for the next person to puzzle over. Appending costs one filter.
+ *
+ * @param int|null $post_id Defaults to the queried object.
+ * @return string[]
+ */
+function ak_append_section_slugs( $post_id = null ) {
+	$value = ak_section_field( 'ak_append_sections', $post_id );
+
+	if ( empty( $value ) ) {
+		return array();
+	}
+
+	return array_values( array_intersect( (array) $value, array_keys( ak_section_registry() ) ) );
+}
+
+/**
+ * Print the appended sections after the post content.
+ *
+ * Priority 21 — after wpautop (10) and after the token swap (20), so the markup is never
+ * handed to a content filter. That is the same lesson as ak_section_token(): rendered HTML
+ * injected before wpautop comes back with stray paragraphs inside it.
+ *
+ * @param string $content Post content.
+ * @return string
+ */
+function ak_append_native_sections( $content ) {
+	if ( is_admin() || ! is_singular() || ! in_the_loop() || ! is_main_query() ) {
+		return $content;
+	}
+
+	foreach ( ak_append_section_slugs() as $slug ) {
+		ob_start();
+		get_template_part( 'template-parts/sections/' . $slug );
+		$content .= (string) ob_get_clean();
+	}
+
+	return $content;
+}
+add_filter( 'the_content', 'ak_append_native_sections', 21 );
+
+/**
  * Apply the strip on the front end.
  *
  * Priority 5 — before Divi's own `the_content` processing at 10, so it never sees
@@ -654,6 +705,17 @@ function ak_acf_page_sections_fields() {
 					'type'         => 'textarea',
 					'rows'         => 3,
 					'instructions' => __( 'For sections that are NOT at the top of the page. One “divi_module_id = section_slug” per line — e.g. “calculator = calculator”. The Divi section with that module ID is swapped for the theme section exactly where it sits, so a page can be migrated in any order. Find the module ID in the Divi section settings under Advanced → CSS ID.', 'kalynyuk' ),
+				array(
+					'key'           => 'field_ak_append_sections',
+					'label'         => __( 'Sections appended at the end', 'kalynyuk' ),
+					'name'          => 'ak_append_sections',
+					'type'          => 'select',
+					'choices'       => ak_section_registry(),
+					'multiple'      => 1,
+					'ui'            => 1,
+					'return_format' => 'value',
+					'instructions'  => __( 'For sections the Divi page never had, so there is nothing to replace. They render AFTER the content, in this order. The other two controls above both need an existing Divi section to anchor to.', 'kalynyuk' ),
+				),
 				),
 			),
 		)
@@ -1273,6 +1335,58 @@ function ak_acf_page_sections_fields() {
 
 	acf_add_local_field_group(
 		array(
+			'key'      => 'group_ak_seo',
+			'title'    => __( 'SEO copy block', 'kalynyuk' ),
+			'location' => array(
+				array(
+					array(
+						'param'    => 'post_type',
+						'operator' => '==',
+						'value'    => 'page',
+					),
+				),
+			),
+			'fields'   => array(
+				array(
+					'key'          => 'field_ak_seo_heading',
+					'label'        => __( 'Heading', 'kalynyuk' ),
+					'name'         => 'ak_seo_heading',
+					'type'         => 'textarea',
+					'rows'         => 2,
+					'instructions' => __( 'Left column. Leave empty and the section renders NOTHING. Unlike the other sections this one has no Divi original at all — it is appended via “Sections appended at the end”.', 'kalynyuk' ),
+				),
+				array(
+					'key'          => 'field_ak_seo_items',
+					'label'        => __( 'Blocks', 'kalynyuk' ),
+					'name'         => 'ak_seo_items',
+					'type'         => 'repeater',
+					'layout'       => 'block',
+					'button_label' => __( 'Add block', 'kalynyuk' ),
+					'instructions' => __( 'The right column — a sub-heading and a paragraph or two each. This is the page\'s long-form SEO copy, so write for a reader first; the headings become H3s under the section H2.', 'kalynyuk' ),
+					'sub_fields'   => array(
+						array(
+							'key'   => 'field_ak_seo_item_heading',
+							'label' => __( 'Sub-heading', 'kalynyuk' ),
+							'name'  => 'heading',
+							'type'  => 'text',
+						),
+						array(
+							'key'          => 'field_ak_seo_item_body',
+							'label'        => __( 'Body', 'kalynyuk' ),
+							'name'         => 'body',
+							'type'         => 'wysiwyg',
+							'media_upload' => 0,
+							'tabs'         => 'visual',
+							'toolbar'      => 'basic',
+						),
+					),
+				),
+			),
+		)
+	);
+
+	acf_add_local_field_group(
+		array(
 			'key'      => 'group_ak_calculator',
 			'title'    => __( 'Calculator', 'kalynyuk' ),
 			'location' => array(
@@ -1654,5 +1768,32 @@ function ak_faq_data() {
 		'intro'   => (string) ak_section_field( 'ak_faq_intro', $id ),
 		'items'   => ak_section_rows( 'ak_faq_items', array( 'question', 'answer' ), $id ),
 		'all_url' => $page_id ? get_permalink( ak_translate_id( $page_id ) ) : '',
+	);
+}
+
+/**
+ * SEO copy-block data for the current page, or null when there is nothing to render.
+ *
+ * ⚠️ THE ONE SECTION WITH NO DIVI ORIGINAL. It is new in the redesign, so it is placed by
+ * `ak_append_sections` rather than by replacing anything — see ak_append_section_slugs().
+ *
+ * @return array|null
+ */
+function ak_seo_data() {
+	$id = (int) get_queried_object_id();
+
+	if ( ! $id ) {
+		return null;
+	}
+
+	$heading = (string) ak_section_field( 'ak_seo_heading', $id );
+
+	if ( '' === trim( $heading ) ) {
+		return null;
+	}
+
+	return array(
+		'heading' => $heading,
+		'items'   => ak_section_rows( 'ak_seo_items', array( 'heading', 'body' ), $id ),
 	);
 }
