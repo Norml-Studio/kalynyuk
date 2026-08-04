@@ -11,13 +11,24 @@
 // browser's, not ours. Everything below is presentation only; see trust.php for why, and
 // trust.js for the one case where JavaScript is involved at all.
 //
-// ⚠️ NO EXPAND ANIMATION. design.md §9 budgets two motion moments and both are spent.
-// A height transition here would be a third. The marker swap is instant for the same
-// reason — an animated icon over an instant panel reads as a glitch, not as polish.
+// ⚠️ THE EXPAND ANIMATION IS A THIRD MOTION MOMENT, added by Petr on 2026-08-04 against
+// the §9 budget of two. design.md §9 has been amended to say so rather than left to
+// contradict the code — see the note there. It is deliberately the ONLY animated thing
+// here: the marker swap stays instant, because a moving icon on top of a moving panel is
+// two things competing for the same glance.
 // ─────────────────────────────────────────────────────────────────────────────
 
 // .trust
 .trust {
+  // ⚠️ THIS IS WHAT MAKES `block-size: auto` ANIMATABLE AT ALL. Without
+  // `interpolate-size: allow-keywords` a transition to an intrinsic size is simply
+  // ignored, and the accordion snaps open exactly as if no transition were declared —
+  // which is also the graceful degradation on browsers that do not support it.
+  //
+  // Scoped to this section rather than :root on purpose: it changes how EVERY
+  // keyword-sized transition behaves in its subtree, and nothing else on the site has
+  // asked for that.
+  interpolate-size: allow-keywords;
   // Divi's own section says `custom_padding="120px||0px"` with a bottom rule. 50 is used
   // instead of 0 so the band matches `.services` directly above it — Figma measures 64
   // here, which is not a token, and 50 is both a token and the neighbouring value.
@@ -102,6 +113,29 @@
       padding-top: t.$space-4; // measured 32 below it
       border-top: t.$border-width solid t.$color-border;
     }
+
+    // ⚠️ ::details-content IS THE ONLY WAY TO ANIMATE A NATIVE <details>, and it is worth
+    // knowing why the usual workarounds are not used here. The content of a closed
+    // <details> is not merely hidden — the browser skips it — so a wrapper div with the
+    // `grid-template-rows: 0fr → 1fr` trick cannot see it, and a JS height measurement
+    // would mean owning open/close state again and giving up everything `name` provides.
+    // This pseudo-element addresses the slot the browser itself manages, so the markup
+    // stays exactly as it is.
+    //
+    // `content-visibility` must transition too, with `allow-discrete`: without it the
+    // content is yanked out of rendering the instant `open` is removed and the height
+    // animates on an empty box, which looks like a collapse with no content in it.
+    &::details-content {
+      block-size: 0;
+      overflow: hidden;
+      transition:
+        block-size t.$dur-slow t.$ease,
+        content-visibility t.$dur-slow t.$ease allow-discrete;
+    }
+
+    &[open]::details-content {
+      block-size: auto;
+    }
   }
 
   // .trust__question
@@ -141,11 +175,17 @@
   // .trust__marker
   // 32×32 lucide plus, drawn on the 24 grid it is designed for so the stroke weight stays
   // the component's own rather than a scaled approximation.
+  //
+  // ⚠️ ACCENT, not ink — I shipped this as $color-ink and was wrong. Both the plus and the
+  // minus carry stroke #307155 in Figma (1130:8951 / 1130:8938). It is the ONE place in
+  // this section that is not ink, which is exactly why it was easy to miss by eye, and it
+  // is a legitimate use under design.md §2 "accent discipline" clause 4 — an icon inside
+  // an otherwise-cream area.
   &__marker {
     flex: 0 0 auto;
     width: 32px;
     height: 32px;
-    color: t.$color-ink;
+    color: t.$color-accent;
   }
 
   // .trust__marker-bar
@@ -174,5 +214,16 @@
         margin-top: t.$space-3;
       }
     }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Reduced motion — the expand animation is the one thing here that moves, so it is the
+// one thing that has to be switchable off. design.md §9 requires this of any new motion.
+// ─────────────────────────────────────────────────────────────────────────────
+@media (prefers-reduced-motion: reduce) {
+  // .trust__item
+  .trust__item::details-content {
+    transition: none;
   }
 }

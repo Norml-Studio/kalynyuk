@@ -27,9 +27,11 @@
  * `open` on the first item is likewise declarative — no "activate the first one" script
  * that briefly shows everything collapsed on load.
  *
- * ⚠️ THERE IS NO EXPAND ANIMATION, deliberately. design.md §9 budgets TWO motion moments
- * and both are spent (the preloader and hover/state transitions). An accordion that
- * animates its height would be a third. Do not add one.
+ * ⚠️ IT DOES ANIMATE ITS HEIGHT, and that is a THIRD motion moment against design.md §9's
+ * budget of two — added by Petr on 2026-08-04, with §9 amended rather than left to
+ * contradict the code. It is done entirely in CSS on `::details-content`, so none of the
+ * behaviour above is given up for it; see _trust.scss for why the usual wrapper and
+ * JS-measurement tricks cannot work on a native <details>.
  *
  * `trust.js` only exists for browsers without `name` support — see the note there.
  *

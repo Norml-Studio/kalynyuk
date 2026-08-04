@@ -765,13 +765,30 @@ page-scoped override in CodeKit, never a change to the widget's own defaults.
 
 ## 9. Motion
 
-### Budget: **2 moments.** Both are spent.
+### Budget: ~~2 moments~~ **3 moments.** All three are spent.
 
 1. **The page preloader** — a full-page overlay (`the-preloader` plugin) before first paint.
 2. **Hover / state transitions** on interactive elements.
+3. **The `trust` accordion's expand / collapse** — `block-size` on `::details-content`,
+   `--dur-slow`. **Added by Petr, 2026-08-04**, raising the budget from two.
 
-That's it. There is no scroll-triggered animation system, no stagger, no parallax, and no
-reveal-on-scroll. **Do not add a third motion moment.**
+There is still no scroll-triggered animation system, no stagger, no parallax, and no
+reveal-on-scroll. **Do not add a fourth.**
+
+⚠️ **Why this is recorded rather than quietly built.** The two-moment budget was stated
+here as a rule, and the accordion was built without an animation *because of it* — the
+"no expand animation" note is still in that section's git history. Raising a locked budget
+is a design decision, so it belongs in the contract with a name and a date on it. A build
+that silently exceeds a documented limit leaves the next person unable to tell an
+intentional exception from drift.
+
+Two conditions came with it, and both are met:
+
+- **It is the only thing that moves in that component.** The plus/minus marker swap stays
+  instant — a moving icon on top of a moving panel is two things competing for one glance.
+- **It is switchable off.** `@media (prefers-reduced-motion: reduce)` zeroes the
+  transition. Any future motion must do the same; §9's reduced-motion clause is the price
+  of admission, not a nicety.
 
 ### Allowed
 

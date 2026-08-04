@@ -558,3 +558,14 @@ Three of the four image placements were composed around artwork that was never e
 **They cannot use the in-place map at all**, which addresses sections by `module_id` — so migrating them needs either a CSS ID added in the Divi builder first, or a different addressing scheme. That is the next real decision on this page, and it is worth knowing before someone plans the work.
 
 What IS true: hero, about, cta, services, trust and the calculator are all native locally, and the six sections that had a `module_id` are done. On production the calculator is still Divi and deliberately so.
+
+### Two corrections to the `trust` accordion
+
+- **[BUG] The plus/minus marker was ink; it is `--accent` in Figma.** Both `lucide/plus` (1130:8951) and `lucide/minus` (1130:8938) carry stroke `#307155`. It is the one element in that section that is *not* ink, which is exactly why it slipped past a visual check, and it is a legitimate use under §2 accent discipline clause 4 (an icon inside an otherwise-cream area). Caught by Petr, not by me.
+- **[DECISION] The accordion now animates open/close — a THIRD motion moment** (Petr, 2026-08-04), against §9's locked budget of two. `design.md` §9 is amended rather than left to contradict the code: the two-moment budget was a stated rule, the accordion was originally built *without* animation because of it, so raising the limit is a design decision that belongs in the contract with a name and a date. A build that silently exceeds a documented limit leaves the next person unable to tell an exception from drift.
+
+Two conditions came with it and both are met: it is the **only** thing that moves in the component (the marker swap stays instant — a moving icon over a moving panel is two things competing for one glance), and it is switchable off via `prefers-reduced-motion`.
+
+Done in pure CSS on `::details-content`, so none of the native behaviour is given up. Worth recording *why* the usual tricks don't apply here: a closed `<details>`'s content is not merely hidden but skipped by the browser, so the `grid-template-rows: 0fr → 1fr` wrapper trick cannot see it, and a JS height measurement would mean owning open/close state again and losing everything `name` provides. `interpolate-size: allow-keywords` is what makes `block-size: auto` animatable at all — scoped to the section, not `:root`, since it changes every keyword-sized transition in its subtree. Browsers without it degrade to the instant behaviour that shipped yesterday.
+
+Verified by sampling the element height mid-transition: `93 → 168 → 228 → 238`.
