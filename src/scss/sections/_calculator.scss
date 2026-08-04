@@ -169,8 +169,15 @@
     -webkit-appearance: none;
     appearance: none;
     width: 100%;
-    height: t.$space-6; // room for the 48px thumb
     margin: 0;
+
+    // ⚠️ THE DOUBLED CLASS IS DELIBERATE — it raises this one declaration to
+    // (0,2,0). At (0,1,0) the height lost somewhere in the cascade and the control
+    // rendered 20px tall, so the 48px thumb overflowed its own box and the tap
+    // target came out smaller than the design's. Measured on the page, not assumed.
+    &.calculator__range {
+      height: t.$space-6; // room for the 48px thumb
+    }
     background: transparent;
     cursor: pointer;
 

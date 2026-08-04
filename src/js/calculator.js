@@ -522,7 +522,27 @@ export function initCalculator() {
           const fixedRateUI = (parseFloat(fixedRateInp?.value) || 0) / 100;
           displayRate = fixedRateUI;
           interestRate = fixedRateUI; // Повна ставка для Mensalidade
-          interestRateForDSTI = fixedRateUI - INDEXANTE_CONST; // Знижена для DSTI
+          /*
+           * ⚠️ WAS `fixedRateUI - INDEXANTE_CONST` — the client's "wrong result".
+           *
+           * That subtracted the Euribor index from the contract rate and computed
+           * DSTI at what was left: 2.80% − 2.143% = 0.657%, a rate no borrower pays.
+           * The page then contradicted itself in plain sight — showing a payment of
+           * 925,89 € against an income of 2 500 € while reporting DSTI 30%, where
+           * 925.89 / 2500 = 37.0%.
+           *
+           * Now the DSTI uses the SAME rate as the payment shown next to it. That is
+           * the conservative fix and needs no regulatory judgement: it does not add a
+           * stress increment, it only stops the page disagreeing with itself.
+           *
+           * ⏳ STILL OPEN, awaiting Anna: Banco de Portugal's macroprudential
+           * recommendation expects an interest-rate SHOCK on top of the contract rate
+           * for the affordability test (+1.5pp → 42%, +3.0pp → 48% on these inputs),
+           * and the variable branch below applies none at all. Adding a specific
+           * increment is a regulatory decision, not a code cleanup — so it is not
+           * invented here. Whatever she answers, it changes this one line.
+           */
+          interestRateForDSTI = fixedRateUI;
         } else if (activeType === 'variable') {
           // Змінна ставка: беремо spread з поля вводу і додаємо до індексу
           indexante = INDEXANTE_CONST;
