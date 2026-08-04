@@ -36,3 +36,20 @@ Added `ak_append_sections` — a slug list rendered after the content on `the_co
 
 - **`seo` band closes with 120 below as well as above** (Petr). The footer has no top padding of its own, so a 0 there put the last paragraph hard against the green band — the only place on the page where two blocks touched with nothing between them. Verified: 120px from the last paragraph to the footer.
 - **[DECISION] The `h1` stays on the hero; the SEO block keeps its `h2`.** Asked whether to swap them now that a keyword-rich block sits at the bottom. Checked rather than guessed: RankMath's focus keyword on page 11 is «Іпотека в Португалії», and the hero `h1` already opens with that phrase verbatim — so the swap buys nothing on the axis it was proposed for, while costing a document outline that opens on `h2` and puts its only `h1` ~9 500px down, where heading-navigation users reach it last. It would also mean hard-coding an exception into `ak_claim_h1()`, whose entire point is that a section cannot know its own rank and the first one rendered takes the `h1`. If the "для іноземців та нерезидентів" phrasing should carry more weight, the levers are the hero copy or a secondary-keyword target — not the heading level.
+
+### 🚀 Production deploy #3 — trust, order, testimonials, faq, seo
+
+All five live on `https://www.kalynyuk.com`, uk and pt. **The homepage now runs ONE Divi section: the calculator**, held back deliberately for its own session.
+
+**Files first again**, same reasoning as deploy #2 and for the same two reasons: without their meta the new templates render nothing, so the Divi originals simply keep rendering (verified between the steps — after the sync and before seeding, production still showed `trust` + `calculator` as Divi with zero console errors); and four of the five sections use repeaters, which cannot be pre-written because `update_field()` on an unregistered field group stores a serialised array instead of flattened cells.
+
+Pre-flight checks all passed before anything was written: both photos present by slug, Review Wall active with 20 reviews, target pages 2133 / 2440 present, and all four Divi sections still in `post_content` to be replaced.
+
+- One consolidated seed rather than five — every attachment resolved **by slug**, the FAQ answers **extracted from `post_content`** rather than retyped (they carry rates and tax bands), and the script aborts unless it parses exactly 7 FAQ items or finds both photos.
+- `ak_append_sections` used for the first time on production, for `seo` — the section with no Divi original.
+- Polylang translations for the five new UI strings written in the same pass, so pt shipped with «Todos os testemunhos» and «Todas as perguntas e respostas» rather than Ukrainian placeholders.
+- **Post-deploy meta diff: zero unexpected differences.** The only deltas are the six `ak_about_*_body` values (local's `<p>` stripped by TinyMCE — identical rendering via `wpautop`), `ak_about_portrait` (2570 vs 2567 — same file, different IDs per environment), and `ak_inline_sections` (local carries `calculator = calculator`, production deliberately does not). Every new section matches exactly.
+
+**Verified on production, both languages:** nine native sections; `.et_pb_section` down to 1 (`calculator`); trust marker `rgb(48,113,85)`; 5 trust items, 5 order items, 9 testimonial cards, 7 FAQ items, 4 SEO blocks; SEO heading 506 wide; one `h1`; no overflow at 1440 or 375; **zero console errors**.
+
+Backups: `~/backup-theme-20260804.tgz` + `~/backup-akmeta-20260804.tsv` (the two earlier pairs are still there). Rollback stays cheap — `post_content` has never been modified, so clearing `ak_inline_sections` and `ak_append_sections` returns every Divi original.
