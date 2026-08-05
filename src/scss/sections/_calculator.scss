@@ -188,6 +188,13 @@ $thumb-arrows: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/s
     gap: t.$space-4;
   }
 
+  // .calculator__cta
+  // Frame 9120 is 150×48 — the kit's accent button at its natural content width, so only
+  // the min-width needs saying. `.btn--primary` supplies fill, radius and height.
+  &__cta {
+    min-width: 150px;
+  }
+
   // .calculator__label-note
   &__label-note {
     font-weight: t.$weight-regular;
@@ -401,8 +408,18 @@ $thumb-arrows: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/s
   }
 
   // .calculator__rate
-  // Frame: modes 40…368, stepper starts at 415 — a 47 gap, so $space-5 rather than the
-  // 24 that was here. The row wraps on narrow viewports; the frame has no mobile state.
+  //
+  // ⚠️ AT DESKTOP THE GAP IS WHATEVER IS LEFT OVER, not a fixed value, and that is
+  // deliberate. The frame has modes 40…368 (328) and the stepper 415…658, i.e. a 47 gap
+  // inside a 616 column. Our labels render ~7px wider EACH at the same 16px — different
+  // tracking metrics — so the modes come to 350 and a fixed 47 (or even 24) pushed the
+  // total past 616 and wrapped the stepper onto its own line. Three fixed gaps were tried
+  // and each broke at some width.
+  //
+  // `nowrap` + `margin-left: auto` on the stepper pins it to the row's end and lets the
+  // leftover become the gap (~23 here). The gap is the one measurement in this row that
+  // is pure whitespace between two groups, so it is the right thing to give up rather
+  // than shrinking the type or the control away from the frame.
   &__rate {
     display: flex;
     flex-wrap: wrap;
@@ -410,20 +427,43 @@ $thumb-arrows: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/s
     gap: t.$space-3;
 
     @include m.bp(desktop) {
-      column-gap: t.$space-5;
+      flex-wrap: nowrap;
+
+      .calculator__stepper {
+        margin-left: auto;
+      }
     }
   }
 
   // .calculator__modes
+  //
+  // ⚠️ `flex: 0 0 auto` at desktop, or the ROW's nowrap just moves the problem inward.
+  // With the row set to nowrap the stepper stopped wrapping, but this group is a flex
+  // item and shrank instead — and its own `flex-wrap: wrap` then pushed «Вручну» onto a
+  // second line. The row read as "not wrapped" while the modes were stacked two-high,
+  // which is a check passing for the wrong reason.
   &__modes {
     display: flex;
     flex-wrap: wrap;
     gap: t.$space-3;
+
+    @include m.bp(desktop) {
+      flex: 0 0 auto;
+      flex-wrap: nowrap;
+    }
   }
 
   // .calculator__mode
+  //
+  // ⚠️ Body SMALL, not Body — and this is what lets the row fit on one line. The frame's
+  // mode labels are 19px tall boxes (52 / 77 / 55 wide), i.e. 16px at 116%, and its modes
+  // come to 84 + 109 + 87 = 280 + 48 of gaps = 328. At Body (20px) ours measured 383, so
+  // 328 + 40 + the 243 stepper overflowed the 616 column and the stepper wrapped onto its
+  // own line — visible the moment the third mode was added.
+  //
+  // Radio is 24 to match (the frame's 84 = 24 + 8 + 52), not the 20 that was here.
   &__mode {
-    @include m.text-body;
+    @include m.text-body-sm;
 
     display: inline-flex;
     align-items: center;
@@ -433,8 +473,8 @@ $thumb-arrows: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/s
     cursor: pointer;
 
     input {
-      width: 20px;
-      height: 20px;
+      width: 24px;
+      height: 24px;
       accent-color: t.$color-accent;
     }
   }
@@ -473,9 +513,25 @@ $thumb-arrows: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/s
       min-width: 0;
     }
 
+    // ⚠️ `position: static` UNDOES A LEGACY ABSOLUTE. The old calculator CSS ships
+    // `.percent-symbol { position: absolute; right: 8px; top: 50% }`, which pinned the
+    // `%` to the right edge of `.input-wrapper` while the number sat in its own 60px box
+    // — measured 29px apart. The frame has no separate `%` element at all (Frame 4166's
+    // characters are "2.70%"), so the two have to sit together and be centred as one
+    // token. In flow, the wrapper's `justify-content: center` does exactly that.
+    //
+    // This is also why `.input-wrapper` carries `position: relative` — it was the
+    // containing block for that absolute. Kept: harmless, and it still scopes anything
+    // else the legacy sheet positions in here until phase 4 removes it.
     .percent-symbol {
       @include m.text-body-strong;
 
+      position: static;
+      // ⚠️ `transform: none` is REQUIRED, not tidying. The legacy rule pairs its absolute
+      // with `top: 50%; transform: translateY(-50%)`. Dropping the absolute alone leaves
+      // the transform applying to a now-static inline element, which lifted the `%` into
+      // a superscript — visible immediately in the render.
+      transform: none;
       color: t.$color-ink;
     }
   }
@@ -510,10 +566,27 @@ $thumb-arrows: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/s
   }
 
   // .calculator__step-value
+  //
+  // ⚠️ THE LEGACY CALCULATOR CSS WINS HERE, and it is not Divi's this time. The page
+  // still ships `.rate-stepper input { width: auto !important; text-align: center;
+  // max-width: 120px; padding: 3px 10px }` — (0,1,1) against this class's (0,1,0). The
+  // result was a 120px box with the number centred in it and 10px of padding on the
+  // right, so `2.84` and `%` sat far apart instead of reading as one value.
+  //
+  // The frame has NO separate `%` element at all: Frame 4166's characters are literally
+  // "2.70%". So the pair has to look like one token — the number right-aligned in a box
+  // just wide enough, the `%` immediately after it, and `.input-wrapper` centring the two
+  // together (which is what puts the value at the frame's dead-centre x=91.5 of 243).
+  //
+  // `.rate-stepper` is kept on purpose — calculator.js finds the steppers by it — so its
+  // styling comes with it, exactly like `.contact-form` did. Out-specifying is the fix
+  // until phase 4 deletes the legacy sheet. `!important` on width only, to beat theirs.
+  &__stepper &__step-value,
   &__step-value {
     @include m.text-body-strong;
 
-    width: 5ch;
+    width: 5ch !important;
+    max-width: none;
     padding: 0;
     color: t.$color-ink;
     text-align: right;

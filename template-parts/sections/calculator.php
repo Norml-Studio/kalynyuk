@@ -81,6 +81,39 @@ $ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (fl
 
 					<?php
 					/*
+					 * ⚠️ «Розрахувати» — the head's CTA, and it is NOT the «Довідка» button.
+					 *
+					 * Frame 9120 is a 150×48 accent-filled button with radius 24, and its
+					 * label (Frame 9145) reads «Розрахувати». Our head rendered the help
+					 * button here instead, gated on `ak_calc_help_content`, which is empty
+					 * in every language — so the slot has always been visually empty.
+					 * Reported by Petr as "в верхнем текстовом блоке нужно добавить кнопку"
+					 * (2026-08-05).
+					 *
+					 * ⚠️ ITS BEHAVIOUR IS NOT IN THE DESIGN, so it is stated here rather
+					 * than guessed at silently. A Figma frame cannot express what a button
+					 * does, and this one cannot mean "compute" — the calculator recomputes
+					 * on every keystroke, so a submit-style action would be a control that
+					 * appears to do something and does not. It moves focus to the first
+					 * field and scrolls the card into view, which is a real job on mobile
+					 * where the head and the fields are a screen apart. Pointing it at
+					 * `/calc/` instead is a one-line change if that is what was meant.
+					 *
+					 * `.btn--primary` is the kit's accent variant (fill #307155, radius 24,
+					 * height 48) — the same component the rest of the site uses, not a
+					 * one-off restyle.
+					 */
+					?>
+					<button
+						class="btn btn--primary calculator__cta"
+						type="button"
+						data-ak-calc-focus
+					>
+						<?php echo esc_html( ak_str( 'ak_calc_cta', 'Розрахувати' ) ); ?>
+					</button>
+
+					<?php
+					/*
 					 * A <button>, not the old `<a href="#infobox">`.
 					 *
 					 * That link pointed at a Divi popup section which no longer exists — and
@@ -198,11 +231,25 @@ $ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (fl
 
 				<?php
 				/*
-				 * The rate row spans both columns. TWO modes only — the Figma frame
-				 * shows a third ("Вручну"), but updateCalculation() branches on exactly
-				 * 'fixed' and 'variable' and initialises interestRate to 0, so a third
-				 * option would compute the payment at 0% and understate it. Petr's call
-				 * (2026-07-31): ship the two that work.
+				 * The rate row spans both columns. THREE modes — Змінна · Фіксована ·
+				 * Вручну, matching Frame 132 (three children, 24 apart).
+				 *
+				 * ⚠️ THIS REVERSES THE 2026-07-31 DECISION, deliberately and on Petr's
+				 * instruction (2026-08-05, "первий скрін це як потрібно"). That decision
+				 * was to ship two, and it was right at the time: updateCalculation()
+				 * branched on exactly 'fixed' and 'variable' and initialises interestRate
+				 * to 0, so a third radio would have computed the payment at 0% and
+				 * understated it. Production still has only the two.
+				 *
+				 * The third is safe NOW because the JS gained a real `manual` branch in
+				 * the same commit — it is no longer a radio with nothing behind it. Do not
+				 * add a fourth without doing the same.
+				 *
+				 * ⏳ Вручну currently computes IDENTICALLY to Фіксована: both take the TAN
+				 * the visitor types. That is the only reading the design supports, and it
+				 * makes the two functionally redundant — flagged for Petr, because the
+				 * alternative (Фіксована becomes a preset rate and only Вручну is
+				 * editable) is a content decision, not a code one.
 				 */
 				?>
 				<div class="calculator__field calculator__field--wide">
@@ -221,6 +268,10 @@ $ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (fl
 							<label class="calculator__mode">
 								<input type="radio" name="rate-type" value="fixed" checked />
 								<span><?php echo esc_html( ak_str( 'ak_calc_fixed', 'Фіксована' ) ); ?></span>
+							</label>
+							<label class="calculator__mode">
+								<input type="radio" name="rate-type" value="manual" />
+								<span><?php echo esc_html( ak_str( 'ak_calc_manual', 'Вручну' ) ); ?></span>
 							</label>
 						</div>
 
@@ -265,6 +316,15 @@ $ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (fl
 							<button class="calculator__step rate-minus" type="button" aria-label="-">−</button>
 							<span class="input-wrapper">
 								<input class="calculator__step-value" type="text" inputmode="decimal" id="fixed-rate-input" value="2,80" aria-label="TAN, %" />
+								<span class="percent-symbol">%</span>
+							</span>
+							<button class="calculator__step rate-plus" type="button" aria-label="+">+</button>
+						</div>
+
+						<div class="calculator__stepper rate-stepper hidden" id="manual-stepper">
+							<button class="calculator__step rate-minus" type="button" aria-label="-">−</button>
+							<span class="input-wrapper">
+								<input class="calculator__step-value" type="text" inputmode="decimal" id="manual-rate-input" value="2,70" aria-label="TAN, %" />
 								<span class="percent-symbol">%</span>
 							</span>
 							<button class="calculator__step rate-plus" type="button" aria-label="+">+</button>

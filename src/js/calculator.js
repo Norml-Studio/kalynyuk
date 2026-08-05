@@ -39,6 +39,7 @@ export function initCalculator() {
 
   initCalculatorHelp();
   initCalculatorTips();
+  initCalculatorCta();
 
   /* ═══ block 1 — inputs, sliders, steppers ═══ */
   (function () {
@@ -301,8 +302,18 @@ export function initCalculator() {
       const variableInput = document.getElementById('variable-rate-input');
       const fixedInput = document.getElementById('fixed-rate-input');
   
-      const steppers = { variable: variableStepper, fixed: fixedStepper };
-      const inputs = { variable: variableInput, fixed: fixedInput };
+      /*
+       * ⚠️ `manual` is the THIRD rate mode, added 2026-08-05 on Petr's instruction. It
+       * exists in the Figma frame and had never been implemented anywhere, production
+       * included. It must be registered in BOTH maps: `steppers` drives which control is
+       * shown, `inputs` is what emitActiveRate() reads. Registering it in only one gives
+       * a radio that reveals its stepper and then reports a rate of 0.
+       */
+      const manualStepper = document.getElementById('manual-stepper');
+      const manualInput = document.getElementById('manual-rate-input');
+
+      const steppers = { variable: variableStepper, fixed: fixedStepper, manual: manualStepper };
+      const inputs = { variable: variableInput, fixed: fixedInput, manual: manualInput };
   
       const state = {
         activeRateType: (document.querySelector('input[name="rate-type"]:checked') || { value: 'variable' }).value
@@ -452,6 +463,9 @@ export function initCalculator() {
       const rateTypeRadios  = document.querySelectorAll('input[name="rate-type"]');
       const variableRateInp = document.querySelector('#variable-stepper input');
       const fixedRateInp    = document.querySelector('#fixed-stepper input');
+      // Block 2 has its own refs — it is a separate IIFE from the mode-swap block above,
+      // so `manual` has to be looked up here as well as there.
+      const manualRateInp   = document.querySelector('#manual-stepper input');
     
       /* outputs */
       const mensalidadeEl = document.getElementById("mensalidade");
@@ -551,6 +565,26 @@ export function initCalculator() {
           interestRate = indexante + spread;
           displayRate = interestRate;
           interestRateForDSTI = interestRate; // Однакова для DSTI
+        } else if (activeType === 'manual') {
+          /*
+           * Вручну — the visitor types the final TAN and it is used as given: no index
+           * added, no spread, no stress increment. Added 2026-08-05 with the third radio.
+           *
+           * ⚠️ WITHOUT THIS BRANCH THE THIRD MODE WOULD COMPUTE AT 0%. interestRate is
+           * initialised to 0 above, so an unhandled activeType does not fail loudly — it
+           * quietly reports a payment far below reality on a licensed intermediary's
+           * calculator. That is exactly why the third radio was held back on 2026-07-31,
+           * and it is why the radio and this branch must ship together.
+           *
+           * ⏳ This is arithmetically identical to the `fixed` branch, because "type the
+           * TAN" is the only reading the design offers for «Вручну». Flagged for Petr:
+           * if Фіксована is meant to be a PRESET rate instead, that is the change, and it
+           * belongs here.
+           */
+          const manualRateUI = (parseFloat(manualRateInp?.value) || 0) / 100;
+          displayRate = manualRateUI;
+          interestRate = manualRateUI;
+          interestRateForDSTI = manualRateUI;
         }
   
         // Mensalidade - з повною ставкою
@@ -869,5 +903,31 @@ function initCalculatorTips() {
     if (pinned.contains(e.target)) return;
 
     hideAll(null);
+  });
+}
+
+/**
+ * The head's «Розрахувати» button.
+ *
+ * ⚠️ The design specifies the button, not what it does — a Figma frame cannot. It
+ * cannot mean "compute": the calculator recomputes on every keystroke, so a
+ * submit-style action would be a control that looks like it does something and
+ * does not. So it moves the visitor to the first field, which is a real job on a
+ * phone where the head and the fields are a screen apart.
+ *
+ * `preventScroll` then an explicit `scrollIntoView` on the CARD, not the input:
+ * focusing the input alone scrolls it to the viewport edge and the label above it
+ * ends up off-screen, so the field arrives with no idea what it is asking for.
+ */
+function initCalculatorCta() {
+  const cta = document.querySelector('[data-ak-calc-focus]');
+  const field = document.getElementById('property-price-input');
+  const card = document.querySelector('.calculator__layout');
+
+  if (!cta || !field) return;
+
+  cta.addEventListener('click', () => {
+    (card || field).scrollIntoView({ behavior: 'smooth', block: 'start' });
+    field.focus({ preventScroll: true });
   });
 }
