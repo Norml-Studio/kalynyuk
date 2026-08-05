@@ -5,7 +5,8 @@
 > way you read `ci-cd.md` before deploying. If a value you need isn't here, derive it
 > from the scales here — don't invent one.
 >
-> **Status:** v2.0.0 · 2026-07-27
+> **Status:** v2.2.0 · 2026-08-05 — adds the **mortgage calculator** spec (§7) and
+> `--space-9` (§4), closing the calculator half of §13 gap #10. Desktop only.
 > **Mode:** SCRAPE, reconciled against the **Figma UI Kit** (page `336:2947`).
 > **Source priority:** (1) the UI Kit — 21 text styles, the Colors section, the
 > Buttons/Inputs component sets; (2) Figma frame `1163:950` for layout/grid;
@@ -222,6 +223,7 @@ with two off-grid survivors (20 and 50) that come from Divi module defaults.
 | `--space-5` | 40px | Section padding (standard) |
 | `--space-6` | 50px | Section padding (generous) |
 | `--space-7` | 56px | Lede → content-stack gap (added v2.1.0) |
+| `--space-9` | 64px | Calculator field ROW gap (added v2.2.0) |
 | `--space-8` | 120px | Hero / feature-band top padding |
 
 ⚠️ **`--space-7` was added in v2.1.0**, measured on Figma `1130:3906`: the `about`
@@ -230,6 +232,15 @@ band's heading box ends at y=1024 and its credential list starts at y=1080. It i
 added here BEFORE being used — the rule in `.claude/CLAUDE.md`. Rounding to
 `--space-6` (50px) was the alternative and was rejected: 6px on a gap this size is
 visible next to the 120px band rhythm directly below it.
+
+⚠️ **`--space-9` was added in v2.2.0**, measured on Figma `1130:4011`: the calculator's
+field rows start 216 apart (y=40 → 256 → 477) around a 152-tall field, so the gap is 64.
+Also `8 × 8` and also added here before use. `--space-7` (56) was tried and rejected: at 56
+the six fields still read as one dense block, and the 8px is legible because each field is
+three stacked parts whose own gaps are 16 and 24.
+
+⚠️ **It is numbered 9 although it sorts between 7 and 8.** The scale is a NAME sequence, not
+an ordering — renumbering `--space-8` would silently turn 120 into 64 everywhere it is used.
 
 `20px` is the **mobile gutter** (measured `custom_padding_phone="40px|20px|32px|20px"`).
 Treat it as the gutter token, not a spacing step.
@@ -785,6 +796,65 @@ alone, and leave a decoy for the next person.
   A Figma frame cannot express scroll behaviour either way, so "the design doesn't say" is
   not permission.
 
+### Mortgage calculator — added v2.2.0
+
+Figma `1130:9148` (desktop 1376×1123). **The section this contract used to say it did not
+cover** — §13 gap #10 warned that the calculator "almost certainly has values not in this
+contract" and to rescan before touching it. Measured off the frame 2026-08-05; the gap is
+now closed for desktop.
+
+**Head** — the shared **x=696** spine, exactly as `about` / `order` / `faq` / `seo`:
+
+| Part | Spec |
+|---|---|
+| Layout | `664fr / 680fr`, `column-gap --space-4` (664 + 32 + 680 = 1376) |
+| Heading | Desktop/H1, 506 wide inside the 664 track, `--ink` |
+| Right column | 680 — intro, then **32** to the «Довідка» button (150×48) |
+| Head → card | **56** (`--space-7`) |
+
+**The card** — the piece that carries the whole section:
+
+| Part | Spec |
+|---|---|
+| Card | full container 1376, `--surface` `#fef8ef`, radius **24** (`--radius-lg`), padding **24** |
+| Columns | `648fr / 656fr`, gap 24, `align-items: stretch` |
+| Fields column | a further **16** padding, so field content sits **40** from the card edge |
+| Fields grid | 2 × 296, column gap **24**, row gap **64** (`--space-9`) |
+| Result panel | 656 wide, `--surface-sunken` `#eeeadc`, radius **16** (`--radius-md`), padding **50** (`--space-6`) |
+
+**Field internals** (the two gaps are NOT equal):
+
+| Part | Spec |
+|---|---|
+| Label | Body Bold, ⓘ badge 24×24 `--surface-sunken`, 6 after the text |
+| Label → input | 14 → **16** in code (the on-scale neighbour) |
+| Input | 296×43, **fill TRANSPARENT**, 1px `--ink-faint`, radius 16, padding 10/16, value right-aligned |
+| Input → slider | **24** |
+| Slider | track 296×**20** `--surface-sunken` radius 24; thumb 48×48 `--accent` circle |
+| Stepper | 243×43, transparent, 1px `--ink-faint`, radius 16, padding 6; −/+ 31×31 radius 12 (`--radius-chip`) `--surface-sunken`; value centred |
+| Rate row | modes 24 apart, radio→label 8; modes → stepper **40** |
+
+**Result panel rows** (panel-space y): payment 85 · metrics 233 · metrics 311 · divider 389 ·
+taxes 413 · form 515, bottom inset 40. The payment block carries **air, not content** — 35
+above and 35 below an 81-tall block, which is why it reads as 151 in the frame.
+
+- ⚠️ **Divi beats `.calculator__input` on SPECIFICITY, not load order.** `input[type="text"]`
+  is (0,1,1) against a single class's (0,1,0), so Divi's `background: #fff; border: 1px
+  solid #bbb; padding: 2px` took the field — white, grey-bordered and **31px tall instead of
+  43**. A doubled class (0,2,0) fixes it and needs no `!important`, because Divi's rule has
+  none. Contrast the range input, where Divi *does* use `!important` and load order matters.
+- ⚠️ **Do not put `contact-form` on anything.** All 11 `.contact-form` rules on the homepage
+  come from `et-builder-module-design-deferred-11-cached-inline-styles` — orphan Divi CSS
+  for a module no longer in `post_content`. Two are actively harmful: a `margin-bottom: 70px
+  !important` that left a dead 221px inside the panel, and a `position: absolute; bottom:
+  40px` on `.ginput_container_checkbox` that rendered the consent checkbox **3 650px down
+  the page, over the FAQ**. See §13 and `docs/05-issues.md`.
+- **Two rate modes ship, not the frame's three.** «Вручну» exists in the design but
+  `updateCalculation()` branches on `fixed` / `variable` only and initialises the rate to 0,
+  so a third option would compute the payment at 0%. Petr's call, 2026-07-31.
+- **Only desktop is measured.** The frame has no tablet or phone state; below `desktop` the
+  card keeps its 24 padding, the columns stack and the field row gap drops to `--space-4`.
+
 ### Header / navigation — added v2.0.0
 
 Behaviour and a11y are governed by **`vibe-frontend-standards/references/header-standard.md`**
@@ -1153,10 +1223,13 @@ out of the URL.
    the one mobile value with a source. **Rescan at 375px and 768px before doing responsive
    work.**
 10. **Only the homepage was measured.** The FAQ (2440), Services (2423), About (2409),
-    Trust (2435), Reviews (2133) and Calculator (566) pages were not scraped, and the
-    calculator carries ~95 KB of its own CSS in Divi code modules
-    (see `docs/05-issues.md`). **The calculator almost certainly has values not in this
-    contract.** Rescan Stage 6 against `/calc/` before touching it.
+    Trust (2435) and Reviews (2133) pages were not scraped.
+    ✅ **The calculator half of this gap is CLOSED (v2.2.0)** — §7 now carries the full
+    desktop spec, measured off Figma `1130:9148`. It was worth the warning: the section
+    was missing its 1376×812 surface card entirely, its head was centred instead of on
+    the x=696 spine, and its inputs were rendering 31px tall because Divi's
+    `input[type="text"]` out-specifies a single class. **Desktop only** — the frame has no
+    tablet or phone state, so rescan at 375/768 before doing responsive work there.
 11. **The Review Wall widget runs its own design system** (Roboto Flex, `#1A7BFF`, 32px
     radius) and is deliberately excluded. Only page-scoped CodeKit overrides bring it
     closer to the contract.
