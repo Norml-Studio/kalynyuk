@@ -154,6 +154,62 @@
   }
 
   // ───────────────────────────────────────────────────────────────────────────
+  // .calculator__slider
+  // Our own track, drawn UNDER a transparent native input. Divi cannot reach it.
+  &__slider {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  // ⚠️ TWO `!important`s, SO SPECIFICITY DECIDES — and Divi loads AFTER us.
+  //
+  // et-divi-customizer-global.min.css is enqueued after our stylesheet
+  // (docs/05-issues.md), so a flagged Divi rule of equal specificity wins on order.
+  // A plain `.calculator__range { background: transparent !important }` at (0,1,0)
+  // therefore lost — measured: the input kept its #eeeadc fill. This selector is
+  // (0,3,0) AND flagged, which beats it on specificity regardless of order.
+  //
+  // That painted fill was the "50px pill" — never the native track, never our
+  // element. Three hypotheses missed it because I was styling the wrong thing.
+  &__slider &__range {
+    background: transparent !important;
+    border: 0 !important;
+  }
+
+  // Divi draws a chevron from its ETmodules icon font inside the thumb. Same
+  // specificity trick to blank it — the design's thumb is a plain circle.
+  &__slider &__range::-webkit-slider-thumb {
+    font-size: 0 !important;
+    color: transparent !important;
+    background-image: none !important;
+    background-color: t.$color-accent !important;
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: t.$radius-circle !important;
+  }
+
+  &__slider &__range::-moz-range-thumb {
+    background-color: t.$color-accent !important;
+    width: 48px !important;
+    height: 48px !important;
+    border: 0 !important;
+    border-radius: t.$radius-circle !important;
+  }
+
+  // .calculator__track
+  // The 20px bar from Figma 1130:4099, centred in the 50px control so the 48px
+  // thumb has room above and below it.
+  &__track {
+    position: absolute;
+    inset-inline: 0;
+    height: 20px;
+    background-color: t.$color-surface-sunken;
+    border-radius: t.$radius-lg;
+    pointer-events: none;
+  }
+
   // .calculator__range — the slider.
   //
   // ⚠️ THUMB STYLING HAS NO SHARED SELECTOR. `::-webkit-slider-thumb` and
@@ -178,42 +234,44 @@
     // Divi's CSS for this element. Specificity cannot win here; a doubled class was
     // tried first and did not. Verified after: the control measures 50px at 1440
     // and 375.
+    position: relative;
+    z-index: 1;
+
     &.calculator__range {
       height: t.$space-6 !important; // room for the 48px thumb
     }
 
-    // ⏳ STILL NOT RIGHT — the TRACK and THUMB, and this is a known open item.
-    //
-    // The design is a 20px track with a 48px circle sitting on it. What renders is a
-    // ~50px pill filling the whole control, with a chevron glyph INSIDE the thumb
-    // that we never wrote — so Divi is styling `input[type=range]` and its
-    // pseudo-elements, and winning. Adding `!important` to the track height and thumb
-    // size was tried and changed nothing visible, so the override is not simply a
-    // priority contest and I have not isolated it. The flags were reverted rather
-    // than left in as decoration.
-    //
-    // Do not guess at this again. It needs a devtools pass on the pseudo-elements
-    // (Chrome shows them under "Show user agent shadow DOM") to find what actually
-    // applies. `getComputedStyle(el, '::-webkit-slider-thumb')` is NOT a usable
-    // check — it returns the host element's styles, which is what made an earlier
-    // measurement here look like a pass when nothing had changed.
-    background: transparent;
+    // Divi paints a background ON THE INPUT ITSELF — that pill was never the native
+    // track nor our element. Same source as the height override, so the same flag.
+    background: transparent !important;
+    border: 0 !important;
     cursor: pointer;
 
     &:focus-visible {
       @include m.focus-ring;
     }
 
+    /*
+     * ⚠️ THE NATIVE TRACK IS DELIBERATELY LEFT UNSTYLED AND TRANSPARENT.
+     *
+     * Divi styles `input[type=range]` and its pseudo-elements with flagged rules of
+     * its own — the giveaway was a chevron glyph it draws inside the thumb, which we
+     * never wrote. Two rounds of `!important` on `::-webkit-slider-runnable-track`
+     * changed nothing visible, so it is not a plain priority contest.
+     *
+     * So we stop competing for the track. `.calculator__track` is OUR element, drawn
+     * under a transparent input — Divi has no selector that reaches it, and the
+     * result is deterministic instead of a fight we keep losing. Only the THUMB still
+     * needs a pseudo-element, because it has to move with the value.
+     */
     &::-webkit-slider-runnable-track {
-      height: 20px;
-      background-color: t.$color-surface-sunken;
-      border-radius: t.$radius-lg;
+      background: transparent !important;
+      border: 0 !important;
     }
 
     &::-moz-range-track {
-      height: 20px;
-      background-color: t.$color-surface-sunken;
-      border-radius: t.$radius-lg;
+      background: transparent !important;
+      border: 0 !important;
     }
 
     &::-webkit-slider-thumb {

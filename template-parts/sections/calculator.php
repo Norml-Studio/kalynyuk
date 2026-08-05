@@ -139,6 +139,8 @@ $ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (fl
 							maxlength="<?php echo esc_attr( $ak_len ); ?>"
 						/>
 
+						<span class="calculator__slider">
+							<span class="calculator__track" aria-hidden="true"></span>
 						<input
 							class="calculator__range"
 							type="range"
@@ -149,6 +151,7 @@ $ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (fl
 							value="<?php echo esc_attr( $ak_val ); ?>"
 							aria-label="<?php echo esc_attr( $ak_label ); ?>"
 						/>
+						</span>
 					</div>
 				<?php endforeach; ?>
 
