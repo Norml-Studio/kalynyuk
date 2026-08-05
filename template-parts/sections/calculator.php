@@ -97,7 +97,11 @@ $ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (fl
 
 		<?php
 		/*
-		 * ⚠️ EVERY `id` AND `name="rate-type"` BELOW IS LOAD-BEARING.
+		 * ⚠️ EVERY `id`, `name="rate-type"` AND RADIO `value` BELOW IS LOAD-BEARING.
+		 *
+		 * updateCalculation() branches on the literal strings 'fixed' and 'variable', so the
+		 * values stay English while the labels beside them translate — see the two
+		 * ak_str() calls in the rate row.
 		 *
 		 * calculator.js addresses the DOM only by id — and six of them not through a
 		 * literal `getElementById('…')` but as STRING ARGUMENTS to the sync helpers
@@ -106,14 +110,23 @@ $ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (fl
 		 * prints a wrong number. The 30-id contract is checked after every change.
 		 *
 		 * Classes are ours and free to change. Ids are not.
+		 *
+		 * ⚠️ The LABEL goes through ak_str(), the id does NOT. That split is the whole
+		 * point: the id is the contract with calculator.js and must never move with the
+		 * language, while the label is chrome and must (multilingual rule 3). These were
+		 * hardcoded Ukrainian until 2026-08-05, which showed up as a fully Ukrainian
+		 * calculator sitting in the middle of the Portuguese homepage.
+		 *
+		 * Each label is resolved ONCE and used for both the visible <label> and the range
+		 * input's aria-label, so assistive tech gets the same words in the same language.
 		 */
 		$ak_fields = array(
-			array( 'property-price', 'Вартість нерухомості', 50000, 1500000, 5000, 200000, 7 ),
-			array( 'loan-amount', 'Сума першого внеску', 0, 1000000, 5000, 30000, 7 ),
-			array( 'loan-term', 'Термін кредиту (у роках)', 5, 40, 1, 20, 2 ),
-			array( 'salary', 'Зарплата', 0, 10000, 500, 3500, 5 ),
-			array( 'net-income', 'Щомісячний чистий дохід', 0, 10000, 500, 2500, 5 ),
-			array( 'expenses', 'Щомісячні витрати', 0, 10000, 250, 0, 5 ),
+			array( 'property-price', ak_str( 'ak_calc_f_price', 'Вартість нерухомості' ), 50000, 1500000, 5000, 200000, 7 ),
+			array( 'loan-amount', ak_str( 'ak_calc_f_down', 'Сума першого внеску' ), 0, 1000000, 5000, 30000, 7 ),
+			array( 'loan-term', ak_str( 'ak_calc_f_term', 'Термін кредиту (у роках)' ), 5, 40, 1, 20, 2 ),
+			array( 'salary', ak_str( 'ak_calc_f_salary', 'Зарплата' ), 0, 10000, 500, 3500, 5 ),
+			array( 'net-income', ak_str( 'ak_calc_f_income', 'Щомісячний чистий дохід' ), 0, 10000, 500, 2500, 5 ),
+			array( 'expenses', ak_str( 'ak_calc_f_expenses', 'Щомісячні витрати' ), 0, 10000, 250, 0, 5 ),
 		);
 		?>
 		<div class="calculator__layout">
@@ -166,7 +179,7 @@ $ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (fl
 				?>
 				<div class="calculator__field calculator__field--wide">
 					<p class="calculator__label">
-						<span>Процентна ставка <span class="calculator__label-note">(річна)</span></span>
+						<span><?php echo esc_html( ak_str( 'ak_calc_rate', 'Процентна ставка' ) ); ?> <span class="calculator__label-note"><?php echo esc_html( ak_str( 'ak_calc_rate_note', '(річна)' ) ); ?></span></span>
 						<span class="calculator__hint" aria-hidden="true">i</span>
 					</p>
 
@@ -174,11 +187,11 @@ $ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (fl
 						<div class="calculator__modes">
 							<label class="calculator__mode">
 								<input type="radio" name="rate-type" value="variable" />
-								<span>Змінна</span>
+								<span><?php echo esc_html( ak_str( 'ak_calc_variable', 'Змінна' ) ); ?></span>
 							</label>
 							<label class="calculator__mode">
 								<input type="radio" name="rate-type" value="fixed" checked />
-								<span>Фіксована</span>
+								<span><?php echo esc_html( ak_str( 'ak_calc_fixed', 'Фіксована' ) ); ?></span>
 							</label>
 						</div>
 
@@ -272,7 +285,18 @@ $ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (fl
 				</div>
 
 				<div class="calculator__form contact-form">
-					<p class="calculator__form-title">Надсилайте нам розрахунок і ми з вами зв’яжемось</p>
+					<p class="calculator__form-title"><?php echo esc_html( ak_str( 'ak_calc_form_title', 'Надсилайте нам розрахунок і ми з вами зв’яжемось' ) ); ?></p>
+					<?php
+					/*
+					 * ⚠️ The FORM's own strings do not come through here — labels,
+					 * placeholders, the button and the confirmation live in Gravity Forms'
+					 * own tables and are translated by ak_gform_translate() in
+					 * inc/integrations.php, which filters every form's object. Form 3 is
+					 * already registered (that loop walks GFAPI::get_forms()), so its
+					 * strings appear in Polylang → Translations → Strings and need only
+					 * filling in — no code change here.
+					 */
+					?>
 					<?php echo do_shortcode( '[gravityform id="3" title="false" ajax="true"]' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 				</div>
 			</div>

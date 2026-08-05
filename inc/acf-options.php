@@ -276,6 +276,49 @@ function ak_register_pll_strings() {
 		'ak_calc_help'      => 'Довідка',
 	);
 
+	/*
+	 * Calculator chrome — Figma 1130:4130.
+	 *
+	 * ⚠️ These were HARDCODED UKRAINIAN in template-parts/sections/calculator.php, which is
+	 * exactly what multilingual rule 3 exists to prevent. The consequence was visible rather
+	 * than theoretical: the calculator is the one section that renders natively on /pt/ with
+	 * `.et_pb_section` down to 0, so with the labels frozen in the template the Portuguese
+	 * homepage showed a Portuguese page with a fully Ukrainian calculator in the middle of it.
+	 *
+	 * The six field labels double as the `aria-label` on their range input, so each is
+	 * resolved ONCE in the template and used for both — a screen-reader user gets the same
+	 * words a sighted one reads, in the same language.
+	 *
+	 * ⚠️ NOT registered here, deliberately: the metric labels (Mensalidade, Montante, Prazo,
+	 * LTV, TAN, Indexante, Spread, Imposto Selo, IMT Cont.) and the two stepper aria-labels
+	 * ('TAN, %' / 'Spread, %'). They are Portuguese banking terms and acronyms that read the
+	 * same in every language, and they are the terms a client will meet on the bank's own
+	 * paperwork — the same call already made for «Livro de Reclamações» in the footer.
+	 * Ukrainian is the DEFAULT language, so Polylang returns the source for it regardless;
+	 * registering them would buy nothing on uk and invite a pt "translation" that renames a
+	 * term away from the one the bank uses.
+	 */
+	$strings += array(
+		'ak_calc_f_price'    => 'Вартість нерухомості',
+		'ak_calc_f_down'     => 'Сума першого внеску',
+		'ak_calc_f_term'     => 'Термін кредиту (у роках)',
+		'ak_calc_f_salary'   => 'Зарплата',
+		'ak_calc_f_income'   => 'Щомісячний чистий дохід',
+		'ak_calc_f_expenses' => 'Щомісячні витрати',
+		'ak_calc_rate'       => 'Процентна ставка',
+		/*
+		 * A separate string from the term above because it is a separate node — the note
+		 * carries $weight-regular against the label's bold, so it cannot be one text run.
+		 * Safe as a fragment only because it is parenthetical AND trailing in Ukrainian and
+		 * Portuguese alike; a language that needs it before the term makes ak_calc_rate a
+		 * format string instead of translating this in place.
+		 */
+		'ak_calc_rate_note'  => '(річна)',
+		'ak_calc_variable'   => 'Змінна',
+		'ak_calc_fixed'      => 'Фіксована',
+		'ak_calc_form_title' => 'Надсилайте нам розрахунок і ми з вами зв’яжемось',
+	);
+
 	// Testimonials — Figma 1130:9143. These replace Review Wall's own strings, which are
 	// plain get_option() values: ONE global string for all four languages, which is the
 	// whole reason that section was rebuilt.
