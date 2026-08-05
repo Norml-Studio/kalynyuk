@@ -97,6 +97,10 @@
   // Figma: 20 Bold 116% −1%. The kit's Body Bold is 20 Bold 124% — the same size
   // and weight, 8% apart on leading. Taking the kit role rather than minting a
   // 40th type combination for that difference (Petr, 2026-07-31).
+  //
+  // A <div> now, not the <label> itself — the ⓘ became a <button>, and <button> is a
+  // labelable element, so a <label> may not contain one other than its own control. The
+  // real <label> is inside and inherits this type; `for` still does the association.
   &__label {
     @include m.text-body-strong;
 
@@ -105,6 +109,11 @@
     gap: t.$space-1;
     margin: 0;
     color: t.$color-ink;
+
+    // The inner <label> — clicking the words still focuses the input, so say so.
+    label {
+      cursor: pointer;
+    }
   }
 
   // .calculator__label-note
@@ -112,22 +121,9 @@
     font-weight: t.$weight-regular;
   }
 
-  // .calculator__hint
-  // The ⓘ badge — 24×24 circle on the sunken surface (Figma 1130:4130).
-  &__hint {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex: 0 0 auto;
-    width: 24px;
-    height: 24px;
-    font-size: t.$text-body-xs-mobile;
-    font-style: italic;
-    line-height: 1;
-    color: t.$color-ink;
-    background-color: t.$color-surface-sunken;
-    border-radius: t.$radius-circle;
-  }
+  // .calculator__hint — REMOVED. The ⓘ badge is now .calc-tip__button, a real button
+  // that opens the ported help copy; see sections/_calc-tip.scss. The 24×24 circle spec
+  // (Figma 1130:4130) moved there unchanged.
 
   // .calculator__input
   // 296×43, radius 16, 1px ink @24%, padding 16/10, value right-aligned, 20 Bold.

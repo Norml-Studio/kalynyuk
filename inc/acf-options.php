@@ -228,6 +228,128 @@ function ak_acf_chrome_fields() {
 add_action( 'acf/init', 'ak_acf_chrome_fields' );
 
 /**
+ * The calculator's ⓘ help copy, keyed by badge.
+ *
+ * ⚠️ PORTED VERBATIM, NOT WRITTEN. Every string below was extracted from page 11's
+ * `_et_pb_custom_css`, where the Divi original kept its tooltip bodies as CSS
+ * `content:` strings — which is why they were invisible to every content search and
+ * why they did not survive into the native rebuild on their own. They quote bank
+ * thresholds (70–80% LTV for non-residents, terms of 10–40 years, ages 75–80) on the
+ * site of a licensed credit intermediary, so they are Anna's reviewed copy: fix a
+ * wording question with her, do not "improve" it here.
+ *
+ * ⚠️ The array was GENERATED from the meta, not retyped — 1 460 characters of which
+ * two carry a straight apostrophe (об'єкта, обов'язкові) and one a pair of straight
+ * double quotes ("на руки"). ak_str() resolves by SOURCE string, so a single
+ * transcription slip would leave a translation nothing ever looks up.
+ *
+ * ⚠️ THE SELECTOR NAMES IN THE ORIGINAL CSS LIE, and one of them matters: `down` came
+ * from `.loan-term-input`, whose label in the markup is «Сума першого внеску» — the
+ * DOWN PAYMENT, not the term. The map was verified by reading each block's visible
+ * label out of `post_content` rather than trusting its class. `.loan-term` is the
+ * separate, genuine term tooltip.
+ *
+ * ⚠️ FOUR MORE TOOLTIPS EXIST IN THAT CSS AND ARE DELIBERATELY NOT PORTED:
+ * `.loanam`, `.lterm`, `.lprc` and `.imt-ilhas` are not in `post_content` at all —
+ * orphan rules for modules that no longer exist, the same class of debris as the
+ * consent-checkbox rule in `docs/05-issues.md`. Three of them duplicate a tooltip we
+ * do port; `.imt-ilhas` belonged to an islands metric this design does not have.
+ * Its body is a better definition of IMT than the live `.imt-cont` one it sat beside
+ * ("Податок на передачу нерухомості" vs "Спеціальні податки") — the two look
+ * swapped. We ship the LIVE text, because that is what visitors read today, and the
+ * improvement is Anna's call rather than a silent edit.
+ *
+ * Keys are ours; they name the badge, not the old selector.
+ *
+ * @return array<string,string> key => Ukrainian source string.
+ */
+function ak_calc_tips() {
+	$tips = array(
+		'price'       => 'Вкажіть загальну ціну об\'єкта нерухомості, який плануєте придбати. Це повна ринкова вартість житла.',
+		'down'        => 'Сума, яку ви маєте сплатити власними коштами при оформленні іпотеки. Чим більший перший внесок — тим вища ймовірність погодження кредиту на вигідних умовах.',
+		'term'        => 'Період, на який береться іпотека. У Португалії стандартний термін становить від 10 до 40 років, залежно від вашого віку та доходу.',
+		'salary'      => 'Сума вашого офіційного щомісячного доходу до оподаткування. Банк враховує дохід усіх співпозичальників.',
+		'income'      => 'Сума, яку ви отримуєте "на руки" після оподаткування, щомісяця. Цей показник важливий для розрахунку співвідношення боргового навантаження',
+		'expenses'    => 'Ваші регулярні обов\'язкові платежі та витрати: інші кредити, аліменти, утримання дітей тощо. Враховується для обчислення фінансового навантаження.',
+		'rate'        => 'Фіксована або змінна річна процентна ставка банку по іпотеці. Остаточна ставка залежить від типу кредиту й обраної банківської програми',
+		'mensalidade' => 'Щомісячний платіж, який ви сплачуватимете за кредитом протягом усього терміну.',
+		'montante'    => 'Загальна сума, яку ви плануєте позичити в банку.',
+		'prazo'       => 'Тривалість кредиту в місяцях',
+		'ltv'         => 'Відсоток від вартості нерухомості, який фінансується банком. Чим нижче, тим краще для схвалення.',
+		'tan'         => 'Загальна ставка без урахування додаткових витрат. Вона включає indexante + spread.',
+		'indexante'   => 'Змінна частина відсоткової ставки, яка базується на Euribor.',
+		'spread'      => 'Фіксована надбавка, яку банк додає до indexante.',
+		'selo'        => 'Податок, який сплачується при укладенні кредитного договору.',
+		'imt'         => 'Спеціальні податки на материковій частині Португалії.',
+	);
+
+	return $tips;
+}
+
+/**
+ * One tip, translated.
+ *
+ * @param string $key Tip key from ak_calc_tips().
+ * @return string Empty string when the key is unknown, so a renamed key drops the
+ *                badge rather than printing a PHP notice into the markup.
+ */
+function ak_calc_tip( $key ) {
+	$tips = ak_calc_tips();
+
+	return isset( $tips[ $key ] ) ? ak_str( 'ak_calc_tip_' . $key, $tips[ $key ] ) : '';
+}
+
+/**
+ * One ⓘ help control: the button and the panel it toggles.
+ *
+ * ⚠️ A DISCLOSURE, NOT `role="tooltip"`. The bodies run to 250 characters and have to
+ * be readable on a phone, which rules out a hover-only tooltip; and WCAG 2.2 §1.4.13
+ * requires content shown on hover to be dismissible, hoverable and persistent, which a
+ * CSS-only `:hover::after` — what the Divi original used — cannot be. `aria-expanded` +
+ * `aria-controls` is also the contract the «Довідка» panel in this same section already
+ * uses, so there is one pattern here rather than two.
+ *
+ * ⚠️ The button is rendered as a SIBLING of the `<label>`, never inside it. `<button>`
+ * is a labelable element, and a `<label>` may not contain a labelable descendant other
+ * than its own control — nesting it would be invalid HTML. (Activation is not the
+ * problem: the spec already stops label forwarding for clicks on interactive
+ * descendants. Validity is.)
+ *
+ * The accessible name carries the FIELD LABEL, so the 16 buttons are distinguishable in
+ * a screen reader's control list instead of reading as sixteen identical "Пояснення".
+ *
+ * @param string $key   Tip key from ak_calc_tips().
+ * @param string $label The visible label this tip explains, already translated.
+ * @return string Escaped HTML, or '' when there is no copy for the key.
+ */
+function ak_calc_hint_html( $key, $label ) {
+	$text = ak_calc_tip( $key );
+
+	// No copy, no badge. A decorative ⓘ that opens nothing is what this replaces.
+	if ( '' === trim( $text ) ) {
+		return '';
+	}
+
+	$id = 'ak-tip-' . $key;
+
+	return sprintf(
+		'<span class="calc-tip" data-ak-tip>'
+			. '<button class="calc-tip__button" type="button" aria-expanded="false" aria-controls="%1$s">'
+				. '<span class="u-visually-hidden">%2$s</span>'
+				. '<span class="calc-tip__glyph" aria-hidden="true">i</span>'
+			. '</button>'
+			// `hidden` is load-bearing, not belt-and-braces: without it the absolutely
+			// positioned panel still occupies layout, and 16 closed 310px panels push the
+			// document into a horizontal scroll at every viewport width.
+			. '<span class="calc-tip__panel" id="%1$s" hidden>%3$s</span>'
+		. '</span>',
+		esc_attr( $id ),
+		esc_html( sprintf( ak_str( 'ak_calc_tip_label', 'Пояснення: %s' ), $label ) ),
+		esc_html( $text )
+	);
+}
+
+/**
  * Register the chrome's translatable strings with Polylang.
  *
  * These are editable per language in Polylang → Translations → Strings, so the
@@ -317,7 +439,21 @@ function ak_register_pll_strings() {
 		'ak_calc_variable'   => 'Змінна',
 		'ak_calc_fixed'      => 'Фіксована',
 		'ak_calc_form_title' => 'Надсилайте нам розрахунок і ми з вами зв’яжемось',
+		// The ⓘ buttons' accessible name. A FORMAT STRING — %s is the field label, so a
+		// screen reader announces "Пояснення: Вартість нерухомості" rather than 16
+		// identical "Пояснення" buttons with no way to tell them apart.
+		'ak_calc_tip_label'  => 'Пояснення: %s',
 	);
+
+	/*
+	 * The ⓘ bodies, from the one source in ak_calc_tips(). Registered in a loop rather
+	 * than listed again here — 1 460 characters duplicated between a registration list
+	 * and the template is exactly how the two drift out of sync and translations quietly
+	 * stop resolving.
+	 */
+	foreach ( ak_calc_tips() as $ak_tip_key => $ak_tip_text ) {
+		$strings[ 'ak_calc_tip_' . $ak_tip_key ] = $ak_tip_text;
+	}
 
 	// Testimonials — Figma 1130:9143. These replace Review Wall's own strings, which are
 	// plain get_option() values: ONE global string for all four languages, which is the

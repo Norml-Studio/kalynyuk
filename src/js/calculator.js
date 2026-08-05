@@ -38,6 +38,7 @@ export function initCalculator() {
   if (!document.getElementById('mensalidade')) return;
 
   initCalculatorHelp();
+  initCalculatorTips();
 
   /* ═══ block 1 — inputs, sliders, steppers ═══ */
   (function () {
@@ -683,5 +684,190 @@ function initCalculatorHelp() {
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && trigger.getAttribute('aria-expanded') === 'true') close();
+  });
+}
+
+/**
+ * The 16 ⓘ help disclosures.
+ *
+ * The copy they show was ported out of Divi's page CSS, where it lived as
+ * `content:` strings on `.tooltip:hover::after` — and where a media query hid every
+ * one of them below 900px, because a hover tooltip cannot work on a touch screen.
+ * That is why this is a BUTTON with `aria-expanded` and not a CSS hover effect: it
+ * has to work on a phone, it has to be dismissible with Escape, and the panel has to
+ * survive the pointer moving onto it (WCAG 2.2 §1.4.13). A `:hover` rule gives none
+ * of the three.
+ *
+ * ⚠️ ALL FIVE ROUTES CONVERGE ON ONE PIECE OF STATE — click, hover, focus, Escape and
+ * click-outside. That is why the open class is set here and never in CSS: a
+ * `:hover` rule plus a JS class is two sources of truth for one boolean, and they
+ * disagree the moment you click and then move the mouse away.
+ */
+function initCalculatorTips() {
+  const tips = Array.from(document.querySelectorAll('[data-ak-tip]'));
+
+  if (!tips.length) return;
+
+  // Clicking PINS a panel open so it survives pointerleave; hovering only previews it.
+  // Without the distinction, moving the mouse off a panel you deliberately opened
+  // closes it, which on the longest tips (250 characters) means you cannot finish
+  // reading one you opened on purpose.
+  let pinned = null;
+
+  /*
+   * ⚠️ Escape closes the panel and returns focus to the button — and returning focus
+   * fired the focus handler below, which reopened the panel it had just closed. The
+   * test caught it: one panel still open with focus correctly restored.
+   *
+   * Consumed synchronously, because .focus() dispatches its event synchronously; it is
+   * also cleared right after the call, since focusing an ALREADY-focused button fires
+   * no event at all and the flag would otherwise swallow the next genuine focus.
+   */
+  let skipFocusOpen = false;
+
+  const partsOf = (tip) => ({
+    button: tip.querySelector('.calc-tip__button'),
+    panel: tip.querySelector('.calc-tip__panel'),
+  });
+
+  const hide = (tip) => {
+    const { button, panel } = partsOf(tip);
+    if (!button || !panel) return;
+
+    panel.classList.remove('calc-tip__panel--open');
+    panel.style.transform = '';
+    panel.hidden = true;
+    button.setAttribute('aria-expanded', 'false');
+  };
+
+  const hideAll = (except) => {
+    tips.forEach((t) => {
+      if (t !== except) hide(t);
+    });
+
+    if (pinned && pinned !== except) pinned = null;
+  };
+
+  const show = (tip) => {
+    const { button, panel } = partsOf(tip);
+    if (!button || !panel) return;
+
+    // One at a time. Two open panels overlap each other in the metrics grid.
+    hideAll(tip);
+
+    /*
+     * Presence first, fade a frame later — the same two-step as the «Довідка» panel.
+     * The panel is `hidden` when closed so its 310px box leaves the flow entirely
+     * (visibility alone kept the box and scrolled the document sideways), which means
+     * it has to be un-hidden BEFORE it can be measured below.
+     */
+    panel.hidden = false;
+    panel.style.transform = '';
+    requestAnimationFrame(() => panel.classList.add('calc-tip__panel--open'));
+    button.setAttribute('aria-expanded', 'true');
+
+    /*
+     * Keep the panel inside the viewport, measured AFTER it is visible — a hidden
+     * element's getBoundingClientRect() is not the box it will occupy.
+     *
+     * ⚠️ THIS SHIFTS, IT DOES NOT FLIP, and the first attempt did flip. Swapping
+     * `left: 0` for `right: 0` only works when the panel fits on the other side; at 375
+     * the panel is 310 wide and neither side has room, so every one of the 16 hung off
+     * an edge and the whole document scrolled sideways. Clamping to both edges is
+     * correct at any width, which left/right alignment cannot be.
+     *
+     * It also replaces the original's hand-assigned `.tlt-right`, set on five badges by
+     * eye and therefore wrong at every width its author did not open.
+     */
+    const margin = 12; // breathing room from the viewport edge, in px
+    const box = panel.getBoundingClientRect();
+    let dx = 0;
+
+    if (box.right > window.innerWidth - margin) {
+      dx = window.innerWidth - margin - box.right;
+    }
+
+    // Applied second so a panel too wide for the viewport pins to the LEFT edge and
+    // starts at its first word, rather than being cut off at the beginning.
+    if (box.left + dx < margin) {
+      dx = margin - box.left;
+    }
+
+    if (dx) panel.style.transform = `translateX(${Math.round(dx)}px)`;
+  };
+
+  const isOpen = (tip) => partsOf(tip).button?.getAttribute('aria-expanded') === 'true';
+
+  // Hover is a POINTER affordance only. On a touch screen `pointerenter` fires from the
+  // tap itself, so the panel would open on hover and then be closed again by the click
+  // handler in the same gesture — a badge that does nothing when tapped.
+  const canHover = window.matchMedia('(hover: hover)').matches;
+
+  tips.forEach((tip) => {
+    const { button } = partsOf(tip);
+    if (!button) return;
+
+    button.addEventListener('click', () => {
+      if (pinned === tip) {
+        hide(tip);
+        pinned = null;
+      } else {
+        show(tip);
+        pinned = tip;
+      }
+    });
+
+    // Keyboard: focus reveals, so a tabbing visitor is not told there is help and then
+    // made to guess that Enter shows it.
+    button.addEventListener('focus', () => {
+      if (skipFocusOpen) return;
+      if (!isOpen(tip)) show(tip);
+    });
+
+    button.addEventListener('blur', () => {
+      if (pinned !== tip) hide(tip);
+    });
+
+    if (canHover) {
+      // On the wrapper, not the button — the panel is inside it, so the pointer moving
+      // from the badge onto the text never leaves. That is §1.4.13's "hoverable".
+      tip.addEventListener('pointerenter', () => show(tip));
+      tip.addEventListener('pointerleave', () => {
+        if (pinned !== tip) hide(tip);
+      });
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+
+    const open = tips.find(isOpen);
+    if (!open) return;
+
+    // Escape inside the calculator must not also close the «Довідка» modal behind it.
+    e.stopPropagation();
+
+    const { button } = partsOf(open);
+    hideAll(null);
+
+    skipFocusOpen = true;
+    button?.focus({ preventScroll: true });
+    skipFocusOpen = false;
+  });
+
+  /*
+   * A resize invalidates every shift computed above, and re-measuring 16 panels on a
+   * resize stream is worse than the problem. Closing is also what the visitor expects:
+   * on a phone, a resize is the on-screen keyboard or an orientation change.
+   */
+  window.addEventListener('resize', () => {
+    if (tips.some(isOpen)) hideAll(null);
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!pinned) return;
+    if (pinned.contains(e.target)) return;
+
+    hideAll(null);
   });
 }

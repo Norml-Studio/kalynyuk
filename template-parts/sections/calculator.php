@@ -121,24 +121,35 @@ $ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (fl
 		 * input's aria-label, so assistive tech gets the same words in the same language.
 		 */
 		$ak_fields = array(
-			array( 'property-price', ak_str( 'ak_calc_f_price', 'Вартість нерухомості' ), 50000, 1500000, 5000, 200000, 7 ),
-			array( 'loan-amount', ak_str( 'ak_calc_f_down', 'Сума першого внеску' ), 0, 1000000, 5000, 30000, 7 ),
-			array( 'loan-term', ak_str( 'ak_calc_f_term', 'Термін кредиту (у роках)' ), 5, 40, 1, 20, 2 ),
-			array( 'salary', ak_str( 'ak_calc_f_salary', 'Зарплата' ), 0, 10000, 500, 3500, 5 ),
-			array( 'net-income', ak_str( 'ak_calc_f_income', 'Щомісячний чистий дохід' ), 0, 10000, 500, 2500, 5 ),
-			array( 'expenses', ak_str( 'ak_calc_f_expenses', 'Щомісячні витрати' ), 0, 10000, 250, 0, 5 ),
+			array( 'property-price', ak_str( 'ak_calc_f_price', 'Вартість нерухомості' ), 50000, 1500000, 5000, 200000, 7, 'price' ),
+			array( 'loan-amount', ak_str( 'ak_calc_f_down', 'Сума першого внеску' ), 0, 1000000, 5000, 30000, 7, 'down' ),
+			array( 'loan-term', ak_str( 'ak_calc_f_term', 'Термін кредиту (у роках)' ), 5, 40, 1, 20, 2, 'term' ),
+			array( 'salary', ak_str( 'ak_calc_f_salary', 'Зарплата' ), 0, 10000, 500, 3500, 5, 'salary' ),
+			array( 'net-income', ak_str( 'ak_calc_f_income', 'Щомісячний чистий дохід' ), 0, 10000, 500, 2500, 5, 'income' ),
+			array( 'expenses', ak_str( 'ak_calc_f_expenses', 'Щомісячні витрати' ), 0, 10000, 250, 0, 5, 'expenses' ),
 		);
 		?>
 		<div class="calculator__layout">
 
 			<div class="calculator__fields">
 				<?php foreach ( $ak_fields as $ak_f ) : ?>
-					<?php list( $ak_key, $ak_label, $ak_min, $ak_max, $ak_step, $ak_val, $ak_len ) = $ak_f; ?>
+					<?php list( $ak_key, $ak_label, $ak_min, $ak_max, $ak_step, $ak_val, $ak_len, $ak_tip ) = $ak_f; ?>
 					<div class="calculator__field">
-						<label class="calculator__label" for="<?php echo esc_attr( $ak_key ); ?>-input">
-							<span><?php echo esc_html( $ak_label ); ?></span>
-							<span class="calculator__hint" aria-hidden="true">i</span>
-						</label>
+						<?php
+						/*
+						 * ⚠️ `.calculator__label` is a <div>, and the <label> is INSIDE it.
+						 *
+						 * It used to be the <label> itself, with the ⓘ nested in it. The ⓘ is
+						 * now a <button>, and `<button>` is a labelable element — a <label>
+						 * may not contain a labelable descendant other than its own control,
+						 * so keeping the old shape would be invalid HTML. The div keeps the
+						 * flex row and the type; the label keeps the `for` association.
+						 */
+						?>
+						<div class="calculator__label">
+							<label for="<?php echo esc_attr( $ak_key ); ?>-input"><?php echo esc_html( $ak_label ); ?></label>
+							<?php echo ak_calc_hint_html( $ak_tip, $ak_label ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in the helper. ?>
+						</div>
 
 						<input
 							class="calculator__input"
@@ -178,10 +189,11 @@ $ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (fl
 				 */
 				?>
 				<div class="calculator__field calculator__field--wide">
-					<p class="calculator__label">
-						<span><?php echo esc_html( ak_str( 'ak_calc_rate', 'Процентна ставка' ) ); ?> <span class="calculator__label-note"><?php echo esc_html( ak_str( 'ak_calc_rate_note', '(річна)' ) ); ?></span></span>
-						<span class="calculator__hint" aria-hidden="true">i</span>
-					</p>
+					<?php $ak_rate_label = ak_str( 'ak_calc_rate', 'Процентна ставка' ); ?>
+					<div class="calculator__label">
+						<span><?php echo esc_html( $ak_rate_label ); ?> <span class="calculator__label-note"><?php echo esc_html( ak_str( 'ak_calc_rate_note', '(річна)' ) ); ?></span></span>
+						<?php echo ak_calc_hint_html( 'rate', $ak_rate_label ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in the helper. ?>
+					</div>
 
 					<div class="calculator__rate">
 						<div class="calculator__modes">
@@ -227,7 +239,7 @@ $ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (fl
 			<div class="calculator__result">
 				<div class="calculator__headline">
 					<div class="calculator__payment">
-						<span class="calculator__metric-label">Mensalidade <span class="calculator__hint" aria-hidden="true">i</span></span>
+						<span class="calculator__metric-label">Mensalidade <?php echo ak_calc_hint_html( 'mensalidade', 'Mensalidade' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in the helper. ?></span>
 						<p class="calculator__payment-value" id="mensalidade">0,00 €</p>
 					</div>
 
@@ -247,16 +259,22 @@ $ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (fl
 				</div>
 
 				<?php
+				/*
+				 * Fourth element is the ⓘ tip key. Spelled out rather than reusing the id,
+				 * even though six of them happen to be the same word: the id is the JS
+				 * contract and the key is the copy contract, and a helper that returns ''
+				 * for an unknown key fails SILENTLY — a badge would just stop appearing.
+				 */
 				$ak_metrics = array(
 					array(
-						array( 'montante', 'Montante', '0 €' ),
-						array( 'prazo', 'Prazo', '0 Meses' ),
-						array( 'ltv', 'LTV', '0%' ),
+						array( 'montante', 'Montante', '0 €', 'montante' ),
+						array( 'prazo', 'Prazo', '0 Meses', 'prazo' ),
+						array( 'ltv', 'LTV', '0%', 'ltv' ),
 					),
 					array(
-						array( 'tan', 'TAN', '0.000%' ),
-						array( 'indexante', 'Indexante', '0.000%' ),
-						array( 'spread', 'Spread', '0.000%' ),
+						array( 'tan', 'TAN', '0.000%', 'tan' ),
+						array( 'indexante', 'Indexante', '0.000%', 'indexante' ),
+						array( 'spread', 'Spread', '0.000%', 'spread' ),
 					),
 				);
 				?>
@@ -264,7 +282,7 @@ $ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (fl
 					<div class="calculator__metrics">
 						<?php foreach ( $ak_row as $ak_m ) : ?>
 							<div class="calculator__metric">
-								<span class="calculator__metric-label"><?php echo esc_html( $ak_m[1] ); ?> <span class="calculator__hint" aria-hidden="true">i</span></span>
+								<span class="calculator__metric-label"><?php echo esc_html( $ak_m[1] ); ?> <?php echo ak_calc_hint_html( $ak_m[3], $ak_m[1] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in the helper. ?></span>
 								<p class="calculator__metric-value" id="<?php echo esc_attr( $ak_m[0] ); ?>"><?php echo esc_html( $ak_m[2] ); ?></p>
 							</div>
 						<?php endforeach; ?>
@@ -275,11 +293,11 @@ $ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (fl
 
 				<div class="calculator__metrics calculator__metrics--taxes">
 					<div class="calculator__metric">
-						<span class="calculator__metric-label">Imposto Selo <span class="calculator__hint" aria-hidden="true">i</span></span>
+						<span class="calculator__metric-label">Imposto Selo <?php echo ak_calc_hint_html( 'selo', 'Imposto Selo' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in the helper. ?></span>
 						<p class="calculator__metric-value" id="imposto-selo">0 €</p>
 					</div>
 					<div class="calculator__metric">
-						<span class="calculator__metric-label">IMT Cont. <span class="calculator__hint" aria-hidden="true">i</span></span>
+						<span class="calculator__metric-label">IMT Cont. <?php echo ak_calc_hint_html( 'imt', 'IMT Cont.' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in the helper. ?></span>
 						<p class="calculator__metric-value" id="imt-cont">0 €</p>
 					</div>
 				</div>

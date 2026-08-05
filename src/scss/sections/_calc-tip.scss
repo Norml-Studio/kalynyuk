@@ -1,0 +1,141 @@
+@use '../abstracts/tokens' as t;
+@use '../abstracts/mixins' as m;
+
+// ─── .calc-tip — the calculator's ⓘ help disclosure ───────────────────────────
+//
+// Its own partial rather than more of _calculator.scss, which is already 723 lines
+// against the 400–500 rule in dev-bem-scss. Adding to a file that is already over is
+// not a reason to make it worse; splitting the rest of it is separate work.
+//
+// Replaces Divi's `.tooltip:hover::after`, which was a CSS-only hover tooltip and had
+// three defects this fixes rather than reproduces:
+//   1. ⚠️ `@media (max-width: 900px) { .tooltip { display: none !important } }` — all
+//      16 tooltips were HIDDEN on mobile and tablet. That is the honest response to a
+//      hover-only control on a touch screen, but it removes the help from the visitors
+//      most likely to need it. A button works on touch, so nothing is hidden here.
+//   2. `bottom: 17` — no unit, so the declaration was invalid and silently dropped;
+//      the panel was never positioned where its author intended.
+//   3. `font-size: 12px; line-height: 1em` on paragraphs up to 250 characters, at
+//      `#2a2011d1`. Lines touched. Type comes from the scale here instead.
+//
+// Ported deliberately: the 12px radius ($radius-chip) and the 310px cap. NOT ported:
+// the `-4px 3px 65px -22px #2a201199` shadow — $shadow-legacy is the only shadow token
+// and it says in as many words not to use it on anything new (design.md §13 gap #2).
+// A hairline in $color-ink-faint, described in the tokens as "hairline on cream",
+// separates the panel from the canvas instead.
+
+// The measured cap from the Divi original. A local, not a token, because design.md has
+// no tooltip spec — the same escape hatch _calculator-legacy.scss used for geometry
+// read off the shortcode rather than guessed. Clamped so it cannot overflow a 375
+// viewport minus the 20px mobile gutters.
+$tip-max: 310px;
+
+// .calc-tip
+.calc-tip {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  vertical-align: middle;
+
+  // .calc-tip__button
+  // The ⓘ badge — 24×24 circle on the sunken surface (Figma 1130:4130). Moved here
+  // from .calculator__hint, which was a <span>; it is a real <button> now.
+  &__button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    color: t.$color-ink;
+    font-family: inherit;
+    background-color: t.$color-surface-sunken;
+    border: 0;
+    border-radius: t.$radius-circle;
+    cursor: pointer;
+
+    // ⚠️ 24×24 IS THE TARGET, and the ±8 ::after trick from .site-nav__item is
+    // deliberately NOT used here. It was tried and reverted, for two measured reasons:
+    // the expanded box overflowed the results panel and made the whole document scroll
+    // sideways, and below each field label the neighbour is the INPUT — so the grown
+    // target sat over a form control and swallowed clicks meant for it. The header
+    // could grow because it grew into the dead 16px gaps between menu rows; there is no
+    // dead space here.
+    //
+    // 24×24 already satisfies WCAG 2.2 §2.5.8 Target Size (Minimum, AA), which asks for
+    // 24. $tap-min's note is about not SHRINKING a visual to match the art, and nothing
+    // is shrunk — 24 is the Figma size. Stealing an input's clicks to reach 40 would
+    // trade a met criterion for a broken form.
+
+    &:focus-visible {
+      @include m.focus-ring;
+    }
+  }
+
+  // .calc-tip__glyph
+  &__glyph {
+    font-size: t.$text-body-xs-mobile;
+    font-style: italic;
+    line-height: 1;
+  }
+
+  // .calc-tip__panel
+  //
+  // ⚠️ CLOSED VIA THE `hidden` ATTRIBUTE, NOT `visibility: hidden`. The first version
+  // used visibility, and the test caught what that costs: a hidden element still
+  // OCCUPIES LAYOUT, so all 16 closed panels sat 310px wide beside their badges and the
+  // whole document scrolled sideways at every width — including 1440, where nothing was
+  // visibly wrong. `display: none` is the only one of the three that takes the box out
+  // of flow as well as out of the accessibility tree.
+  //
+  // This is the same two-step the «Довідка» panel above uses: the attribute owns
+  // presence, a class owns the fade, and JS flips them a frame apart.
+  &__panel {
+    position: absolute;
+    top: calc(100% + #{t.$space-1});
+    left: 0;
+    z-index: t.$z-sticky; // above the section, BELOW the sticky header ($z-header)
+    width: max-content;
+    max-width: min($tip-max, calc(100vw - #{t.$space-5}));
+    padding: t.$space-2;
+    color: t.$color-ink;
+    text-align: left;
+    background-color: t.$color-surface;
+    border: t.$border-width solid t.$color-ink-faint;
+    border-radius: t.$radius-chip;
+    opacity: 0;
+    transition: opacity t.$dur-fast t.$ease;
+
+    &[hidden] {
+      display: none;
+    }
+
+    // The type mixin is applied AFTER the block above so its line-height wins over
+    // nothing — the label row it sits in sets a bold, tight line for a one-line label.
+    @include m.text-body-xs;
+
+    font-weight: t.$weight-regular;
+  }
+
+  // .calc-tip__panel--open
+  // State lives on the panel and is set only by JS. Deliberately not a `:hover` or
+  // `:focus-within` descendant selector: the SCSS convention here forbids &__a &__b
+  // chains, and hover, focus, click, Escape and click-outside all have to converge on
+  // one state anyway — two mechanisms for one piece of state is how they disagree.
+  &__panel--open {
+    opacity: 1;
+  }
+
+  // Edge collisions are handled by a translateX SHIFT set in calculator.js, not by a
+  // right-aligned modifier. A flip only helps when the panel fits on the other side; at
+  // 375 it is 310 wide and neither side has room, so flipping just moved the overflow to
+  // the opposite edge. There is deliberately no --flip class here.
+}
+
+@media (prefers-reduced-motion: reduce) {
+  // .calc-tip__panel
+  .calc-tip__panel {
+    transition: none;
+  }
+}
