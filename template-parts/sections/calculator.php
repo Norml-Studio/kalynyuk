@@ -57,42 +57,59 @@ $ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (fl
 <section class="calculator" data-ak-indexante="<?php echo esc_attr( (string) $ak_indexante ); ?>">
 	<div class="calculator__inner">
 
+		<?php
+		/*
+		 * ⚠️ THE HEAD IS TWO COLUMNS, and the «Довідка» button belongs INSIDE the right
+		 * one. It used to be centred with the button floating between the head and the
+		 * layout; Frame 9122 has neither — heading 506 at the container edge, right
+		 * column 680 at x=696 holding the intro and then the button 32 below it. That is
+		 * the same spine `about`, `order`, `faq` and `seo` use, so the old centring made
+		 * the calculator the one section off the page's grid.
+		 */
+		?>
 		<?php if ( '' !== $ak_heading || '' !== $ak_intro ) : ?>
 			<div class="calculator__head">
 				<?php if ( '' !== $ak_heading ) : ?>
 					<?php $ak_h = ak_claim_h1(); ?>
 					<<?php echo $ak_h; ?> class="calculator__title"><?php echo esc_html( $ak_heading ); ?></<?php echo $ak_h; ?>>
 				<?php endif; ?>
-				<?php if ( '' !== $ak_intro ) : ?>
-					<p class="calculator__intro"><?php echo nl2br( esc_html( $ak_intro ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped above. ?></p>
-				<?php endif; ?>
-			</div>
-		<?php endif; ?>
 
-		<?php
-		/*
-		 * A <button>, not the old `<a href="#infobox">`.
-		 *
-		 * That link pointed at a Divi popup section which no longer exists — and it
-		 * had already stopped working on production before this migration: measured
-		 * there as a 0×0 element whose click opened nothing. It was a control in name
-		 * only. This is a real button with real state, and the panel below is ours.
-		 */
-		?>
-		<?php if ( '' !== trim( $ak_help_html ) ) : ?>
-			<button
-				class="dovidka"
-				type="button"
-				aria-expanded="false"
-				aria-controls="ak-calc-help"
-				data-ak-help-open
-			>
-				<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-					<circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5" />
-					<path d="M8 7.2v3.4M8 5.2v.9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-				</svg>
-				<span><?php echo esc_html( $ak_help ); ?></span>
-			</button>
+				<div class="calculator__head-body">
+					<?php if ( '' !== $ak_intro ) : ?>
+						<p class="calculator__intro"><?php echo nl2br( esc_html( $ak_intro ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped above. ?></p>
+					<?php endif; ?>
+
+					<?php
+					/*
+					 * A <button>, not the old `<a href="#infobox">`.
+					 *
+					 * That link pointed at a Divi popup section which no longer exists — and
+					 * it had already stopped working on production before this migration:
+					 * measured there as a 0×0 element whose click opened nothing. It was a
+					 * control in name only. This is a real button with real state, and the
+					 * panel below is ours.
+					 *
+					 * Renders only when there is help copy — `ak_calc_help_content` is empty
+					 * on every language today, so the button is correctly absent for now.
+					 */
+					?>
+					<?php if ( '' !== trim( $ak_help_html ) ) : ?>
+						<button
+							class="dovidka"
+							type="button"
+							aria-expanded="false"
+							aria-controls="ak-calc-help"
+							data-ak-help-open
+						>
+							<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+								<circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5" />
+								<path d="M8 7.2v3.4M8 5.2v.9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+							</svg>
+							<span><?php echo esc_html( $ak_help ); ?></span>
+						</button>
+					<?php endif; ?>
+				</div>
+			</div>
 		<?php endif; ?>
 
 		<?php
@@ -302,7 +319,34 @@ $ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (fl
 					</div>
 				</div>
 
-				<div class="calculator__form contact-form">
+				<?php
+				/*
+				 * ⚠️ `contact-form` WAS REMOVED FROM THIS CLASS LIST, and it fixed a bug
+				 * that had nothing to do with margins.
+				 *
+				 * All 11 `.contact-form` rules on this page come from ONE source —
+				 * `et-builder-module-design-deferred-11-cached-inline-styles`, Divi's
+				 * generated CSS for a module that is no longer in `post_content`. This is
+				 * the orphan-CSS class recorded in docs/05-issues.md, and the calculator
+				 * was the last thing still opting into it.
+				 *
+				 * Two of those rules were actively wrong here:
+				 *   · `.contact-form { margin: 24px 0 40px; margin-bottom: 70px !important }`
+				 *     out-cascaded our layout at equal specificity (it loads later) and
+				 *     left a dead 221px gap under the submit button inside the panel;
+				 *   · `.contact-form .ginput_container_checkbox { position: absolute;
+				 *     bottom: 40px !important }` — with no positioned ancestor the consent
+				 *     checkbox anchored to `.et_builder_inner_content` and rendered at
+				 *     y=9512 while the calculator sits at y=5861. **The consent checkbox
+				 *     was floating ~3 650px away, over the FAQ.** Measured, not inferred.
+				 *
+				 * For a licensed credit intermediary the consent has to be IN the form it
+				 * belongs to, so this is not only cosmetic. The one thing worth keeping —
+				 * the checkbox and label styling — is reproduced from tokens in
+				 * `_calculator.scss` rather than inherited from CSS that phase 4 deletes.
+				 */
+				?>
+				<div class="calculator__form">
 					<p class="calculator__form-title"><?php echo esc_html( ak_str( 'ak_calc_form_title', 'Надсилайте нам розрахунок і ми з вами зв’яжемось' ) ); ?></p>
 					<?php
 					/*

@@ -128,10 +128,20 @@ $space-6: 50px;
 // to the 120px band rhythm immediately below.
 $space-7: 56px;
 
+// Added in design.md v2.2.0 — the calculator card's field ROW gap, measured 64 on Figma
+// 1130:4011 (row pitch 216 against a 152-tall field: 40 → 256 → 477). 8 × 8, so like
+// $space-7 it fills a hole in the scale rather than bending it. $space-7 was tried and
+// rejected: at 56 the six fields still read as one block, and the 8px matters because
+// each field is three stacked parts whose own gaps are 16 and 24.
+//
+// ⚠️ Numbered 9 although it sorts between 7 and 8. The scale is a NAME sequence, not an
+// ordering — renumbering $space-8 would silently change 120 to 64 everywhere it is used.
+$space-9: 64px;
+
 $space-8: 120px;
 $gutter:  20px;
 
-$spaces: (1: $space-1, 2: $space-2, 3: $space-3, 4: $space-4, 5: $space-5, 6: $space-6, 7: $space-7, 8: $space-8);
+$spaces: (1: $space-1, 2: $space-2, 3: $space-3, 4: $space-4, 5: $space-5, 6: $space-6, 7: $space-7, 9: $space-9, 8: $space-8);
 
 // ─── Shape ──────────────────────── UI Kit Buttons/Inputs (337:4158) + design.md
 // THREE steps + circle.

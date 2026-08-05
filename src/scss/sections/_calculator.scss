@@ -27,9 +27,26 @@
   }
 
   // .calculator__head
+  //
+  // ⚠️ TWO COLUMNS ON THE x=696 SPINE, NOT CENTRED. It was centred — heading stretched
+  // across the full 1376 and the intro centred under it — and the frame has neither:
+  // Frame 9122 is a SPACE_BETWEEN row, heading 506 wide at the container edge, right
+  // column 680 wide at x=696. That is the same spine `about`, `order`, `faq` and `seo`
+  // already use, so centring made the calculator the one section off the grid.
   &__head {
     margin-bottom: t.$space-3;
-    text-align: center;
+
+    @include m.bp(desktop) {
+      display: grid;
+      // The SHARED spine, copied from `.order` / `.seo` rather than re-derived:
+      // 664 + 32 + 680 = 1376, which puts the right column at x=696. The frame's
+      // heading is 506 wide and simply wraps inside the 664 track.
+      grid-template-columns: minmax(0, 664fr) minmax(0, 680fr);
+      column-gap: t.$space-4;
+      align-items: start;
+      // Frame 9123: head 255 tall, card at y=311 — a 56 gap, which is $space-7.
+      margin-bottom: t.$space-7;
+    }
   }
 
   // .calculator__title
@@ -45,36 +62,66 @@
   }
 
   // .calculator__intro
+  // In the right-hand track now, so it is left-aligned at its own measure and no
+  // longer needs centring or a max-width — the 680 track IS the measure.
   &__intro {
     @include m.text-body;
 
     max-width: t.$measure-max;
-    margin: t.$space-2 auto 0;
+    margin: t.$space-2 0 0;
     color: t.$color-ink;
+
+    @include m.bp(desktop) {
+      max-width: none;
+      margin-top: 0;
+    }
   }
 
-  // .calculator__layout
-  // Figma: fields on the left, the result panel on the right at 655 of 1376.
+  // .calculator__layout — THE CARD.
+  //
+  // ⚠️ THIS WAS MISSING ENTIRELY, and it was the single biggest reason the section did
+  // not read as the design. Frame 114 is a 1376×812 CARD: fill $color-surface (#fef8ef)
+  // and radius 24 ($radius-lg). Without it the fields sat on the bare page canvas and
+  // the sunken result panel read as a stray grey box rather than a well inside a card.
+  //
+  // The two insets are different ON PURPOSE, measured off the frame:
+  //   · the result panel is inset 24 from the card's top/right/bottom (y=24, right 1351
+  //     of 1376, bottom 788 of 812) — so the CARD carries 24;
+  //   · the fields start at x=40, y=40 and end 40 above the card's bottom — so the
+  //     fields column carries a further 16 (24 + 16 = 40).
+  // Column maths: card inner 24…1352; fields box 24…672 (content 40…656 inside its 16),
+  // then a 24 gap, then the panel 696…1352 at 656 wide. 648 + 24 + 656 = 1328 = 1376−48.
   &__layout {
     display: grid;
     gap: t.$space-3;
+    padding: t.$space-3;
+    background-color: t.$color-surface;
+    border-radius: t.$radius-lg;
 
     @include m.bp(desktop) {
-      grid-template-columns: minmax(0, 656fr) minmax(0, 655fr);
-      gap: t.$space-5;
-      align-items: start;
+      grid-template-columns: minmax(0, 648fr) minmax(0, 656fr);
+      // `stretch`, not `start` — the frame's panel is 764 tall against the fields'
+      // 764, i.e. the two columns are equal and the card's height follows them. With
+      // `start` the panel collapsed to its content and left the card short on one side.
+      align-items: stretch;
     }
   }
 
   // .calculator__fields
-  // Two columns of 296 with a 24 gutter (measured x=40 and x=360).
+  // Two columns of 296 with a 24 gutter (measured x=40 and x=360). The 16 padding is
+  // the second half of the card's 40 field inset — see the note on __layout.
   &__fields {
     display: grid;
     gap: t.$space-3;
+    padding: t.$space-2;
 
     @include m.bp(tablet) {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: t.$space-4 t.$space-3;
+      // ⚠️ ROW GAP 64, NOT 32. Measured from the frame's row pitch: a field is
+      // 23 + 14 + 43 + 24 + 48 = 152 tall and the rows start 216 apart (40 → 256 → 477),
+      // so the gap is 64. At 32 the fields read as one dense block instead of six
+      // separate questions, which is most of what "не очень" was pointing at.
+      gap: t.$space-9 t.$space-3;
     }
   }
 
@@ -116,6 +163,16 @@
     }
   }
 
+  // .calculator__head-body
+  // The head's right track: intro, then the «Довідка» button 32 below it (Frame 9121 —
+  // intro 680×175, button at y=207, so a 32 gap).
+  &__head-body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: t.$space-4;
+  }
+
   // .calculator__label-note
   &__label-note {
     font-weight: t.$weight-regular;
@@ -132,13 +189,31 @@
 
     width: 100%;
     min-width: 0;
-    padding: 10px t.$space-2;
     color: t.$color-ink;
     text-align: right;
-    background-color: transparent;
-    border: t.$border-width solid t.$color-ink-faint;
-    border-radius: t.$radius-md;
     transition: border-color t.$dur-base t.$ease;
+
+    // ⚠️ DOUBLED CLASS BECAUSE DIVI WINS ON SPECIFICITY — and this time it is NOT the
+    // load-order problem the range input has, so no `!important` is needed.
+    //
+    // Divi ships `input.text, input[type="text"], … { background-color: #fff;
+    // border: 1px solid #bbb; padding: 2px }`. `input[type="text"]` is (0,1,1) and
+    // `.calculator__input` is only (0,1,0), so Divi took all three declarations: the
+    // field rendered WHITE with a grey #bbb border, and — because `padding: 2px` beat
+    // `10px 16px` — **31px tall instead of the design's 43**. That was most of what
+    // looked wrong about the fields; the declarations here were correct all along and
+    // simply never applied. Measured with CSS.getMatchedStylesForNode rather than
+    // guessed at.
+    //
+    // (0,2,0) beats (0,1,1) regardless of order. Only the three declarations Divi
+    // actually overrides are raised — the rest stay at their natural specificity so
+    // this does not become a blanket escalation.
+    &.calculator__input {
+      padding: 10px t.$space-2;
+      background-color: transparent;
+      border: t.$border-width solid t.$color-ink-faint;
+      border-radius: t.$radius-md;
+    }
 
     &:hover {
       border-color: t.$color-border;
@@ -152,11 +227,16 @@
   // ───────────────────────────────────────────────────────────────────────────
   // .calculator__slider
   // Our own track, drawn UNDER a transparent native input. Divi cannot reach it.
+  // The field's two internal gaps are NOT equal in the frame: label→input is 14 and
+  // input→slider is 24. `__field` carries 16 (the on-scale neighbour of 14 — the same
+  // "take the kit step rather than mint a value" call already made for the label type),
+  // and this adds the missing 8 to reach 24 under the input.
   &__slider {
     position: relative;
     display: flex;
     align-items: center;
     min-width: 0;
+    margin-top: t.$space-1;
   }
 
   // ⚠️ TWO `!important`s, SO SPECIFICITY DECIDES — and Divi loads AFTER us.
@@ -292,11 +372,17 @@
   }
 
   // .calculator__rate
+  // Frame: modes 40…368, stepper starts at 415 — a 47 gap, so $space-5 rather than the
+  // 24 that was here. The row wraps on narrow viewports; the frame has no mobile state.
   &__rate {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: t.$space-3;
+
+    @include m.bp(desktop) {
+      column-gap: t.$space-5;
+    }
   }
 
   // .calculator__modes
@@ -329,7 +415,14 @@
   &__stepper {
     display: inline-flex;
     align-items: center;
+    justify-content: space-between;
     gap: t.$space-1;
+    // 243 is the frame's width and the control is a fixed-size thing, not fluid text —
+    // without it the stepper shrank to its content and the −/+ sat on top of the value.
+    // The 6px padding is NOT the frame's stated 16/10: its buttons are absolutely placed
+    // at 6 from each edge (43 − 31 = 12), so 6 is the geometry that actually renders.
+    width: 243px;
+    max-width: 100%;
     padding: 6px;
     border: t.$border-width solid t.$color-ink-faint;
     border-radius: t.$radius-md;
@@ -340,10 +433,14 @@
       display: none;
     }
 
+    // Takes the space between the two buttons and centres the value in it — the frame
+    // puts the value text at x=91.5 of 243, i.e. dead centre, not hugging either button.
     .input-wrapper {
       position: relative;
       display: inline-flex;
       align-items: center;
+      justify-content: center;
+      flex: 1 1 auto;
       min-width: 0;
     }
 
@@ -398,6 +495,9 @@
   // ───────────────────────────────────────────────────────────────────────────
   // .calculator__result — the panel, 655×764, radius 16, sunken surface.
   // ───────────────────────────────────────────────────────────────────────────
+  // Panel padding is 50 ($space-6), not the 40 that was here: the content group sits at
+  // x=50 y=50 in a 655×764 panel and is 555 wide (50 each side). 40 is only the BOTTOM
+  // inset (50 + 674 = 724 of 764), which `margin-top: auto` on the form reproduces.
   &__result {
     display: grid;
     gap: t.$space-3;
@@ -407,17 +507,40 @@
     border-radius: t.$radius-md;
 
     @include m.bp(desktop) {
-      padding: t.$space-5;
+      // ⚠️ FLEX, NOT GRID, and only because of `margin-top: auto` on the form. Under
+      // `display: grid` + `align-content: start` the free space is packed AFTER the last
+      // row, so an auto margin on a row has nothing to absorb — the form stayed put and
+      // the dead gap under it survived the first attempt. In a flex column the auto
+      // margin takes the free space, which is the whole point. The single-column stack
+      // makes the two layouts otherwise interchangeable.
+      display: flex;
+      flex-direction: column;
+      padding: t.$space-6;
+      // The frame's gaps are not uniform: 32 under the headline, 24 between the metric
+      // rows and around the divider, 48 before the form. 24 is the common case and stays
+      // the gap; the two exceptions are set on the elements themselves.
+      row-gap: t.$space-3;
     }
   }
 
   // .calculator__headline
+  //
+  // The frame's headline is 151 tall against our 78, and the difference is AIR, not
+  // content: Frame 131 wraps a 195×81 payment block in ~35 of padding top and bottom.
+  // Measured in panel space, the payment label sits 85 below the panel's top edge and
+  // 67 above the metrics row — against our 50 and 24. Adding it back is most of what
+  // stopped the panel looking top-heavy with a hole at the bottom.
   &__headline {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: t.$space-3;
+
+    @include m.bp(desktop) {
+      margin-top: t.$space-4;    // 50 + 32 = 82, against the frame's 85
+      margin-bottom: t.$space-5; // + the 24 row gap = 64, against the frame's 67
+    }
   }
 
   // .calculator__payment
@@ -668,9 +791,81 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 // .calculator__form
+// .calculator__form
+//
+// ⚠️ `margin-top: auto` PINS THE FORM TO THE PANEL'S BOTTOM, and it is load-bearing for
+// the card rather than cosmetic. The two columns are `stretch` so the card has one clean
+// height — but our fields column comes out ~26px taller than the frame's (each field is
+// 162 against 152, from the kit's 124% line-height where the frame drew 116%), so the
+// panel is stretched past its content and the slack landed as a dead gap under the
+// button. The frame's own largest gap is the 48 before the form (467 → 515), so
+// absorbing the slack THERE is what the design already does with it.
 .calculator__form {
+  @include m.bp(desktop) {
+    margin-top: auto;
+    padding-top: t.$space-3;
+  }
+
   .gform_wrapper {
     margin: 0;
+  }
+
+  // ─── Consent checkbox ──────────────────────────────────────────────────────
+  // Reproduced from tokens because the markup no longer carries `.contact-form` —
+  // see the note in calculator.php. The orphan Divi rules drew a transparent box with
+  // a 1.5px ink@56% border, a 14px ink@56% label and an underlined ink link; that
+  // intent is kept, the absolute positioning that sent the checkbox 3 650px down the
+  // page is not. $border-width (1) replaces the legacy 1.5, which is off the scale and
+  // indistinguishable at 20px.
+  //
+  // Mechanism copied from the footer's consent box, including WHY the !importants are
+  // there: GF styles the native input with `appearance: none` plus its own background,
+  // and its --gf-ctrl-checkbox-* variables measurably do not reach it.
+  .gfield_checkbox {
+    label {
+      @include m.text-body-xs;
+
+      color: t.$color-ink-muted;
+    }
+
+    a {
+      color: t.$color-ink;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+  }
+
+  input[type='checkbox'] {
+    appearance: none;
+    display: inline-grid;
+    place-content: center;
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    background-color: transparent !important;
+    border: t.$border-width solid t.$color-ink-muted !important;
+    border-radius: 4px;
+    cursor: pointer;
+
+    &::before {
+      content: '';
+      width: 11px;
+      height: 6px;
+      border-left: 2px solid t.$color-ink;
+      border-bottom: 2px solid t.$color-ink;
+      transform: rotate(-45deg) translate(1px, -2px);
+      opacity: 0;
+      transition: opacity t.$dur-fast t.$ease;
+    }
+
+    &:checked::before {
+      opacity: 1;
+    }
+
+    &:focus-visible {
+      @include m.focus-ring;
+    }
   }
 
   .gform_fields {
