@@ -4,166 +4,80 @@
 starts, this file is compressed into weekly.md. See README.md for the protocol. -->
 
 
-## 2026-08-04
+## 2026-08-05
 
-- Rolled the changelog per `README.md`: week **2026-W31** compressed into `changelog.md`, week **2026-W32** into `weekly.md`, and this file reset. Nothing was dropped that the compression rules protect — every `[DECISION]` and `[INTEGRATION]` from both weeks survives in the tier above.
-- ⚠️ **Diagnosed the stray consent checkbox properly before parking it** (Petr: leave it for the calculator session). It is **not** plugin junk and **not** in `post_content`: the rule `.contact-form .ginput_container_checkbox { position: absolute; bottom: 40px !important; max-width: 460px !important; }` ships inside `<style id="et-builder-module-design-deferred-11-cached-inline-styles">` — Divi's generated CSS for page 11, from a module that no longer exists in the content. Its `offsetParent` is `div.et_builder_inner_content`, so with no positioned ancestor the `bottom: 40px` anchors to the whole content area and lands the checkbox over the FAQ.
-  **The general lesson is bigger than this bug: removing a Divi section at render time does NOT remove the CSS Divi generated for it.** Divi builds its dynamic stylesheet from `post_content` independently of our `the_content` filter, so every migrated section may have left orphan rules behind. Worth a sweep during phase 4.
+Rolled 2026-08-04 into `weekly.md` under **Week 2026-W32** per `README.md`. No
+`weekly.md` → `changelog.md` rollover was due — 2026-08-05 is still W32.
 
-### De-Divi migration — `seo`, the long-form copy block. **A new section, not a replacement.**
+### The calculator session — arithmetic first, then language
 
-Figma `1146:12634`. Heading left, four sub-headed prose blocks right at the shared x=696 spine. Ukrainian and Portuguese.
+The calculator is the last Divi section on the homepage and the only one still Divi on
+production. Locally it is now fully native in **both** languages: `.et_pb_section` is
+**0** on `/` and `/pt/`.
 
-#### The mechanism grew a THIRD placement route
+#### Anna's reference simulator settled three open questions
 
-This is the first section the Divi page never had, and both existing routes need something to anchor to: `ak_sections` strips the leading N and draws in their place, `ak_inline_sections` swaps one out where it sits. A **new** section has nothing to replace.
+She sent two screenshots of the tool she wants this to match. Checking our formulas
+against her numbers **validated the core and found one clear defect**.
 
-Added `ak_append_sections` — a slug list rendered after the content on `the_content` at **priority 21**, i.e. after `wpautop` (10) and after the token swap (20), so the markup never meets a content filter. That is the same lesson `ak_section_token()` records: rendered HTML injected before `wpautop` comes back with stray paragraphs inside it.
+Confirmed identical on both her cases: the annuity payment to the cent (1045.43 and
+1592.24 €), TAN = indexante + spread, Imposto do Selo = 0.8% of the acquisition value,
+and DSTI = payment / net income at the **contract** rate.
 
-**The alternative was rejected on principle:** inventing a Divi section in `post_content` purely so there would be something to replace would write to the blob this whole file exists to leave alone, and leave a decoy section for the next person to puzzle over.
+- **That independently confirmed the DSTI fix and closed the stress-increment question.** The old code computed DSTI at `fixedRateUI − INDEXANTE_CONST` — 2.80% − 2.143% = 0.657%, a rate no borrower pays — so the page contradicted itself in plain sight: a payment of 925,89 € against an income of 2 500 € while reporting DSTI 30%, where 925.89 / 2500 = 37.0%. Her tool applies **no** stress increment, so none is added here either.
+- ⚠️ **LTV truncates, it does not round.** 230 000 / 350 000 = 65.71 shows as **65** in her tool (we said 66); 350 000 / 450 000 = 77.78 shows as **77** (we said 78). Both point the same way and **the direction matters** — LTV is a bank threshold, so rounding up overstates it and can make a case look outside a limit it actually meets.
 
-#### Notable
+#### The slider took four attempts because I was styling the wrong element
 
-- **Heading levels are the point here.** Section H2, blocks H3 — the outline stays one level deep rather than flattening. This is the only block whose job is to be read by a crawler as well as a person, and it sits last precisely so it does not compete with the page's selling sections.
-- Block spacing (80) is deliberately larger than anything inside a block (32), so four sub-headings read as four topics rather than one list.
-- ⚠️ **I added `position: sticky` to the heading and then removed it.** The copy column runs ~1440px and it seemed a kindness — but a Figma frame cannot express scroll behaviour either way, so "the design doesn't say" is not permission to invent it. Left static, as drawn, with the reasoning in the partial so it is not re-added by reflex.
+The control rendered 20px instead of 50, so the thumb overflowed its own box and the tap
+target was smaller than the design's.
 
-#### Verified
+- **The height needed `!important`, and the flag is evidence-based rather than habit:** setting the height inline from devtools gave 20px, inline `!important` gave 50px. An inline declaration outranks every stylesheet selector, so only another `!important` can beat it — one exists in Divi's CSS for this element. Specificity cannot win; a doubled class was tried first and did not.
+- ⚠️ **The "50px pill" was never the native `::-webkit-slider-runnable-track` and never the new wrapper — it was a background Divi paints ON THE INPUT ITSELF.** Adding `!important` to the pseudo-track changed nothing, correctly, twice. Both attempts were reverted rather than left in as decoration.
+- **Fixed by making the track OUR element.** `.calculator__track` is a 20px bar drawn under a transparent input, so Divi has no selector that reaches it. Only the thumb still needs a pseudo-element, because it has to move with the value — pinned at 48px with Divi's ETmodules chevron blanked.
+- ⚠️ **Divi was winning on load order, not specificity.** Per `docs/05-issues.md`, `et-divi-customizer-global.min.css` is enqueued AFTER our stylesheet, and **between two `!important` declarations the cascade falls back to specificity** — so `.calculator__range { background: transparent !important }` at (0,1,0) lost. Raising the selector to (0,3,0) wins regardless of order.
+- ⚠️ **`getComputedStyle(el, '::-webkit-slider-thumb')` is not a usable check — it returns the HOST element's styles**, which once made a failed attempt look like a pass. The only reliable check is the rendered pixels.
 
-- Placed **between the FAQ and the footer**: FAQ 8756–9483, seo 9483–11044, footer 11044. Heading 506 at the container edge, body 680 at x=726 — the same spine as `about`, `order` and `faq`.
-- 4 blocks, 4 H3s, one H1 on the page. Columns 2 → 1 below desktop. **No `.seo` element overflows at 375 / 641 / 768 / 1024 / 1025 / 1280 / 1440 / 1600 / 2560.** No console errors.
-- `/pt/` renders the whole block in Portuguese.
+#### The section was hardcoded Ukrainian — the second half of the `/pt/` breakage
 
-- **`seo` band closes with 120 below as well as above** (Petr). The footer has no top padding of its own, so a 0 there put the last paragraph hard against the green band — the only place on the page where two blocks touched with nothing between them. Verified: 120px from the last paragraph to the footer.
-- **[DECISION] The `h1` stays on the hero; the SEO block keeps its `h2`.** Asked whether to swap them now that a keyword-rich block sits at the bottom. Checked rather than guessed: RankMath's focus keyword on page 11 is «Іпотека в Португалії», and the hero `h1` already opens with that phrase verbatim — so the swap buys nothing on the axis it was proposed for, while costing a document outline that opens on `h2` and puts its only `h1` ~9 500px down, where heading-navigation users reach it last. It would also mean hard-coding an exception into `ak_claim_h1()`, whose entire point is that a section cannot know its own rank and the first one rendered takes the `h1`. If the "для іноземців та нерезидентів" phrasing should carry more weight, the levers are the hero copy or a secondary-keyword target — not the heading level.
+Yesterday's diagnosis found `/pt/` had **two** problems: unstyled *and* in Ukrainian. The
+native migration fixed the first by construction. This fixed the second.
 
-### 🚀 Production deploy #3 — trust, order, testimonials, faq, seo
+Because the calculator already renders natively on `/pt/`, 11 labels frozen in the
+template showed up as a **fully Ukrainian calculator sitting in the middle of the
+Portuguese homepage** — 27 Cyrillic strings across text nodes and `aria-label` /
+`placeholder`.
 
-All five live on `https://www.kalynyuk.com`, uk and pt. **The homepage now runs ONE Divi section: the calculator**, held back deliberately for its own session.
+- Routed through `ak_str()`: the six field labels, the rate label and its «(річна)» note, the two mode names, the form title. **Each field label is resolved ONCE and reused as the range input's `aria-label`**, so assistive tech gets the same words in the same language.
+- **[DECISION] The metric labels stay Portuguese in every language, untranslatable by design** — Mensalidade, Montante, Prazo, LTV, TAN, Indexante, Spread, Imposto Selo, IMT Cont., plus the two stepper `aria-label`s. They are Portuguese banking terms and acronyms, and they are the terms a client meets on the bank's own paperwork; the same call already made for «Livro de Reclamações» in the footer. Ukrainian is the default language, so Polylang returns the source for it regardless — registering them would buy nothing on uk and would invite a pt "translation" that renames a term away from the one the bank uses.
+- ⚠️ **The radio `value` attributes stay English.** `updateCalculation()` branches on the literal `'fixed'` / `'variable'`, so they are as load-bearing as the ids. The block comment now says so, since the labels beside them just became translatable.
+- ⚠️ **`ak_calc_indexante` is deliberately NOT seeded per language.** It is a *number*, not copy. `ak_section_field()` falls back to the default language, so pt reads page 11's value; writing it per language would mean updating the Euribor in four places and letting them drift — the exact failure the editable index was introduced to end. Verified: unset on 2483, resolves to 2.143, and the value reaches the JS (variable mode shows Indexante 2.143%).
+- ⚠️ **Gravity Form 3's sources were read out of the form object, never retyped.** GF stores **straight** apostrophes ("Ім'я", "зв'яжемося") where the theme uses typographic ones, and `pll__()` matches on the source — one retyped character seeds a translation nothing ever looks up. The confirmation's `<strong>` and hard newline survive because only the words are swapped inside it. `Згода` and the consent sentence needed nothing: byte-identical to form 1's, already translated by sharing the source (yesterday's side effect, working as designed).
+- **«калькулятор» is rendered as "Simulador", not "Calculadora"** — the Portuguese word for this instrument, and what Anna's own reference tool is called. ⚠️ It is also the pt search term, so this is an **SEO choice as well as a translation one**; flagged in the seed rather than buried, and it changes in one place if Anna prefers otherwise.
+- Page 2483 already carried translated pt meta for **every** section except the calculator, so seeding `ak_calc_heading` / `ak_calc_intro` there is the last row of an existing pattern, not a new one. The seed refuses to overwrite a non-empty value.
 
-**Files first again**, same reasoning as deploy #2 and for the same two reasons: without their meta the new templates render nothing, so the Divi originals simply keep rendering (verified between the steps — after the sync and before seeding, production still showed `trust` + `calculator` as Divi with zero console errors); and four of the five sections use repeaters, which cannot be pre-written because `update_field()` on an unregistered field group stores a serialised array instead of flattened cells.
+#### Verified — 47/47, both languages, 1440 and 375
 
-Pre-flight checks all passed before anything was written: both photos present by slug, Review Wall active with 20 reviews, target pages 2133 / 2440 present, and all four Divi sections still in `post_content` to be replaced.
+Native section with zero Divi originals · all 32 contract ids · indexante falling back to
+2.143 · `h2` with exactly one `h1` on the page · English radio values · `aria-label`
+matching the visible label · 50px control · **zero Cyrillic anywhere in the pt
+calculator** · **uk unchanged string for string** · payment 925,89 € · DSTI 37% · LTV
+truncating to 65% · TAN = indexante + spread in variable mode · no overflow · no console
+errors beyond the known Review Wall `remodal.min.js` one.
 
-- One consolidated seed rather than five — every attachment resolved **by slug**, the FAQ answers **extracted from `post_content`** rather than retyped (they carry rates and tax bands), and the script aborts unless it parses exactly 7 FAQ items or finds both photos.
-- `ak_append_sections` used for the first time on production, for `seo` — the section with no Divi original.
-- Polylang translations for the five new UI strings written in the same pass, so pt shipped with «Todos os testemunhos» and «Todas as perguntas e respostas» rather than Ukrainian placeholders.
-- **Post-deploy meta diff: zero unexpected differences.** The only deltas are the six `ak_about_*_body` values (local's `<p>` stripped by TinyMCE — identical rendering via `wpautop`), `ak_about_portrait` (2570 vs 2567 — same file, different IDs per environment), and `ak_inline_sections` (local carries `calculator = calculator`, production deliberately does not). Every new section matches exactly.
+⚠️ **Two of the checks were themselves wrong and were fixed rather than explained away.**
+The `pageerror` filter matched on the message, which carries no filename, so it swallowed
+the remodal error — and would have swallowed a real error of ours with the same shape; it
+now matches the stack. The overflow probe flagged Gravity Forms' hidden field, parked at
+`left: -9999px` with `visibility: hidden` by design; it now skips only genuinely hidden
+elements, so a *visible* element at a negative left still fails. A green suite that is
+green for the wrong reason is worse than a red one.
 
-**Verified on production, both languages:** nine native sections; `.et_pb_section` down to 1 (`calculator`); trust marker `rgb(48,113,85)`; 5 trust items, 5 order items, 9 testimonial cards, 7 FAQ items, 4 SEO blocks; SEO heading 506 wide; one `h1`; no overflow at 1440 or 375; **zero console errors**.
+### Still open
 
-Backups: `~/backup-theme-20260804.tgz` + `~/backup-akmeta-20260804.tsv` (the two earlier pairs are still there). Rollback stays cheap — `post_content` has never been modified, so clearing `ak_inline_sections` and `ak_append_sections` returns every Divi original.
-
-### Header submenu spacing — the gap was never the problem
-
-Reported as "the gap between items should be 16px". It already was — `.site-nav__sublist` had `gap: $space-2` all along. What was wrong is that each item was **40px tall instead of the design's 20**, so the list measured 208 against Figma's 128 (`1163:1809`: four 20px rows, `itemSpacing: 16`). Bigger rows read as bigger spacing.
-
-The 40 came from `min-height: $tap-min` plus 8px block padding, added for header-standard §5's ≥40px target — and `$tap-min`'s own note says in as many words **not** to shrink a target to match the art. So both requirements were real and in conflict.
-
-**Resolved by separating flow height from hit area.** The row keeps the design's 20px in flow; an absolutely-positioned `::after` grows the clickable box ±8 into the gaps, which are dead space anyway. That gives **36×321 per item** at zero layout cost — comfortably over WCAG 2.2 AA's 24px floor, on a pointer-only menu (mobile uses the drawer, never this panel).
-
-⚠️ **±8 is the maximum that does not overlap:** the gap is 16, so adjacent targets meet exactly and tile the list with no ambiguous region. Do not raise it chasing 40.
-
-Verified by probing `elementFromPoint`: on-text hits its own row, 4px into the gap still hits the row above, and the boundary resolves cleanly to the row below — no dead pixels, no overlap. List now 130 against the design's 128 (the 0.48px line-height rounding).
-
-### FAQ translated into Portuguese
-
-Page 2483 was showing the Ukrainian questions and answers under a Portuguese heading — the seed had deliberately let them inherit, and nobody had translated them since.
-
-⚠️ **Translation only.** Every figure was carried across unchanged and then spot-checked programmatically: 10–20% / 30–40%, TAEG 3,5–4,5%, fixa 3,5–4%, 18–35 anos, 15%, 450 000 €, 83 696 €, 7–10%, IMT 0–8%, 316 272 €, Imposto do Selo 0,8% / 0,6%, 1500–2500 €, 10–15%, 3–6 meses, 1 ano. Nothing rounded, restated or "improved" — this is regulated copy for a licensed credit intermediary and the Ukrainian original is the reviewed source. Portuguese terminology uses the local names (IMT — Imposto Municipal sobre as Transmissões, contrato sem termo, declarações de IRS).
-
-### Footer translation — the whole footer, and the answer to "how does Gravity Forms work with Polylang?"
-
-**It doesn't.** There is no Polylang integration for Gravity Forms — *Gravity Forms Multilingual* is a WPML product, and only `polylang/polylang.php` is active here. What was being conflated:
-
-- **GF's own interface strings** — the character counter, "This field is required" — are ordinary WordPress i18n. Polylang switches the locale, GF loads its matching `.mo`, and they translate for free. That is why "0 de 600 máximo de caracteres" was already Portuguese while the label beside it was Ukrainian.
-- **Form CONTENT** — labels, placeholders, error messages, choice text, button, confirmation — is editor-entered and lives in **GF's own tables**. Polylang's string scanner never sees it. Nothing translated it, so the footer form stayed Ukrainian in every language.
-
-**[DECISION] One form, filtered — not one form per language.** The usual workaround is duplicating the form and picking it at render time. Rejected: four forms means four entry streams, four notification configs, and a field added to one and forgotten in the other three — for a four-field contact form. The cost lands forever on whoever maintains it. Instead `ak_gform_translate()` filters the form OBJECT, so there stays one form, one entry stream, one set of notifications, and every string becomes editable in Polylang → Translations → Strings like all the others (multilingual rule 3).
-
-⚠️ **All three hooks are required**, and this is not belt-and-braces. `gform_pre_render` translates what the visitor sees; `gform_pre_validation` keeps the re-rendered form translated after a failed submit; `gform_pre_submission_filter` carries it into submission — and is also how the **confirmation message** gets translated, because `GFFormDisplay::process_form()` picks the confirmation out of the form object that filter returns (`form_display.php`, `handle_submission()` at ~line 210). Deliberately **not** the obvious `gform_confirmation` filter: by the time it fires the message is merged with the entry and wrapped in GF markup, so the string handed to `pll__()` would be per-submission HTML matching no registered source.
-
-Registration is **admin-only** — `pll_register_string()` only populates the Strings screen; `pll__()` translates by source string and needs no registration. Doing it on the front end would mean a `GFAPI::get_forms()` query on every page view to build a screen no visitor opens. Notifications are deliberately left untranslated: they go to Anna, not the visitor.
-
-#### Four more footer strings were broken in ways a translation layer cannot fix
-
-- ⚠️ **A source string in the wrong language cannot be translated.** `ak_copyright` was registered with the **Portuguese** default `'Todos os direitos reservados.'`, so the Ukrainian site rendered "© 2026 Todos os direitos reservados." and Portuguese only looked right *by accident* — the source doubled as the pt translation. Polylang always returns the source for the default language, so no amount of translating could have fixed it. The email field's custom `errorMessage` had the same shape: typed in English, so Ukrainian visitors got an English validation error. **Both fixed at the source**, with pt/en/ru re-seeded off the new Ukrainian keys.
-- **Social labels came from an ACF options repeater** — global, one value for all languages, which is exactly what multilingual rule 3 warns against. «Телеграм»/«Інстаграм» were *already translated* in Polylang and still rendered Ukrainian on `/pt/`, because `ak_socials()` returned `(string) $row['label']` directly; the `ak_str()` branch in that function was a legacy fallback that never ran. Now routed through `ak_str()`, with the repeater rows registered (admin-only) so a *fifth* social an editor adds later shows up in the Strings screen instead of failing silently the same way.
-- ⚠️ **Polylang returns 0, not the original, for an untranslated privacy page.** It filters `option_wp_page_for_privacy_policy` at priority 20 and hands back the translation — or `0` when there is none. Every caller reads 0 as "no privacy policy configured", so on `/pt/`, `/en/` and `/ru/` the footer link **vanished entirely**, and so did core's `get_privacy_policy_url()` (login screen, `the_privacy_policy_link()`, personal-data export mail). A missing translation must degrade to the Ukrainian page, not to nothing — for a credit intermediary the policy has to be reachable from every page in every language. Fixed at the **option** level, not in `footer.php`, because the footer was only where it was noticed. Capture at priority 19 / restore at 21, so Polylang's own filter is left completely alone rather than torn out or recursed through.
-- **Four `__()` strings reached assistive tech in English.** The theme calls `load_child_theme_textdomain()` but ships no `languages/` folder, so *every* `__()` renders as its English source. Harmless for admin labels; not for the skip link (visible on keyboard focus), the footer nav label, the drawer label and the language-switcher label. Moved to `ak_str()`. The remaining `__()` calls are admin-only, plus «Livro de Reclamações» / «Intermediário de crédito n.º» — Portuguese legal names that stay Portuguese in every language by design.
-- **The language switcher announced "uk, pt" instead of "Українська, Português".** `ak_language_switcher()` asked Polylang for `display_names_as => 'slug'`, and since the switcher is flags-only the name exists *solely* in the two visually-hidden spans — the one place a language must be named in words. Switched to `'name'`; the separate `slug` key still drives `hreflang`, `lang` and the flag lookup, so nothing machine-readable lost anything.
-
-#### Verified
-
-- Full footer sweep on `/pt/` and `/en/`: **zero Cyrillic left**, in text nodes and in `aria-label` / `alt` / `placeholder`.
-- Form submitted end-to-end in the browser on `/` and `/pt/`. Empty submit → errors in the page language, and the re-rendered form keeps its translated labels (this is what `gform_pre_validation` buys). Valid submit → confirmation in the page language, cream `rgb(247,242,233)` preserved through the translated markup.
-- The 9 QA entries this created were deleted by matching the `ak-qa*@norml.studio` addresses; the 99 real entries were not touched.
-
-#### Two dead ends worth recording
-
-- ⚠️ **A "valid" test email was rejected, and it was not our bug.** `ak-test@example.com` fails `GF_Field_Email::is_email_rejected()` — GF blocklists the reserved domain. Confirmed pre-existing by re-running the same submission with all three filters removed. Cost real time; **use a real domain when smoke-testing a GF email field.**
-- `/en/` and `/ru/` return **404** — their front pages (2484 / 2485) exist but are still drafts, so only `uk` and `pt` are live. Strings still resolve on those URLs because Polylang sets `curlang` from the path, which made the 404s look like working pages in an early check.
-
-#### Known, not fixed
-
-- **`remodal.min.js` from the Review Wall plugin throws `b.map is not a function` on every page load.** Third-party, pre-existing, unrelated to the footer. Not dequeued: the plugin's shortcode is still used on the Відгуки page (2133), so its assets are still needed there.
-- **GF ships no Ukrainian translation**, so its own strings ("This field is required.") stay English on `/`. Portuguese is complete. Fixing it means supplying a `gravityforms-uk.mo`.
-- The **privacy policy page itself has no translations** — every language links to the Ukrainian one. Content gap, not a code gap: the link works.
-- **Consent entries record the Ukrainian text in every language.** Only `choices[].text` is translated, never `value`, so entries stay comparable across languages — but the stored record then does not show what a Portuguese visitor actually read. For a regulated intermediary that may matter; flagged for Petr rather than decided here.
-- Forms **2 and 3** (calculator) are now registered in Polylang but deliberately left untranslated — form 2's confirmation is in English on a Ukrainian site. That belongs to the calculator session.
-
-⚠️ **This work is not deployable by file sync alone.** Production needs the same DB seeding: the `PLL_MO` strings, and the GF form-1 `errorMessage` source rewritten to Ukrainian. Deploying files without it leaves production with an English error message whose source no translation matches.
-
-### 🚀 Production deploy #4 — footer translation
-
-Seven PHP files (`footer`, `header`, `acf-options`, `integrations`, `nav`, `lang-switch`, `nav-drawer`) plus a DB seed. **No `dist/` change** — nothing touched SCSS or JS.
-
-⚠️ **File sync alone would have been wrong here**, which is what makes this deploy different from #1–#3. Two of the fixes rewrite *source* strings (`ak_copyright`, the email `errorMessage`), and Polylang matches on the source — so shipping the code without re-seeding would have left production with strings whose translations no longer resolve.
-
-**Every source string was read out of production's own database rather than reconstructed.** The consent sentence embeds an absolute privacy URL that differs per environment (`kalynyuk.loc` vs `www.kalynyuk.com`), and the confirmation carries a cream `<span style="…">` wrapper. The seed pulls production's `<a …>` tag and its span verbatim and only swaps the words between them, so a scheme or trailing-slash difference cannot silently seed a translation that nothing ever looks up. It aborts if any source reads empty or if the consent text has no anchor. **This is the discipline the deploy-#2 attachment-ID bug bought** — resolve from the target environment, never from local.
-
-Backups before anything ran: `~/backup-theme-20260804b.tgz` and `~/backup-strings-20260804.json` (the full `PLL_MO` table for all four languages plus the complete form-1 object).
-
-⚠️ **The strings backup was written into the docroot first and was briefly reachable over HTTP.** Moved to `~/` immediately; the webroot was then confirmed clean. `ABSPATH` is a webroot — dump files belong in the home directory. Worth remembering before the next seed script.
-
-**Verified live on `https://www.kalynyuk.com`, both languages:**
-- `/pt/` footer has **zero Cyrillic left** — text nodes and `aria-label` / `alt` / `placeholder` alike.
-- The privacy link **renders again** on `/pt/` ("Privacidade"); it had been absent entirely.
-- Consent `href` survives translation on both languages: `https://www.kalynyuk.com/privacy-policy/`.
-- Copyright now reads «© 2026 Усі права захищено.» on uk and "Todos os direitos reservados." on pt — previously Portuguese on both.
-- Validation path exercised on both: errors come back in the page language and the re-rendered form keeps its translated labels and button. **No entries created** (103 before and after) and no notification sent — the happy path was deliberately not run on production.
-- No console errors beyond the known Review Wall `remodal.min.js` one.
-
-Rollback is the tarball plus `backup-strings-20260804.json`, which restores both the `PLL_MO` entries and the form object.
-
-- **[DECISION] The consent-record behaviour stays as it is** (Petr): entries keep storing the Ukrainian consent text in every language, because only `choices[].text` is translated and never `value`. Recorded here rather than changed — if the record ever needs to show what a Portuguese visitor actually read, the lever is translating `value` too (which splits the entry stream by language) or adding a language field to the form.
-- The **happy-path submission on production was not run**. It creates a real entry and sends a real notification to Anna, so it needs an explicit go-ahead rather than being inferred; the validation path was exercised instead and proves the same three hooks.
-- ⚠️ **Side effect worth knowing: translating form 1 also translated part of form 3.** `pll__()` matches on the SOURCE string, and the calculator form's consent sentence is byte-identical to the footer form's — so it picked up the Portuguese translation for free, without form 3 being seeded. Anything sharing a source string across forms translates together; that is the mechanism working as designed, but it means "form 3 is untranslated" is not quite true any more.
-
-### Why the calculator is broken on `/pt/` — diagnosed on production, not fixed
-
-Petr reported the calculator "съехал" on the Portuguese homepage: the label «Процентна ставка (річна)» sits *underneath* the radio row, and the result panel has lost its card styling.
-
-**Root cause: `_et_pb_custom_css` is post META, and Polylang never copied it.** Divi's *Page Settings → Custom CSS* is stored in post meta, not in `post_content`. Page 11 (uk home) carries **24 163 chars** of it; pages **2483 (pt), 2484 (en) and 2485 (ru) all carry 0**. The `post_content` of 11 and 2483 is otherwise all but identical — same 9 sections, same module ids, 63 vs 64 `custom_css_*` attributes, 4146 vs 4176 chars — so the markup was duplicated faithfully and only the meta was left behind.
-
-Measured, rather than inferred:
-
-| | uk (11) | pt (2483) |
-|---|---|---|
-| `et-builder-module-design-*-cached-inline-styles` | **17 118 chars** | **158 chars** |
-| computed `.input-block.interest-rate` | `display: flex` (column) | `display: block` |
-| `.interest-rate-wrapper` box | y 7006, h 50 | y **7024**, h 30 |
-| `.input-block.interest-rate` label box | y 6982 | y **7038** |
-
-The overlap follows mechanically. `.input-block { display: flex; flex-direction: column; gap: 38px }` lives in the missing 24 KB, so on pt the block falls back to `display: block` — while `.interest-rate-wrapper { margin-top: -34px !important }` **survives**, because that one is in the Code module's own inline `<style>`, which *is* part of `post_content`. With no flex column left to absorb it, the negative margin drags the radio row 34px up and straight over the label. 111 selectors are missing in total, including `.calculator-form`, `.calculator-result`, `.item`, the custom radio `::before`, and the Gravity Forms styling inside the result panel.
-
-⚠️ **Ruled out before landing on this**, because each was the more obvious suspect:
-- **Not our footer deploy.** Nothing in it touches the calculator, and the breakage is a missing stylesheet, not changed markup.
-- **Not Divi's file cache.** `et-cache/11/` and `et-cache/2483/` hold byte-identical files (52 983 + 12 789 each).
-- **Not the native-sections mechanism.** Both pages strip the same 8 sections and keep `calculator`; 2483's `ak_*` meta is empty and resolves through the default-language fallback exactly as designed.
-
-⚠️ **A verbatim copy of the meta is only a HALF fix, and I checked before recommending one.** The 24 KB contains **40 Cyrillic runs** — the tooltip bodies and the «років» suffix are written as CSS `content:` strings (single-quoted, which a first pass with a double-quote regex missed). Copying it would fix the layout and simultaneously ship Ukrainian tooltip text onto the Portuguese page. The calculator's Divi markup on 2483 is untranslated anyway, so `/pt/` has **two** problems, not one: it is unstyled *and* it is in Ukrainian.
-
-**Recommendation: don't patch it — the native calculator migration already in progress fixes both at the root** (labels through `ak_section_field()` / `ak_str()`, layout in SCSS that is language-agnostic by construction), and a copy would put 24 KB of Ukrainian-bearing CSS onto three more pages that then have to be remembered and deleted afterwards. If the live breakage cannot wait, the stopgap is one `update_post_meta( 2483, '_et_pb_custom_css', … )` and is reversible by setting it back to `''`. **Left for Petr to call; nothing was changed on production.**
-
-📌 **The general lesson, and it outlives the calculator: a Polylang translation copies `post_content`, not post meta.** Any Divi page-level custom CSS, and anything else living in meta, silently does not exist on the translation. Page **#566 (Калькулятор, 22 867 chars)** carries the same kind of payload and is only safe because it has no translations *yet* — translate it and it breaks the same way.
+- ⏳ **IMT is still wrong, and was NOT guessed.** Our bracket table gives 22 506 € where Anna's gives 22 237 (delta 270) and 14 506 where hers gives 1 557 (**delta 12 950**). The two cases differ only by the client's age — 31 vs 36 — which is almost certainly the **IMT Jovem** first-time-buyer relief, and explains why her tool has a date-of-birth field at all. Implementing it needs the actual brackets and eligibility rules. **Asked, not invented.**
+- ⏳ **Whether the DSTI affordability test should carry a Banco de Portugal rate shock.** Its macroprudential recommendation expects an interest-rate shock on top of the contract rate (+1.5pp → 42%, +3.0pp → 48% on the default inputs); Anna's tool applies none, and neither do we. A specific increment is a **regulatory decision, not a code cleanup**. Whatever she answers changes one line.
+- **The tooltips are decoration.** Every `.calculator__hint` is an `ⓘ` badge with `aria-hidden="true"` and no panel behind it. The Divi original carried its tooltip bodies as CSS `content:` strings inside the 24 KB of page meta (the 40 Cyrillic runs); none of that copy has been ported. Needs a decision on whether the hints become real tooltips or the badges come out.
+- **`ak_calc_help_content` is empty on page 11 too**, so the «Довідка» button correctly does not render in any language. The panel exists in the template awaiting copy — it replaced a Divi Popups section whose trigger was already dead on production.
+- **The rate row ships TWO modes, not the design's three.** Figma shows «Вручну»; `updateCalculation()` branches on exactly `'fixed'` and `'variable'` and initialises `interestRate` to 0, so a third option would compute the payment at 0% and understate it. Petr's call (2026-07-31): ship the two that work.
+- ⚠️ **Not deployable by file sync alone.** Production needs the same DB seeding: 11 chrome strings, five Gravity Form 3 strings, and `ak_calc_heading` / `ak_calc_intro` on 2483 — all in pt/en/ru. And the deploy still has to strip the calculator's Divi original (`ak_inline_sections` carries `calculator = calculator` locally; production deliberately does not yet), which is what makes this the deploy that finally takes the homepage to zero Divi sections.
