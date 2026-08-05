@@ -212,13 +212,43 @@ styles; verify the pseudo-element through the compiled CSS and the rendered pixe
 Verified 47/47 + 48/48, 57px button and no overflow at 375 / 768 / 1024 / 1440 / 1600 /
 2560.
 
+### The head CTA, the third rate mode, and the `%`
+
+📌 **The head button is «Розрахувати», not «Довідка» — which is why the slot had always
+looked empty.** Frame 9120 is a 150×48 accent button, radius 24, and its label reads
+«Розрахувати». We had rendered the *help* button there, gated on `ak_calc_help_content`
+(empty in every language). So the missing button was never a styling gap: a different
+button was standing in its place. Uses `.btn--primary`, the kit variant, not a restyle.
+
+⚠️ **Its behaviour is not in the design, so it is stated rather than guessed.** It cannot
+mean "compute" — the calculator recomputes on every keystroke, so a submit-style action
+would be a control that looks like it does something and does not. It focuses the first
+field and scrolls the card into view (a real job on a phone, where head and fields are a
+screen apart). Pointing it at `/calc/` is a one-line change if that was the intent.
+
+- ⚠️ **The third mode reverses the 2026-07-31 decision, on Petr's instruction.** That decision was right at the time: `updateCalculation()` branched on exactly `fixed` / `variable` and initialises `interestRate` to 0, so a third radio would have reported a payment far below reality. **Production still has only two.** It is safe now because the JS gained a real `manual` branch in the same commit — registered in **both** the `steppers` and `inputs` maps (one alone gives a radio that reveals its control and then reports 0%), with block 2 looking its input up separately since it is its own IIFE. Verified: TAN 2.700%, payment 917,49 €, −/+ reach TAN.
+- ⏳ **Вручну computes identically to Фіксована** — both take the TAN the visitor types, the only reading the design offers. That makes them functionally redundant. Flagged for Petr: the alternative (Фіксована becomes a preset, only Вручну editable) is a content decision, not a code one.
+- ⚠️ **The `%` gap was LEGACY CSS, and not Divi's this time.** The page ships `.rate-stepper input { width: auto !important; text-align: center; max-width: 120px }` and `.percent-symbol { position: absolute; right: 8px; top: 50%; transform: translateY(-50%) }` — both (0,1,1) against our single class. The value sat in a 120px box while the `%` was pinned to the wrapper's right edge, **29px apart**. The frame has *no separate `%` element*: Frame 4166's characters are literally "2.70%". `.rate-stepper` is kept because calculator.js finds the steppers by it, so its styling rides along — **exactly like `.contact-form` did**. ⚠️ `transform: none` is required, not tidying: dropping the absolute alone left the transform on a now-static inline element and **lifted the `%` into a superscript**.
+
+#### Two knock-ons the third mode exposed, both measured
+
+- **Mode labels are Body SMALL (16px), not Body.** The frame's labels are 19px-tall boxes at 52/77/55 and its modes total 328; at 20px ours came to 383 and the stepper wrapped. Radio 24, not 20.
+- ⚠️ **At desktop the modes↔stepper gap is now whatever is left over, not a fixed value.** Our labels still render ~7px wider *each* at the same 16px (tracking metrics), so the modes come to 350 and **any** fixed gap overflowed the 616 column — three were tried. `nowrap` + `margin-left: auto` yields ~24. The gap is the one measurement in that row that is pure whitespace between two groups, so it is the right thing to give up rather than shrinking type away from the frame.
+- ⚠️ **`flex: 0 0 auto` on the modes group is part of that fix, and finding out why is the lesson.** With only the ROW set to `nowrap` the group shrank instead, and its own wrap pushed «Вручну» onto a second line — **while the row still measured as "not wrapped"**. The check had passed for the wrong reason; it now compares the group's height to a single row. Same shape as the headline-card mistake: a green check is only as good as what it actually asserts.
+
+Three suite assertions hardcoded two modes and were updated — the third mode is
+intentional, so the tests were the stale part. Verified 47/47 + 48/48; modes on one line
+with the stepper inside the column at 768 / 1024 / 1440 / 1600 / 2560, wrapping only at
+375, no overflow anywhere.
+
 ### Still open
 
 - ⏳ **IMT is still wrong, and was NOT guessed.** Our bracket table gives 22 506 € where Anna's gives 22 237 (delta 270) and 14 506 where hers gives 1 557 (**delta 12 950**). The two cases differ only by the client's age — 31 vs 36 — which is almost certainly the **IMT Jovem** first-time-buyer relief, and explains why her tool has a date-of-birth field at all. Implementing it needs the actual brackets and eligibility rules. **Asked, not invented.**
 - ⏳ **Whether the DSTI affordability test should carry a Banco de Portugal rate shock.** Its macroprudential recommendation expects an interest-rate shock on top of the contract rate (+1.5pp → 42%, +3.0pp → 48% on the default inputs); Anna's tool applies none, and neither do we. A specific increment is a **regulatory decision, not a code cleanup**. Whatever she answers changes one line.
 - ⏳ **[DECISION] Deploy waits for Anna's IMT answer** (Petr). Production therefore keeps the broken `/pt/` calculator — no styles and Ukrainian labels — until the brackets arrive. The alternative offered was deploying now (IMT would have been no more wrong than it already is on production, which runs the same bracket table) and it was declined in favour of shipping once, correct.
 - **The tip bodies are pt-only.** `/en/` and `/ru/` inherit Ukrainian; those front pages are still drafts and 404, and all 17 strings are registered, so both languages appear in Polylang → Strings for whoever fills them in.
-- **`ak_calc_help_content` is empty on page 11 too**, so the «Довідка» button correctly does not render in any language. The panel exists in the template awaiting copy — it replaced a Divi Popups section whose trigger was already dead on production. Its slot in the head's right column is now built (150×48, 32 below the intro), so supplying the copy is all that is left.
+- **`ak_calc_help_content` is empty on page 11 too**, so the «Довідка» button still does not render in any language. ⚠️ **It is NOT the head button** — that is «Розрахувати», now built. Довідка has no slot in the frame at all, so where it belongs is an open question, not just a missing string: the panel it opens exists in the template, and the button is currently orphaned. Needs Petr to say whether Довідка survives as a control.
+- ⏳ **Вручну vs Фіксована is a live content question.** Both compute from a typed TAN, so today they are the same control twice. Either Фіксована becomes a preset rate (and only Вручну stays editable), or one of them goes.
 - **The calculator has no tablet or phone frame.** `design.md` §13 gap #10 is closed for desktop only; the 375/768 behaviour is our own (columns stack, row gap drops to 32) and verified not to overflow, but it is not *designed*. Rescan before doing responsive work there.
 - ⏳ **`IMT Ilhas` — a THIRD tax metric, visible in Petr's reference and absent from our build.** The frame's tax row (`1130:4061`) carries 4 children against our 2, the dead `.imt-ilhas` tooltip existed in the legacy CSS, and `calculator.js`'s own header comment claims it computes IMT "for mainland and islands" — but there is **no islands function in the file**, only `calculateIMTContinente()`. So the comment is wrong and the metric was never ported. Adding it means an islands bracket table: **regulated figures, the same class of thing as IMT Jovem, so it goes to Anna rather than being invented.**
 - ⚠️ **The stale-Divi-CSS sweep is now worth scheduling rather than noting.** Removing `contact-form` proved the point on live markup: orphan rules from deleted modules are still reaching our elements, and they win on load order. Something should enumerate what else `et-builder-module-design-deferred-11-cached-inline-styles` still matches before phase 4.
