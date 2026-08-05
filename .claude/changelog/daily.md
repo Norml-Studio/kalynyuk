@@ -188,6 +188,30 @@ the container rule. Consent checkbox now `static`, inside the form, 556 wide.
 and §13 gap #10 is marked closed **for desktop only** — the frame has no tablet or phone
 state, so that caveat is kept rather than quietly dropped.
 
+### Petr's five corrections — and one of them was a dead control
+
+- ⚠️ **The stepper −/+ never worked at all.** `calculator.js` walks `.rate-stepper` then looks for `.rate-plus` / `.rate-minus` **inside** it; the BEM rewrite renamed both to `calculator__step`, so both lookups returned null, both `if (plus)` / `if (minus)` guards skipped, and no listener was ever attached. Nothing threw. **This is the same silent failure the id contract protects against — except these are CLASSES, so the 30-id check could not see it.** Both restored, and the click path is now covered by a test that presses the buttons and reads the rate back.
+- The glyph is a real **minus sign (U+2212)**, not a hyphen — at 20px a hyphen is shorter and sits higher than the `+` beside it. ⚠️ The *size* was not the problem and I checked before changing it: `$text-body-desktop` is already the frame's 20px. (First attempt invented a cause and was reverted.)
+- **120 above the section** — also `design.md` §6's rhythm for a feature band. With `.trust`'s 50 below, the gap is 170 against the **184** the frame draws between the bands (trust ends 5855, calculator starts 6039), so the requested number reconciles with the measurement rather than fighting it.
+- **Arrows in the thumbs.** Frame 118 inside the 48px thumb is 42×24 holding vuesax `arrow-left` + `arrow-right`, 24×24, overlapping by 6. ⚠️ Delivered as a **background-image data URI** because the thumb is a *pseudo-element* — it cannot hold child nodes and `content` does not render on it. The same declaration also replaces the `background-image: none` that blanked Divi's chevron, so Divi's glyph still cannot return. ⚠️ **`#` must be `%23` in a data URI**, or the stroke colour parses as a fragment id and the arrows come out invisible — indistinguishable from a failed load.
+- **Button 57 tall, and the two form inputs with it** (Frame 293 and Frame 105 are both 493×57, 8 apart). `$btn-height-wide` already existed for exactly this; the form was on the 48 standard. ⚠️ It needed `!important`: the cascade showed **our 57 winning while the computed value came back 38** — GF resolves control height through `--gf-ctrl-*` variables, so the losing rule is not a plain declaration you can out-specify.
+- **% and DSTI centred on the arc**, not parked at its right end. Frame 283 is a 43×43 readout at x=401 in a gauge spanning 328…515 (centre 421.5 vs 422.5), and both its texts are 43 wide — centre-aligned inside it.
+
+📌 **A correction to my own previous entry: the headline is a CARD, not padding.** Frame 131
+is 555×151 with `fills: #fef8ef` and `cornerRadius: 24` — a `$color-surface` card on the
+sunken panel, as Petr's reference shows. I had read its 35 of inset as air and reproduced
+it with margins. **That still put every row within ~10px of the frame, which is exactly why
+it survived a measurement pass: matching positions is not the same as matching structure.**
+Worth remembering when a comparison is done by coordinates alone.
+
+⚠️ **`getComputedStyle(el, '::-webkit-slider-thumb')` bit again**, in a check this time
+rather than in the code — it reported `background-image: none` for a thumb that does carry
+the arrows. The note in `_calculator.scss` already says it returns the HOST element's
+styles; verify the pseudo-element through the compiled CSS and the rendered pixels.
+
+Verified 47/47 + 48/48, 57px button and no overflow at 375 / 768 / 1024 / 1440 / 1600 /
+2560.
+
 ### Still open
 
 - ⏳ **IMT is still wrong, and was NOT guessed.** Our bracket table gives 22 506 € where Anna's gives 22 237 (delta 270) and 14 506 where hers gives 1 557 (**delta 12 950**). The two cases differ only by the client's age — 31 vs 36 — which is almost certainly the **IMT Jovem** first-time-buyer relief, and explains why her tool has a date-of-birth field at all. Implementing it needs the actual brackets and eligibility rules. **Asked, not invented.**
@@ -196,6 +220,7 @@ state, so that caveat is kept rather than quietly dropped.
 - **The tip bodies are pt-only.** `/en/` and `/ru/` inherit Ukrainian; those front pages are still drafts and 404, and all 17 strings are registered, so both languages appear in Polylang → Strings for whoever fills them in.
 - **`ak_calc_help_content` is empty on page 11 too**, so the «Довідка» button correctly does not render in any language. The panel exists in the template awaiting copy — it replaced a Divi Popups section whose trigger was already dead on production. Its slot in the head's right column is now built (150×48, 32 below the intro), so supplying the copy is all that is left.
 - **The calculator has no tablet or phone frame.** `design.md` §13 gap #10 is closed for desktop only; the 375/768 behaviour is our own (columns stack, row gap drops to 32) and verified not to overflow, but it is not *designed*. Rescan before doing responsive work there.
+- ⏳ **`IMT Ilhas` — a THIRD tax metric, visible in Petr's reference and absent from our build.** The frame's tax row (`1130:4061`) carries 4 children against our 2, the dead `.imt-ilhas` tooltip existed in the legacy CSS, and `calculator.js`'s own header comment claims it computes IMT "for mainland and islands" — but there is **no islands function in the file**, only `calculateIMTContinente()`. So the comment is wrong and the metric was never ported. Adding it means an islands bracket table: **regulated figures, the same class of thing as IMT Jovem, so it goes to Anna rather than being invented.**
 - ⚠️ **The stale-Divi-CSS sweep is now worth scheduling rather than noting.** Removing `contact-form` proved the point on live markup: orphan rules from deleted modules are still reaching our elements, and they win on load order. Something should enumerate what else `et-builder-module-design-deferred-11-cached-inline-styles` still matches before phase 4.
 - **The rate row ships TWO modes, not the design's three.** Figma shows «Вручну»; `updateCalculation()` branches on exactly `'fixed'` and `'variable'` and initialises `interestRate` to 0, so a third option would compute the payment at 0% and understate it. Petr's call (2026-07-31): ship the two that work.
 - ⚠️ **Not deployable by file sync alone.** Production needs the same DB seeding: 11 chrome strings, five Gravity Form 3 strings, `ak_calc_heading` / `ak_calc_intro` on 2483, the 16 tip bodies in pt, and `ak_calc_tip_label` in pt/en/ru. And the deploy still has to strip the calculator's Divi original (`ak_inline_sections` carries `calculator = calculator` locally; production deliberately does not yet), which is what makes this the deploy that finally takes the homepage to zero Divi sections.
