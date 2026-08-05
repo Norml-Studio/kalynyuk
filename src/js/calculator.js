@@ -572,7 +572,15 @@ export function initCalculator() {
         tanEl.textContent       = (displayRate * 100).toFixed(3) + "%"; // Показуємо введену ставку
         indexanteEl.textContent = (indexante   * 100).toFixed(3) + "%";
         spreadEl.textContent    = (spread      * 100).toFixed(3) + "%";
-        ltvEl.textContent       = propertyPrice > 0 ? Math.round((loanAmount / propertyPrice) * 100) + "%" : "0%";
+        /*
+         * ⚠️ FLOOR, NOT ROUND — verified against Anna's reference simulator on two
+         * cases she sent. 230 000 / 350 000 = 65.71% shows as 65 there (we rounded to
+         * 66); 350 000 / 450 000 = 77.78% shows as 77 (we rounded to 78). Both point
+         * the same way, and the direction matters: LTV is a bank threshold, so
+         * rounding UP overstates it and can make a case look outside a limit it
+         * actually meets.
+         */
+        ltvEl.textContent       = propertyPrice > 0 ? Math.floor((loanAmount / propertyPrice) * 100) + "%" : "0%";
         prazoEl.textContent     = termMonths + " Meses";
         montanteEl.textContent  = loanAmount.toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + " €";
     
