@@ -144,12 +144,58 @@ never seeded, so `/pt/` announced "Пояснення: Valor do imóvel" to scre
 *only* in a visually-hidden span. **No sighted check could ever have caught it**; the
 automated Cyrillic sweep did, on the first run after the feature landed.
 
+### Built the section to the frame — Petr: «дизайн не очень, можешь по макету»
+
+Measured Figma `1130:9148` against the render instead of eyeballing it. The section was
+off the design in six structural ways, and one of them explains the rest.
+
+📌 **`design.md` §13 gap #10 had warned about exactly this** — "the calculator almost
+certainly has values not in this contract, rescan before touching it". Every value earlier
+sessions used had been derived from the frame by hand with nothing to check it against,
+which is why «не очень» had no obvious answer until the frame was measured.
+
+- **THE CARD WAS MISSING ENTIRELY**, and it was most of the problem. Frame 114 is a 1376×812 card — `$color-surface` #fef8ef, radius 24. Without it the fields sat on the bare page canvas and the sunken result panel read as a stray grey box instead of a well inside a card. ⚠️ The two insets differ on purpose: the panel is inset 24 from the card, the fields a further 16 (= 40 from the card edge).
+- **The head was centred.** Frame 9122 is a SPACE_BETWEEN row — heading 506 at the container edge, right column 680 at x=696 with the intro and then the «Довідка» button 32 below. That is the spine `about` / `order` / `faq` / `seo` already use, so centring made the calculator the one section off the page's grid. Reused their `664fr/680fr` + `$space-4` pattern rather than deriving a new one; head→card is now 56.
+- ⚠️ **The inputs were losing to Divi on SPECIFICITY, not load order — and our declarations were correct all along, they simply never applied.** Divi ships `input[type="text"] { background: #fff; border: 1px solid #bbb; padding: 2px }` at (0,1,1) against `.calculator__input`'s (0,1,0), so the field rendered white, grey-bordered and **31px tall against the design's 43**. Fixed with a doubled class (0,2,0) and **no `!important`**, because Divi's rule has none — deliberately unlike the range input, where Divi *does* use it and order is what decides. Measured with `CSS.getMatchedStylesForNode`, not guessed.
+- **Field row gap 64, was 32** — the frame's rows start 216 apart around a 152-tall field. At 32 the six fields read as one dense block, which is much of what «не очень» was pointing at. Needed a new token: **`$space-9`**, added to `design.md` *before* use per the CLAUDE.md rule, with the same reasoning `$space-7` got. ⚠️ Numbered 9 though it sorts between 7 and 8 — the scale is a name sequence, and renumbering `$space-8` would silently turn 120 into 64 everywhere.
+- **Result panel**: padding 50 not 40, and the payment block got its air back — 85 from the panel top, 67 to the metrics row, against our 50 and 24. ⚠️ That air is why the frame's headline measures 151 against our 78: it is *padding, not content*. Rows now track the frame within ~10px — 82/224/304/385/410/535 against 85/233/311/389/413/515.
+- **Stepper** is 243 wide with the value centred; it had collapsed to its content so the −/+ sat on the number. The 6px padding is the geometry that actually renders (43 − 31 = 12), not the frame's stated 16/10.
+- ⚠️ **The panel had to switch from grid to flex on desktop, purely for `margin-top: auto` on the form.** Under `grid` + `align-content: start` the free space packs AFTER the last row, so an auto margin has nothing to absorb — the first attempt changed nothing and the dead gap survived it.
+
+#### 📌 Dropping one class fixed a bug that had nothing to do with the design
+
+`contact-form` came off the form's class list. **All 11 `.contact-form` rules on this page
+come from one source** — `et-builder-module-design-deferred-11-cached-inline-styles`,
+Divi's generated CSS for a module no longer in `post_content`. This is the orphan-CSS class
+recorded in `docs/05-issues.md`, and **the calculator was the last thing still opting into
+it.** Two of those rules were actively wrong:
+
+- `margin: 24px 0 40px` + `margin-bottom: 70px !important` out-cascaded our layout at equal specificity (it loads later) and left a dead **221px** gap under the submit button *inside* the panel;
+- ⚠️ `.contact-form .ginput_container_checkbox { position: absolute; bottom: 40px !important }` — with no positioned ancestor the consent checkbox anchored to `.et_builder_inner_content` and rendered at **y=9512 while the calculator sits at y=5861**. The consent checkbox was floating **~3 650px away, over the FAQ**. Measured, not inferred — and it is the same bug the 2026-08-04 entry diagnosed and parked.
+
+For a licensed credit intermediary the consent has to be **in** the form it belongs to, so
+this was never only cosmetic. The one thing worth keeping — the checkbox and label styling
+— is reproduced from tokens using the footer's proven mechanism (including why its
+`!important`s are needed), rather than inherited from CSS that phase 4 deletes.
+
+#### Verified
+
+47/47 (contract) + 48/48 (tooltips), both languages. No overflow and no horizontal scroll
+at **375 / 768 / 1024 / 1600 / 2560**; the card measures 1376 at every width ≥ desktop, per
+the container rule. Consent checkbox now `static`, inside the form, 556 wide.
+
+`design.md` bumped to **v2.2.0**: §7 gains the full calculator spec, §4 gains `--space-9`,
+and §13 gap #10 is marked closed **for desktop only** — the frame has no tablet or phone
+state, so that caveat is kept rather than quietly dropped.
+
 ### Still open
 
 - ⏳ **IMT is still wrong, and was NOT guessed.** Our bracket table gives 22 506 € where Anna's gives 22 237 (delta 270) and 14 506 where hers gives 1 557 (**delta 12 950**). The two cases differ only by the client's age — 31 vs 36 — which is almost certainly the **IMT Jovem** first-time-buyer relief, and explains why her tool has a date-of-birth field at all. Implementing it needs the actual brackets and eligibility rules. **Asked, not invented.**
 - ⏳ **Whether the DSTI affordability test should carry a Banco de Portugal rate shock.** Its macroprudential recommendation expects an interest-rate shock on top of the contract rate (+1.5pp → 42%, +3.0pp → 48% on the default inputs); Anna's tool applies none, and neither do we. A specific increment is a **regulatory decision, not a code cleanup**. Whatever she answers changes one line.
 - ⏳ **[DECISION] Deploy waits for Anna's IMT answer** (Petr). Production therefore keeps the broken `/pt/` calculator — no styles and Ukrainian labels — until the brackets arrive. The alternative offered was deploying now (IMT would have been no more wrong than it already is on production, which runs the same bracket table) and it was declined in favour of shipping once, correct.
 - **The tip bodies are pt-only.** `/en/` and `/ru/` inherit Ukrainian; those front pages are still drafts and 404, and all 17 strings are registered, so both languages appear in Polylang → Strings for whoever fills them in.
-- **`ak_calc_help_content` is empty on page 11 too**, so the «Довідка» button correctly does not render in any language. The panel exists in the template awaiting copy — it replaced a Divi Popups section whose trigger was already dead on production.
+- **`ak_calc_help_content` is empty on page 11 too**, so the «Довідка» button correctly does not render in any language. The panel exists in the template awaiting copy — it replaced a Divi Popups section whose trigger was already dead on production. Its slot in the head's right column is now built (150×48, 32 below the intro), so supplying the copy is all that is left.
+- **The calculator has no tablet or phone frame.** `design.md` §13 gap #10 is closed for desktop only; the 375/768 behaviour is our own (columns stack, row gap drops to 32) and verified not to overflow, but it is not *designed*. Rescan before doing responsive work there.
+- ⚠️ **The stale-Divi-CSS sweep is now worth scheduling rather than noting.** Removing `contact-form` proved the point on live markup: orphan rules from deleted modules are still reaching our elements, and they win on load order. Something should enumerate what else `et-builder-module-design-deferred-11-cached-inline-styles` still matches before phase 4.
 - **The rate row ships TWO modes, not the design's three.** Figma shows «Вручну»; `updateCalculation()` branches on exactly `'fixed'` and `'variable'` and initialises `interestRate` to 0, so a third option would compute the payment at 0% and understate it. Petr's call (2026-07-31): ship the two that work.
 - ⚠️ **Not deployable by file sync alone.** Production needs the same DB seeding: 11 chrome strings, five Gravity Form 3 strings, `ak_calc_heading` / `ak_calc_intro` on 2483, the 16 tip bodies in pt, and `ak_calc_tip_label` in pt/en/ru. And the deploy still has to strip the calculator's Divi original (`ak_inline_sections` carries `calculator = calculator` locally; production deliberately does not yet), which is what makes this the deploy that finally takes the homepage to zero Divi sections.
