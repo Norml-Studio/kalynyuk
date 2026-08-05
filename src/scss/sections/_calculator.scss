@@ -13,12 +13,27 @@
 // id). Classes are ours; ids are not. See the template docblock.
 // ─────────────────────────────────────────────────────────────────────────────
 
+// The two arrows inside the slider thumb — vuesax arrow-left + arrow-right, 24×24 each,
+// overlapping by 6 in a 42×24 box (Figma 1130:4101). Drawn as chevrons on the canvas
+// colour so they read on the accent circle.
+//
+// ⚠️ `#` MUST BE URL-ENCODED AS %23 inside a data URI. An unescaped `#` starts a fragment
+// identifier, so the SVG parses with no stroke colour and the arrows come out invisible —
+// which looks exactly like the image having failed to load.
+$thumb-arrows: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="42" height="24" viewBox="0 0 42 24" fill="none"><path d="M14.5 7.5 10 12l4.5 4.5" stroke="%23f7f2e9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M27.5 7.5 32 12l-4.5 4.5" stroke="%23f7f2e9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+
 // .calculator
 .calculator {
   padding-block: t.$space-5;
 
   @include m.bp(desktop) {
-    padding-block: t.$space-6;
+    // 120 above (Petr, 2026-08-05), which is also design.md §6's section rhythm for a
+    // feature band. With `.trust`'s 50 below it the gap comes to 170, against the 184 the
+    // frame draws between the two bands (trust ends 5855, the calculator starts 6039) —
+    // so the number reconciles the instruction with the measurement rather than fighting
+    // it. Bottom stays 50: the SEO block below owns its own top spacing.
+    padding-top: t.$space-8;
+    padding-bottom: t.$space-6;
   }
 
   // .calculator__inner
@@ -254,13 +269,24 @@
     border: 0 !important;
   }
 
-  // Divi draws a chevron from its ETmodules icon font inside the thumb. Same
-  // specificity trick to blank it — the design's thumb is a plain circle.
+  // ⚠️ THE THUMB CARRIES TWO ARROWS (Petr, 2026-08-05). Frame 118 inside the 48px thumb
+  // is 42×24 and holds vuesax `arrow-left` + `arrow-right`, each 24×24, overlapping by 6.
+  //
+  // Delivered as a background-image data URI, because the thumb is a PSEUDO-ELEMENT: it
+  // cannot hold real child nodes, and `content` does not render on it either. This also
+  // replaces the `background-image: none` that used to blank Divi's own ETmodules
+  // chevron — the same declaration now does both jobs, so Divi's glyph still cannot
+  // appear. `font-size: 0` and `color: transparent` stay for exactly that reason.
+  //
+  // Kept in $thumb-arrows so the webkit and moz rules cannot drift apart; they must stay
+  // two separate rules (see the note below on selector lists being dropped wholesale).
   &__slider &__range::-webkit-slider-thumb {
     font-size: 0 !important;
     color: transparent !important;
-    background-image: none !important;
     background-color: t.$color-accent !important;
+    background-image: $thumb-arrows !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
     width: 48px !important;
     height: 48px !important;
     border-radius: t.$radius-circle !important;
@@ -268,6 +294,9 @@
 
   &__slider &__range::-moz-range-thumb {
     background-color: t.$color-accent !important;
+    background-image: $thumb-arrows !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
     width: 48px !important;
     height: 48px !important;
     border: 0 !important;
@@ -452,6 +481,10 @@
   }
 
   // .calculator__step
+  // 31×31 radius 12 on the sunken surface. The glyph is already the frame's size —
+  // $text-body-desktop is 20px and the frame's "+" is a 12×21 box, i.e. 20px Nunito
+  // Sans. So the size was NOT the problem: the hyphen was (now U+2212 in the markup),
+  // together with the buttons doing nothing at all.
   &__step {
     display: inline-flex;
     align-items: center;
@@ -523,13 +556,16 @@
     }
   }
 
-  // .calculator__headline
+  // .calculator__headline — A CARD, not just a row.
   //
-  // The frame's headline is 151 tall against our 78, and the difference is AIR, not
-  // content: Frame 131 wraps a 195×81 payment block in ~35 of padding top and bottom.
-  // Measured in panel space, the payment label sits 85 below the panel's top edge and
-  // 67 above the metrics row — against our 50 and 24. Adding it back is most of what
-  // stopped the panel looking top-heavy with a hole at the bottom.
+  // ⚠️ I FIRST READ THIS AS PADDING AND WAS WRONG. Frame 131 is 555×151 with
+  // `fills: #fef8ef` and `cornerRadius: 24` — it is a $color-surface card sitting on the
+  // sunken panel, exactly as Petr's reference shows. What looked like 35 of air top and
+  // bottom is the card's padding around a 195×81 payment block.
+  //
+  // Getting it wrong the first time still moved the layout the right way (the rows landed
+  // within ~10px of the frame), which is precisely why it survived a measurement pass —
+  // matching positions is not the same as matching structure.
   &__headline {
     display: flex;
     flex-wrap: wrap;
@@ -538,8 +574,14 @@
     gap: t.$space-3;
 
     @include m.bp(desktop) {
-      margin-top: t.$space-4;    // 50 + 32 = 82, against the frame's 85
-      margin-bottom: t.$space-5; // + the 24 row gap = 64, against the frame's 67
+      // 555 wide inside a 555 content column, so the card is full-width here; the 35
+      // measured inset rounds to $space-4 and keeps the 81-tall block centred in 151.
+      padding: t.$space-4;
+      background-color: t.$color-surface;
+      border-radius: t.$radius-lg;
+      // The frame's next row starts 32 below the card (201 → 233), and the panel's own
+      // row gap is already 24, so 8 completes it.
+      margin-bottom: t.$space-1;
     }
   }
 
@@ -569,11 +611,18 @@
   }
 
   // .calculator__gauge-read
+  //
+  // CENTRED ON THE ARC, not parked at its right end (Petr, 2026-08-05). Frame 283 is a
+  // 43×43 readout at x=401 in a gauge that spans 328…515 — centre 421.5 against the
+  // readout's 422.5 — and both its texts are 43 wide, i.e. centre-aligned inside it.
+  // Its bottom sits level with the arc's bottom, which is what puts the number inside
+  // the curve rather than beside it.
   &__gauge-read {
     position: absolute;
-    right: 0;
+    left: 50%;
     bottom: 0;
-    text-align: right;
+    text-align: center;
+    transform: translateX(-50%);
   }
 
   // .calculator__gauge-value
@@ -872,11 +921,15 @@
     gap: t.$space-2 !important;
   }
 
+  // 57 tall, matching the button below them — Frame 293 and Frame 105 are both 493×57,
+  // 8 apart. $btn-height-wide already existed for exactly this ("the 493×57 wide
+  // variant"); the form was using the 48 standard.
   input[type='text'],
   input[type='email'],
   input[type='tel'] {
     @include m.text-body-sm;
 
+    min-height: t.$btn-height-wide;
     padding: 10px t.$space-2 !important;
     color: t.$color-ink !important;
     background-color: t.$color-surface !important;
@@ -884,17 +937,25 @@
     border-radius: t.$radius-md !important;
   }
 
+  // 8 between the input row and the button (Frame 293 ends 57, Frame 105 starts 65).
   .gform_footer {
-    margin: t.$space-2 0 0 !important;
+    margin: t.$space-1 0 0 !important;
     padding: 0 !important;
   }
 
+  // 57 tall (Petr, 2026-08-05) — Frame 105 is 493×57, which is what $btn-height-wide
+  // was minted for. It was on $btn-height (48), the narrow standard.
   input[type='submit'],
   .gform_button {
     @include m.text-ui;
 
     width: 100%;
-    min-height: t.$btn-height;
+    // ⚠️ `!important`, like every other declaration in this block. Without it the
+    // computed min-height came back 38px even though the cascade showed OUR 57px
+    // winning — Gravity Forms resolves its own control height through
+    // `--gf-ctrl-*` variables, so the losing rule is not a plain declaration you can
+    // out-specify. min-height was the one property here that lacked the flag.
+    min-height: t.$btn-height-wide !important;
     padding: t.$btn-padding t.$space-3 !important;
     color: t.$color-canvas !important;
     background-color: t.$color-ink !important;

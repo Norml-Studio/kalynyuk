@@ -232,22 +232,42 @@ $ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (fl
 						 * here is that legacy class, not the HTML attribute.
 						 */
 						?>
+						<?php
+						/*
+						 * ⚠️ `rate-minus` / `rate-plus` ARE LOAD-BEARING, and their absence
+						 * was a real bug: the −/+ buttons did nothing at all.
+						 *
+						 * calculator.js walks `.rate-stepper` and then looks for
+						 * `.rate-plus` / `.rate-minus` INSIDE it. The BEM rewrite renamed
+						 * both to `calculator__step`, so both lookups returned null, both
+						 * `if (plus)` / `if (minus)` guards skipped, and no listener was
+						 * ever attached. Nothing threw — exactly the silent failure the
+						 * id-contract note above describes, except these are classes, so
+						 * the 30-id check could not catch them.
+						 *
+						 * Reported by Petr as "они не кликаются" (2026-08-05).
+						 *
+						 * The glyph is a real MINUS SIGN (U+2212), not a hyphen: at 20px a
+						 * hyphen is visibly shorter and sits higher than the `+` beside it,
+						 * which is what made the pair look misaligned.
+						 */
+						?>
 						<div class="calculator__stepper rate-stepper hidden" id="variable-stepper">
-							<button class="calculator__step" type="button" aria-label="-">-</button>
+							<button class="calculator__step rate-minus" type="button" aria-label="-">−</button>
 							<span class="input-wrapper">
 								<input class="calculator__step-value" type="text" inputmode="decimal" id="variable-rate-input" value="0,75" aria-label="Spread, %" />
 								<span class="percent-symbol">%</span>
 							</span>
-							<button class="calculator__step" type="button" aria-label="+">+</button>
+							<button class="calculator__step rate-plus" type="button" aria-label="+">+</button>
 						</div>
 
 						<div class="calculator__stepper rate-stepper" id="fixed-stepper">
-							<button class="calculator__step" type="button" aria-label="-">-</button>
+							<button class="calculator__step rate-minus" type="button" aria-label="-">−</button>
 							<span class="input-wrapper">
 								<input class="calculator__step-value" type="text" inputmode="decimal" id="fixed-rate-input" value="2,80" aria-label="TAN, %" />
 								<span class="percent-symbol">%</span>
 							</span>
-							<button class="calculator__step" type="button" aria-label="+">+</button>
+							<button class="calculator__step rate-plus" type="button" aria-label="+">+</button>
 						</div>
 					</div>
 				</div>
