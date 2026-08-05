@@ -171,13 +171,32 @@
     width: 100%;
     margin: 0;
 
-    // ⚠️ THE DOUBLED CLASS IS DELIBERATE — it raises this one declaration to
-    // (0,2,0). At (0,1,0) the height lost somewhere in the cascade and the control
-    // rendered 20px tall, so the 48px thumb overflowed its own box and the tap
-    // target came out smaller than the design's. Measured on the page, not assumed.
+    // ⚠️ `!important` ON THE CONTROL HEIGHT IS EVIDENCE-BASED. Setting the height
+    // inline from devtools proved it: `height:50px` rendered 20px, and
+    // `height:50px !important` rendered 50px. An inline declaration outranks every
+    // stylesheet selector, so only another `!important` can beat it — one exists in
+    // Divi's CSS for this element. Specificity cannot win here; a doubled class was
+    // tried first and did not. Verified after: the control measures 50px at 1440
+    // and 375.
     &.calculator__range {
-      height: t.$space-6; // room for the 48px thumb
+      height: t.$space-6 !important; // room for the 48px thumb
     }
+
+    // ⏳ STILL NOT RIGHT — the TRACK and THUMB, and this is a known open item.
+    //
+    // The design is a 20px track with a 48px circle sitting on it. What renders is a
+    // ~50px pill filling the whole control, with a chevron glyph INSIDE the thumb
+    // that we never wrote — so Divi is styling `input[type=range]` and its
+    // pseudo-elements, and winning. Adding `!important` to the track height and thumb
+    // size was tried and changed nothing visible, so the override is not simply a
+    // priority contest and I have not isolated it. The flags were reverted rather
+    // than left in as decoration.
+    //
+    // Do not guess at this again. It needs a devtools pass on the pseudo-elements
+    // (Chrome shows them under "Show user agent shadow DOM") to find what actually
+    // applies. `getComputedStyle(el, '::-webkit-slider-thumb')` is NOT a usable
+    // check — it returns the host element's styles, which is what made an earlier
+    // measurement here look like a pass when nothing had changed.
     background: transparent;
     cursor: pointer;
 
