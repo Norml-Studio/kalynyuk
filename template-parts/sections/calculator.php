@@ -349,8 +349,8 @@ $ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (fl
 						</svg>
 
 						<div class="calculator__gauge-read" id="dsti-info">
-							<p class="calculator__gauge-value" id="dsti-percent">—</p>
-							<p class="calculator__gauge-caption">DSTI</p>
+							<div class="calculator__gauge-value" id="dsti-percent">—</div>
+							<div class="calculator__gauge-caption">DSTI</div>
 						</div>
 					</div>
 				</div>
