@@ -349,6 +349,57 @@ skipped. `ak_native_sections` cleared from production. Backups kept on the serve
 `~/backup-theme-20260806-1925.tgz`, `~/backup-akmeta-20260806-1925.tsv`. Rollback is one
 meta key — `post_content` was never touched.
 
+### 🚀 The deploy was INCOMPLETE — `/pt/` shipped the calculator in Ukrainian
+
+Petr, minutes after the go-live: «на pt калькулятор не переведен а на лок переведен». He
+was right, and the miss was mine.
+
+📌 **I shipped files + post meta and called it done. The translations live in neither.**
+Polylang string translations sit in **`wp_termmeta._pll_strings_translations`** and the pt
+copy sits on the *translated* page (2483) — so the deploy carried none of it. `/pt/` then
+rendered the calculator in Ukrainian through `ak_section_field()`'s default-language
+fallback, which is **designed** to do that so a new language is never blank. It looks like
+a successful deploy.
+
+⚠️ **Two mistakes made it possible, and both were mine to avoid:**
+1. I wrote "Translations need no seeding" in the go-live entry. True of the section **list** — pt/en/ru inherit page 11's — but I let it stand for the **copy**, which is a different thing entirely.
+2. I "verified `/pt/`" by asserting the calculator *renders*. Language had been an entire workstream in this same session, and I still did not assert a single Portuguese string. **Checking that a page renders a section is not checking that the section is translated.**
+
+#### The trap inside the fix
+
+⚠️ **Polylang matches on the SOURCE string, and one source embeds an absolute URL.** The
+Gravity Forms consent choice is `Я погоджуюсь з <a href="{site}/privacy-policy/">…`, so its
+source is *different on production*. Seeding local's pair verbatim would have created an
+entry keyed to a string that never occurs there — a translation nothing ever looks up, and
+a consent notice left in Ukrainian on a licensed intermediary's form. Normalised
+`kalynyuk.loc` → `www.kalynyuk.com` in **both** source and translation. Every other form-3
+source was compared field by field first and is byte-identical.
+
+⚠️ **And I backed up the wrong table.** `PLL_MO` is documented as using a `polylang_mo`
+post type; on this install that query returns **zero rows**, and I had already exported
+`wp_posts` — a **157 MB** dump of the wrong data onto a shared host carrying three sites.
+Replaced with a 17 KB `wp_termmeta` export, which is where the strings actually are.
+
+#### Done and verified
+
+Seed was **add-only** — it skipped every source production already translated (kept 46 pt /
+47 en / 40 ru), so nothing edited in the live admin was clobbered. Added 37 pt / 20 en /
+20 ru, plus `ak_calc_heading` + `ak_calc_intro` on 2483.
+
+Production `/pt/` now matches local **exactly**: all six field labels and their tooltip
+bodies, the three modes (Variável / Fixa / Manual), «Calcular», the form title, the submit
+button (Enviar cálculo) — and a **Cyrillic sweep of every leaf node, `aria-label` and
+`placeholder` inside the section returns zero**. DSTI 37%. The consent notice reads
+"Concordo com a Política de Privacidade…" with its link pointing at
+`https://www.kalynyuk.com/privacy-policy/` — the normalisation working end to end.
+
+`/en/` and `/ru/` render no calculator at all: pages 2484 / 2485 are still empty drafts.
+That is expected, not a regression.
+
+`ci-cd.md` now documents the **third deploy leg** (DB-resident translations), where the
+strings actually live, the URL-in-source trap, and the add-only rule. Backup:
+`~/backup-termmeta-20260806-1942.sql`.
+
 ### Still open
 
 - ⏳ **IMT is still wrong, and was NOT guessed.** Our bracket table gives 22 506 € where Anna's gives 22 237 (delta 270) and 14 506 where hers gives 1 557 (**delta 12 950**). The two cases differ only by the client's age — 31 vs 36 — which is almost certainly the **IMT Jovem** first-time-buyer relief, and explains why her tool has a date-of-birth field at all. Implementing it needs the actual brackets and eligibility rules. **Asked, not invented.**

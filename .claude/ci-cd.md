@@ -38,6 +38,36 @@ That cuts both ways, and the second direction bites:
 does not know, so the pre-write is a no-op until the sync lands and the flip is atomic.
 See *Deploy commands*.
 
+### ⚠️ THERE IS A THIRD DEPLOY, AND IT IS NOT POST META (2026-08-06)
+
+"Code and content" is one split too few. A multilingual section has **three** things to
+ship, and the third bit immediately after the calculator go-live:
+
+1. **Files** — theme, via tarball.
+2. **Post meta** — `ak_sections` / `ak_inline_sections` / the `ak_*` copy, per page.
+3. **DB-resident TRANSLATIONS**, which live in neither:
+   - Polylang string translations → **`wp_termmeta._pll_strings_translations`**, one row per
+     language term (21 = pt, 25, 29 here). ⚠️ **NOT** a `polylang_mo` post type — that
+     query returns zero rows on this install, and backing up `wp_posts` instead produced a
+     157 MB dump of the wrong table on a shared host with three sites.
+   - Per-language ACF copy on the *translated* page (`ak_calc_heading` / `ak_calc_intro` on
+     2483 for pt), which seeding the Ukrainian page does not touch.
+
+Miss step 3 and the section renders in the DEFAULT LANGUAGE on every translation — not
+blank, not broken, just Ukrainian. `ak_section_field()`'s fallback is designed to do exactly
+that, so it looks like a successful deploy. **Checking that `/pt/` renders the section is
+not checking that `/pt/` is translated.**
+
+⚠️ **Polylang matches on the SOURCE STRING, and one source embeds an absolute URL.** The
+Gravity Forms consent choice is `Я погоджуюсь з <a href="{site}/privacy-policy/">…`, so its
+source differs per environment. Seeding local's pair verbatim creates an entry keyed to a
+string that never occurs on production — a translation nothing ever looks up. Normalise
+`kalynyuk.loc` → `www.kalynyuk.com` in **both** the source and the translation. Everything
+else in form 3 is byte-identical; verified field by field before seeding.
+
+**Seed add-only.** The seed skips any source production already translates (it kept 46 pt /
+47 en / 40 ru), so a translation edited in the live admin is never clobbered by local.
+
 ### ⚠️ …EXCEPT WHEN THE CODE IS ALREADY THERE — reverse the order (2026-08-06)
 
 "Meta first" rests on one premise: **the live code does not know the key yet.** Once a
