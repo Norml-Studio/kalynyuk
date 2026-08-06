@@ -488,11 +488,14 @@ $thumb-arrows: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/s
     gap: t.$space-1;
     // 243 is the frame's width and the control is a fixed-size thing, not fluid text —
     // without it the stepper shrank to its content and the −/+ sat on top of the value.
-    // The 6px padding is NOT the frame's stated 16/10: its buttons are absolutely placed
-    // at 6 from each edge (43 − 31 = 12), so 6 is the geometry that actually renders.
+    //
+    // Padding is 5, and that is arithmetic, not taste: the frame's 43 INCLUDES its 1px
+    // inside stroke, so 43 = 1 + 5 + 31 + 5 + 1. It also puts the buttons 6 from the
+    // outer edge, which is exactly where the frame draws them (x=6 and x=206 of 243).
+    // At 6 the control came out 45.
     width: 243px;
     max-width: 100%;
-    padding: 6px;
+    padding: 5px;
     border: t.$border-width solid t.$color-ink-faint;
     border-radius: t.$radius-md;
 
@@ -511,16 +514,19 @@ $thumb-arrows: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/s
       justify-content: center;
       flex: 1 1 auto;
       min-width: 0;
+      // The legacy sheet gives this a 6px gap below 900, which reopened the split between
+      // the number and its `%` on mobile after everything else had been closed. The two
+      // are one token at every width.
+      gap: 0;
     }
 
-    // ⚠️ `position: static` UNDOES A LEGACY ABSOLUTE. The old calculator CSS ships
-    // `.percent-symbol { position: absolute; right: 8px; top: 50% }`, which pinned the
-    // `%` to the right edge of `.input-wrapper` while the number sat in its own 60px box
-    // — measured 29px apart. The frame has no separate `%` element at all (Frame 4166's
-    // characters are "2.70%"), so the two have to sit together and be centred as one
-    // token. In flow, the wrapper's `justify-content: center` does exactly that.
+    // ⚠️ STILL NEEDED AFTER `.rate-stepper` WENT. The legacy `.percent-symbol
+    // { position: absolute; right: 8px; top: 50%; transform: translateY(-50%) }` is NOT
+    // scoped to `.rate-stepper` — it is a bare class rule, so dropping the wrapper class
+    // did not free it. It pinned the `%` to the right edge of `.input-wrapper` while the
+    // number sat in its own box, 29px away.
     //
-    // This is also why `.input-wrapper` carries `position: relative` — it was the
+    // This is also why `.input-wrapper` keeps `position: relative` — it was the
     // containing block for that absolute. Kept: harmless, and it still scopes anything
     // else the legacy sheet positions in here until phase 4 removes it.
     .percent-symbol {
@@ -533,6 +539,21 @@ $thumb-arrows: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/s
       // a superscript — visible immediately in the render.
       transform: none;
       color: t.$color-ink;
+
+      // ⚠️ FLAGGED SIZES, and only because of one mobile rule: the legacy sheet ships
+      // `@media (max-width: 900px) { .percent-symbol { font-size: 14px !important;
+      // line-height: 16px !important } }`. It is a BARE class rule, so dropping
+      // `.rate-stepper` from the markup did not free it, and being flagged it beats this
+      // block's (0,2,0) on its own. Below 900 the `%` rendered 14px against the value's
+      // 18 and sat 6px off it. These restate `text-body-strong` verbatim rather than
+      // inventing a size — keep them in step if that mixin ever changes.
+      font-size: t.$text-body-mobile !important;
+      line-height: t.$lh-snug !important;
+
+      @include m.bp(desktop) {
+        font-size: t.$text-body-desktop !important;
+        line-height: t.$lh-normal !important;
+      }
     }
   }
 
@@ -541,6 +562,14 @@ $thumb-arrows: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/s
   // $text-body-desktop is 20px and the frame's "+" is a 12×21 box, i.e. 20px Nunito
   // Sans. So the size was NOT the problem: the hyphen was (now U+2212 in the markup),
   // together with the buttons doing nothing at all.
+  //
+  // 31×31, radius 12, sunken fill — plain declarations now, and that is the point of
+  // having dropped `.rate-stepper` from the markup (see the note on __stepper above).
+  //
+  // ⏳ The glyph colour is the ONE value here not confirmed against the frame — the Figma
+  // bridge dropped before 1130:4168's fill could be read. $color-accent is what rendered
+  // before and matches Petr's reference; the legacy sheet used #307156 against the
+  // canonical #307155. Re-check 1130:4168 when the bridge is back.
   &__step {
     display: inline-flex;
     align-items: center;
@@ -550,7 +579,7 @@ $thumb-arrows: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/s
     height: 31px;
     font-size: t.$text-body-desktop;
     line-height: 1;
-    color: t.$color-ink;
+    color: t.$color-accent;
     background-color: t.$color-surface-sunken;
     border-radius: t.$radius-chip;
     cursor: pointer;
@@ -567,26 +596,23 @@ $thumb-arrows: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/s
 
   // .calculator__step-value
   //
-  // ⚠️ THE LEGACY CALCULATOR CSS WINS HERE, and it is not Divi's this time. The page
-  // still ships `.rate-stepper input { width: auto !important; text-align: center;
-  // max-width: 120px; padding: 3px 10px }` — (0,1,1) against this class's (0,1,0). The
-  // result was a 120px box with the number centred in it and 10px of padding on the
-  // right, so `2.84` and `%` sat far apart instead of reading as one value.
+  // ⚠️ STILL A DOUBLED SELECTOR, and for a different opponent than the rest of the
+  // stepper. Dropping `.rate-stepper` freed this from the legacy sheet's `input`
+  // rules — but the element is `type="text"`, so Divi's `input[type="text"]
+  // { background: #fff; border: 1px solid #bbb; padding: 2px }` at (0,1,1) was next in
+  // line and would have put a white box with a grey border around the rate. The legacy
+  // rule had been the only thing holding Divi off. No `!important` — Divi's is not
+  // flagged; contrast `.calculator__input`, which needs the same trick for the same
+  // reason.
   //
-  // The frame has NO separate `%` element at all: Frame 4166's characters are literally
-  // "2.70%". So the pair has to look like one token — the number right-aligned in a box
-  // just wide enough, the `%` immediately after it, and `.input-wrapper` centring the two
-  // together (which is what puts the value at the frame's dead-centre x=91.5 of 243).
-  //
-  // `.rate-stepper` is kept on purpose — calculator.js finds the steppers by it — so its
-  // styling comes with it, exactly like `.contact-form` did. Out-specifying is the fix
-  // until phase 4 deletes the legacy sheet. `!important` on width only, to beat theirs.
-  &__stepper &__step-value,
-  &__step-value {
+  // The frame has NO separate `%` element: Frame 4166's characters are literally
+  // "2.70%". So the pair reads as one token — number right-aligned in a box just wide
+  // enough, `%` immediately after, `.input-wrapper` centring the two together, which is
+  // what lands the value at the frame's dead-centre x=91.5 of 243.
+  &__stepper &__step-value {
     @include m.text-body-strong;
 
-    width: 5ch !important;
-    max-width: none;
+    width: 5ch;
     padding: 0;
     color: t.$color-ink;
     text-align: right;

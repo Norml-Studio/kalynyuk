@@ -395,8 +395,14 @@ export function initCalculator() {
         });
       });
   
-      // Stepper buttons
-      document.querySelectorAll('.rate-stepper').forEach(stepper => {
+      // Stepper buttons.
+      //
+      // ⚠️ Keyed on `.calculator__stepper`, NOT the legacy `.rate-stepper` — the legacy
+      // class was dropped from the markup on 2026-08-06 because it dragged a whole
+      // stylesheet with it (see the note in _calculator.scss). If you reintroduce
+      // `.rate-stepper` anywhere, you reintroduce a 24px-tall control with 24px round
+      // buttons and an 8px value on mobile.
+      document.querySelectorAll('.calculator__stepper').forEach(stepper => {
         const plus = stepper.querySelector('.rate-plus');
         const minus = stepper.querySelector('.rate-minus');
         const input = stepper.querySelector('input');

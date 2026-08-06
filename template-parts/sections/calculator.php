@@ -303,7 +303,7 @@ $ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (fl
 						 * which is what made the pair look misaligned.
 						 */
 						?>
-						<div class="calculator__stepper rate-stepper hidden" id="variable-stepper">
+						<div class="calculator__stepper hidden" id="variable-stepper">
 							<button class="calculator__step rate-minus" type="button" aria-label="-">−</button>
 							<span class="input-wrapper">
 								<input class="calculator__step-value" type="text" inputmode="decimal" id="variable-rate-input" value="0,75" aria-label="Spread, %" />
@@ -312,7 +312,7 @@ $ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (fl
 							<button class="calculator__step rate-plus" type="button" aria-label="+">+</button>
 						</div>
 
-						<div class="calculator__stepper rate-stepper" id="fixed-stepper">
+						<div class="calculator__stepper" id="fixed-stepper">
 							<button class="calculator__step rate-minus" type="button" aria-label="-">−</button>
 							<span class="input-wrapper">
 								<input class="calculator__step-value" type="text" inputmode="decimal" id="fixed-rate-input" value="2,80" aria-label="TAN, %" />
@@ -321,7 +321,7 @@ $ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (fl
 							<button class="calculator__step rate-plus" type="button" aria-label="+">+</button>
 						</div>
 
-						<div class="calculator__stepper rate-stepper hidden" id="manual-stepper">
+						<div class="calculator__stepper hidden" id="manual-stepper">
 							<button class="calculator__step rate-minus" type="button" aria-label="-">−</button>
 							<span class="input-wrapper">
 								<input class="calculator__step-value" type="text" inputmode="decimal" id="manual-rate-input" value="2,70" aria-label="TAN, %" />
