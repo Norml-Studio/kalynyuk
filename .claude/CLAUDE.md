@@ -101,9 +101,12 @@ that touches deploy or DB reads `ci-cd.md` first** — `vibe-wp-developer`,
 `dev-wp-developer`, `vibe-wp-manager`, `dev-wp-migration`. The catalog of patterns
 lives in `{norml-claude-skills}/.claude/skills/dev-ci-cd/`.
 
-⚠️ `ci-cd.md` is currently **provisional** — the pattern is a default, not a
-confirmed decision, and the environment rows are unfilled. Deploys are blocked until
-it's confirmed.
+✅ **`ci-cd.md` is OPERABLE** — both original blockers (no repo, no credentials) closed
+2026-07-28/30, first real deploy 2026-08-03, calculator go-live 2026-08-06.
+
+⚠️ This line read "Deploys are blocked" until 2026-08-06 — three days after deploys
+started working, and `ci-cd.md` had already logged its own STATUS block going stale the
+same way. **Two files now state deploy readiness; when it changes, change both.**
 
 ## Design contract — REQUIRED READING
 

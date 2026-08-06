@@ -286,6 +286,69 @@ Verified 16/16 on a stepper-specific check at **1440 and 375** — 243×43, butt
 radius 12 six from each edge, value and `%` the same size and touching, pair centred, −/+
 still wired — plus 47/47 + 48/48.
 
+### 🚀 DEPLOYED — the calculator is live, and DSTI is finally right on the live site
+
+Petr: «починi DSTI и задеплой». Two corrections came out of doing it.
+
+📌 **The DSTI rate fix was already in the code** — I had said in chat that the branch
+subtracting the index "ломается"; it did not. All three branches already used the contract
+rate and local already showed 37%. The fix was never the code; it was that **the code had
+never reached visitors.**
+
+📌 **Our calculator was DARK on production.** Shipped 2026-08-03, but page 11's
+`ak_inline_sections` did not list it and page 566 had **no `ak_*` meta at all**. Visitors
+were seeing Divi's legacy calculator with the original `− INDEXANTE_CONST` defect.
+Confirmed by grepping the live HTML: zero `calculator__*` classes, only `calculator-form` /
+`rate-stepper` / `input-inline-control`. **So deploying files alone would have changed
+nothing** — that is why the scope question went back to Petr, who chose to go live on both
+pages.
+
+⚠️ **AND A CORRECTION TO WHAT I TOLD PETR EARLIER: `ak_calc_help_content` is NOT empty
+everywhere.** It is empty on page 11 but carries **3 971 bytes** of help copy on page 566.
+So «Довідка» renders on `/calc/` — verified live. My "the button is orphaned" was wrong;
+it is orphaned on the homepage only.
+
+#### ⚠️ The deploy order in `ci-cd.md` had to be REVERSED, and the reason generalises
+
+`ci-cd.md` says *meta first, then files* — sound, but it rests on one premise: **the live
+code does not know the key yet.** The calculator had been shipped dark, so production
+already read `ak_inline_sections`. Seeding first would have activated the section **using
+the 2026-08-03 build** — the old design, live, for the minute until the tarball landed.
+Order used: **files → meta → cache.** `ci-cd.md` now carries the rule and how to tell which
+case you are in.
+
+#### What the pre-flight caught before anything was written
+
+- **`post_content` is NOT identical between environments** (page 11 differs by 26 bytes, 566 by 5), so "same meta ⇒ same render" could not be assumed. Checked what the mechanism *actually* matches on instead: `ak_replace_divi_section_by_id()` keys on the `module_id` attribute, and **`module_id="calculator"` exists on both sides** — so the locator is safe regardless of the byte diff.
+- ⚠️ **`/calc/` needs `ak_strip_extra = 1`, not just `ak_sections`.** The calculator's Divi layout is TWO sections (calculator + the `infobox` popup). With only `ak_sections`, `ak_native_section_count()` returns 1 and the popup section would have been left rendering as a leftover.
+- ⚠️ **Six `ak_about_*` bodies and `ak_about_portrait` differ between environments and were deliberately NOT touched.** Production's bodies are `<p>`-wrapped (+7 bytes — verified by word-diff, not assumed) and its portrait is a different attachment ID. `ci-cd.md` warns about exactly this: production's post **2567 is an attachment**, while locally 2567 is a *revision*. Seeding "everything from local" would have pushed `kalynyuk.loc` content shapes and a wrong image onto production.
+- **Local posts 2567 / 2571 carrying section meta are REVISIONS**, not pages — nothing to replicate.
+- **Translations need no seeding**: pt 2483 / en 2484 / ru 2485 carry no section meta, so `ak_section_field()`'s default-language fallback gives them page 11's list. Verified live on `/pt/`.
+- The seed was **generated programmatically from local values** rather than hand-written — 3 971 bytes of Cyrillic HTML is not something to retype, and `ci-cd.md` forbids inlining PHP through the shell.
+
+#### Verified live
+
+| | home | /calc/ | /pt/ |
+|---|---|---|---|
+| payment | 925,89 € | 925,89 € | 925,89 € |
+| **DSTI** | **37%** | **37%** | **37%** |
+| card #fef8ef r24 | ✓ | ✓ | ✓ |
+| three modes | ✓ | ✓ | ✓ |
+| «Розрахувати» | ✓ | ✓ | ✓ |
+| stepper 43px | ✓ | ✓ | ✓ |
+
+925,89 ÷ 2 500 = 37% — **the page now agrees with itself**, and matches the method derived
+from Anna's own simulator. No duplicate calculator (`id="mensalidade"` appears exactly once
+per page; `calculator-form` survives only inside legacy CSS selector text). Hero still
+renders on the homepage and `/pt/` — absent on `/calc/` by design, since that page's
+`ak_sections` is the calculator. Only console error is the pre-existing Review Wall
+`remodal.min.js` `b.map is not a function`, attributed by stack to the plugin.
+
+Final `ak_*` diff: **158 keys both sides**, the only differences being the 7 deliberately
+skipped. `ak_native_sections` cleared from production. Backups kept on the server:
+`~/backup-theme-20260806-1925.tgz`, `~/backup-akmeta-20260806-1925.tsv`. Rollback is one
+meta key — `post_content` was never touched.
+
 ### Still open
 
 - ⏳ **IMT is still wrong, and was NOT guessed.** Our bracket table gives 22 506 € where Anna's gives 22 237 (delta 270) and 14 506 where hers gives 1 557 (**delta 12 950**). The two cases differ only by the client's age — 31 vs 36 — which is almost certainly the **IMT Jovem** first-time-buyer relief, and explains why her tool has a date-of-birth field at all. Implementing it needs the actual brackets and eligibility rules. **Asked, not invented.**
@@ -293,7 +356,7 @@ still wired — plus 47/47 + 48/48.
 - ⏳ **[DECISION] Deploy waits for Anna's IMT answer** (Petr). Production therefore keeps the broken `/pt/` calculator — no styles and Ukrainian labels — until the brackets arrive. The alternative offered was deploying now (IMT would have been no more wrong than it already is on production, which runs the same bracket table) and it was declined in favour of shipping once, correct.
 - **The tip bodies are pt-only.** `/en/` and `/ru/` inherit Ukrainian; those front pages are still drafts and 404, and all 17 strings are registered, so both languages appear in Polylang → Strings for whoever fills them in.
 - **`ak_calc_help_content` is empty on page 11 too**, so the «Довідка» button still does not render in any language. ⚠️ **It is NOT the head button** — that is «Розрахувати», now built. Довідка has no slot in the frame at all, so where it belongs is an open question, not just a missing string: the panel it opens exists in the template, and the button is currently orphaned. Needs Petr to say whether Довідка survives as a control.
-- ⏳ **Вручну vs Фіксована is a live content question.** Both compute from a typed TAN, so today they are the same control twice. Either Фіксована becomes a preset rate (and only Вручну stays editable), or one of them goes.
+- ⏳ **Вручну vs Фіксована is a live content question — and it is now LIVE on production**.** Both compute from a typed TAN, so today they are the same control twice. Either Фіксована becomes a preset rate (and only Вручну stays editable), or one of them goes.
 - **The calculator has no tablet or phone frame.** `design.md` §13 gap #10 is closed for desktop only; the 375/768 behaviour is our own (columns stack, row gap drops to 32) and verified not to overflow, but it is not *designed*. Rescan before doing responsive work there.
 - ⏳ **`IMT Ilhas` — a THIRD tax metric, visible in Petr's reference and absent from our build.** The frame's tax row (`1130:4061`) carries 4 children against our 2, the dead `.imt-ilhas` tooltip existed in the legacy CSS, and `calculator.js`'s own header comment claims it computes IMT "for mainland and islands" — but there is **no islands function in the file**, only `calculateIMTContinente()`. So the comment is wrong and the metric was never ported. Adding it means an islands bracket table: **regulated figures, the same class of thing as IMT Jovem, so it goes to Anna rather than being invented.**
 - ⏳ **Re-check Figma `1130:4168` for the −/+ glyph colour** when the bridge is up — the one calculator value never read off the frame.

@@ -4,7 +4,7 @@
 > or DB reads this file FIRST. The cataloged patterns live in
 > `{norml-claude-skills}/.claude/skills/dev-ci-cd/`.
 
-## ✅ STATUS: OPERABLE — first real deploy 2026-08-03
+## ✅ STATUS: OPERABLE — first real deploy 2026-08-03 · calculator go-live 2026-08-06
 
 Both original blockers are closed:
 
@@ -37,6 +37,22 @@ That cuts both ways, and the second direction bites:
 **Therefore: write the meta FIRST, then sync the files.** The old code ignores meta keys it
 does not know, so the pre-write is a no-op until the sync lands and the flip is atomic.
 See *Deploy commands*.
+
+### ⚠️ …EXCEPT WHEN THE CODE IS ALREADY THERE — reverse the order (2026-08-06)
+
+"Meta first" rests on one premise: **the live code does not know the key yet.** Once a
+section has been shipped dark, that premise is gone — production already reads
+`ak_inline_sections`, so seeding the meta activates the section *using whatever theme
+version is currently on the server*.
+
+At the calculator go-live that would have put the **2026-08-03 build** in front of
+visitors for the minute between seeding and extracting the tarball — the old design, live,
+with no warning. So the order was **files → meta → cache**, and the flip stayed atomic
+because the section was dark until the very last step.
+
+**Rule:** meta first for a section production has never seen; **files first for a section
+already shipped dark.** Check which case you are in by grepping the live HTML for the
+section's own class before you decide.
 
 ---
 
