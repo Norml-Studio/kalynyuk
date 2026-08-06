@@ -241,6 +241,51 @@ intentional, so the tests were the stale part. Verified 47/47 + 48/48; modes on 
 with the stepper inside the column at 768 / 1024 / 1440 / 1600 / 2560, wrapping only at
 375, no overflow anywhere.
 
+### Finished the stepper (Figma `1130:4165`) — by deleting the class, not fighting it
+
+📌 **I had reported these buttons as done without measuring them.** The earlier commit
+claimed "31×31 radius 12 sunken buttons"; it had verified the stepper's *width* and the
+value centring and stopped. The buttons were rendering **24×24 circles with a 14px glyph**
+in a control **24px tall against the frame's 43**. The declarations were correct and
+completely inert. *Measuring the thing you changed is not the same as measuring the thing
+you claimed* — third instance of that shape this week.
+
+Root cause was the **legacy sheet**, not Divi. `.rate-stepper` is (0,1,1) against a lone
+`.calculator__step` (0,1,0), and it carries two stacked layers where the second undoes the
+first — `width:30px; border-radius:12px` then `width:24px!important; max-width:24px!important;
+border-radius:50%; font-size:14px!important` — plus `.rate-stepper { height:24px!important }`
+and, in media queries, `font-size:12px!important` / `8px!important` on the value.
+
+- ⚠️ **`max-width:24px!important` is why the first attempt half-worked**: height took our 31 while width stayed 24 *from the same pair of rules*. An asymmetry like that is a second constraint hiding, not a cascade mystery — worth remembering as a diagnostic.
+- **So the class went.** Same move as `.contact-form`, same reason: it was in the markup only so calculator.js could find the steppers, and it dragged a stylesheet with it. `calculator.js` now walks `.calculator__stepper`. The diff **removes more `!important` than it adds**.
+
+⚠️ **Two legacy rules survive the change and still need overriding**, because they are BARE
+class rules never scoped to `.rate-stepper` — dropping the wrapper class does not free
+them: `.percent-symbol { position:absolute; transform:translateY(-50%) }` (and `transform:
+none` is required, not tidying — dropping the absolute alone lifted the `%` into a
+superscript), and a **flagged** `@media (max-width:900px) .percent-symbol { font-size:14px
+!important }` that beats (0,2,0) on its own. `.input-wrapper` also gets a 6px gap below 900.
+**Lesson: check whether a legacy rule is scoped to the class you are removing before
+assuming removal frees you.**
+
+⚠️ **And a new opponent appears once the legacy goes.** The value is `type="text"`, so with
+`.rate-stepper input` gone, **Divi's `input[type="text"] { background:#fff; border:1px solid
+#bbb }` was next in line** — the legacy rule had been the only thing holding Divi off.
+Removing one layer of override can expose another; the doubled selector stays.
+
+Padding is **5, not 6**, and that is arithmetic: the frame's 43 *includes* its 1px inside
+stroke (43 = 1+5+31+5+1), which also lands the buttons 6 from the outer edge exactly where
+the frame draws them. At 6 the control measured 45.
+
+⏳ The −/+ **glyph colour** is the one value not confirmed against the frame — the Figma
+bridge dropped before `1130:4168`'s fill could be read. Kept as `$color-accent` (what
+rendered before, matches Petr's reference) but declared explicitly so phase 4 can delete
+the legacy sheet without silently turning them ink. **Re-check `1130:4168`.**
+
+Verified 16/16 on a stepper-specific check at **1440 and 375** — 243×43, buttons 31×31 at
+radius 12 six from each edge, value and `%` the same size and touching, pair centred, −/+
+still wired — plus 47/47 + 48/48.
+
 ### Still open
 
 - ⏳ **IMT is still wrong, and was NOT guessed.** Our bracket table gives 22 506 € where Anna's gives 22 237 (delta 270) and 14 506 where hers gives 1 557 (**delta 12 950**). The two cases differ only by the client's age — 31 vs 36 — which is almost certainly the **IMT Jovem** first-time-buyer relief, and explains why her tool has a date-of-birth field at all. Implementing it needs the actual brackets and eligibility rules. **Asked, not invented.**
@@ -251,6 +296,7 @@ with the stepper inside the column at 768 / 1024 / 1440 / 1600 / 2560, wrapping 
 - ⏳ **Вручну vs Фіксована is a live content question.** Both compute from a typed TAN, so today they are the same control twice. Either Фіксована becomes a preset rate (and only Вручну stays editable), or one of them goes.
 - **The calculator has no tablet or phone frame.** `design.md` §13 gap #10 is closed for desktop only; the 375/768 behaviour is our own (columns stack, row gap drops to 32) and verified not to overflow, but it is not *designed*. Rescan before doing responsive work there.
 - ⏳ **`IMT Ilhas` — a THIRD tax metric, visible in Petr's reference and absent from our build.** The frame's tax row (`1130:4061`) carries 4 children against our 2, the dead `.imt-ilhas` tooltip existed in the legacy CSS, and `calculator.js`'s own header comment claims it computes IMT "for mainland and islands" — but there is **no islands function in the file**, only `calculateIMTContinente()`. So the comment is wrong and the metric was never ported. Adding it means an islands bracket table: **regulated figures, the same class of thing as IMT Jovem, so it goes to Anna rather than being invented.**
+- ⏳ **Re-check Figma `1130:4168` for the −/+ glyph colour** when the bridge is up — the one calculator value never read off the frame.
 - ⚠️ **The stale-Divi-CSS sweep is now worth scheduling rather than noting.** Removing `contact-form` proved the point on live markup: orphan rules from deleted modules are still reaching our elements, and they win on load order. Something should enumerate what else `et-builder-module-design-deferred-11-cached-inline-styles` still matches before phase 4.
 - **The rate row ships TWO modes, not the design's three.** Figma shows «Вручну»; `updateCalculation()` branches on exactly `'fixed'` and `'variable'` and initialises `interestRate` to 0, so a third option would compute the payment at 0% and understate it. Petr's call (2026-07-31): ship the two that work.
 - ⚠️ **Not deployable by file sync alone.** Production needs the same DB seeding: 11 chrome strings, five Gravity Form 3 strings, `ak_calc_heading` / `ak_calc_intro` on 2483, the 16 tip bodies in pt, and `ak_calc_tip_label` in pt/en/ru. And the deploy still has to strip the calculator's Divi original (`ak_inline_sections` carries `calculator = calculator` locally; production deliberately does not yet), which is what makes this the deploy that finally takes the homepage to zero Divi sections.
