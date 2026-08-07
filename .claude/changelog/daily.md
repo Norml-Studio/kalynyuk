@@ -400,6 +400,57 @@ That is expected, not a regression.
 strings actually live, the URL-in-source trap, and the add-only rule. Backup:
 `~/backup-termmeta-20260806-1942.sql`.
 
+### 🚀 The emailed calculation was all zeros — and the writer was not in the repo
+
+Petr: the lead notification arrives as `Montante: 0 € / Prazo: 0 Meses / LTV: 0% /
+TAN: 0.000%`. **Every lead since go-live carried no numbers.**
+
+📌 **Grepping the theme for the form field found nothing, because the writer lives in
+Divi → Theme Options → Integration** (`et_divi`'s `divi_integration_body`). Worth
+remembering as a search location: this project has a fourth place code can hide, next to
+`post_content`, the CodeKit custom codes and the theme.
+
+It failed twice over, and the second failure is what produced zeros:
+
+1. It watched `document.querySelector('.result-data')` — a **legacy class the BEM rewrite removed**. `if (target)` was false, so its MutationObserver never attached and the value was never refreshed after a keystroke.
+2. Its one surviving call ran on `DOMContentLoaded`, **before** this module computes, so it captured the placeholder markup — exactly the zeros Anna received.
+
+Replaced by `syncCalcSummary()` in `calculator.js`, called at the end of
+`updateCalculation()` so it cannot drift from what is on screen. The Divi field is cleared
+(all 978 bytes were that one script — verified before clearing, backed up to
+`ak_backup_divi_integration_body` on both environments).
+
+It now captures **everything** instead of four values: six inputs, the rate mode and its
+rate, then Mensalidade, DSTI, Montante, Prazo, LTV, TAN, Indexante, Spread, Imposto Selo,
+IMT Cont. — plus the language and URL so Anna knows which language to answer in.
+
+⚠️ **Labels are read from the DOM, not hardcoded** — that is what makes it work on every
+language. Field labels come out in the visitor's language; metric labels stay Portuguese
+because they are Portuguese banking terms by design. Hardcoding Ukrainian would have
+re-broken `/pt/` the same way the section itself was broken.
+
+⚠️ **GF replaces the form markup on every AJAX render**, so `#input_3_6` becomes a new
+empty element after a failed validation. Without `gform_post_render` the visitor fixes a
+typo'd email, resubmits, and the calculation arrives blank — the original bug in a new hat.
+
+#### Two more of my own bugs, both found while wiring this
+
+- ⚠️ **`manualRateInp` was never in the `inputs` array**, so the third rate mode only recalculated when you *switched* to it — editing its value or pressing −/+ did nothing. **And my check passed anyway**: it asserted the field value changed while merely *printing* TAN beside it. TAN read 2.700% after the value went to 2.71 and the test went green. **Assert the thing you are claiming, not its neighbour.** Fifth false-pass this week.
+- ⚠️ **`formatYears()` hardcoded `" років"`, and it was LIVE on the Portuguese page** — «20 років» inside the term field. It hid because the string is written into the input's **VALUE**, and the Cyrillic sweep that "cleared" this section read text nodes, `aria-label` and `placeholder` — an input's value is none of those. Now flows through `data-ak-years` / `ak_str( 'ak_calc_years' )` like the indexante does, and **the sweep is widened to values, `title` and `alt`.**
+
+#### Verified on production
+
+47/47 + 48/48 + 16/16 locally, then the widened sweep against the live site: `/pt/` shows
+**"20 anos"**, zero Cyrillic anywhere in the section including input values, and a clean
+end-to-end lead reads:
+
+```
+Valor do imóvel: 450,000 €          Mensalidade: 1 960,70 €
+Valor da entrada: 90,000 €          DSTI: 65%
+Prazo do crédito (em anos): 20 anos Montante: 360 000 €   LTV: 80%
+Taxa de juro (anual): Fixa — 2.80%  TAN: 2.800%           Imposto Selo: 3 600 €
+```
+
 ### Still open
 
 - ⏳ **IMT is still wrong, and was NOT guessed.** Our bracket table gives 22 506 € where Anna's gives 22 237 (delta 270) and 14 506 where hers gives 1 557 (**delta 12 950**). The two cases differ only by the client's age — 31 vs 36 — which is almost certainly the **IMT Jovem** first-time-buyer relief, and explains why her tool has a date-of-birth field at all. Implementing it needs the actual brackets and eligibility rules. **Asked, not invented.**
