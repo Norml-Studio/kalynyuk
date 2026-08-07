@@ -647,10 +647,37 @@ export function initCalculator() {
         // Розраховуємо доступний дохід просто як чистий дохід мінус витрати.
         const availableIncome = netIncome - expenses;
         
-        // Розраховуємо DSTI на основі платежу зі знижкою для фіксованої.
-        let dstiVal = availableIncome > 0 ? (paymentForDSTI / availableIncome) * 100 : 100;
-        let dstiText = Math.round(Math.min(dstiVal, 100)) + "%";
-        dstiPercentEl.textContent = dstiText;
+        /*
+         * ⚠️ TWO SEPARATE THINGS USED TO FREEZE THIS READOUT AT "100%". Reported by Petr
+         * 2026-08-07: drag the term to 5 years and DSTI sticks at 100%, after which no
+         * other slider moves it.
+         *
+         *   1. `availableIncome > 0 ? … : 100` — with expenses 2 000 against income 2 000
+         *      the denominator is 0, so the ternary returned a CONSTANT. Measured: the
+         *      payment fell from 10 996,17 € to 1 027,24 € and DSTI never left 100%. That
+         *      is the freeze, and the loan term had nothing to do with it.
+         *   2. `Math.min(dstiVal, 100)` capped the DISPLAY. At 5 years the true ratio is
+         *      223%, at 10 years 120% — both printed "100%" while the payment visibly
+         *      changed, which reads as frozen too.
+         *
+         * Now: no disposable income → Infinity → the readout says ">100%" rather than
+         * inventing a number, and over-100 ratios print their real value. A broker needs
+         * 223% and 100% to look different. THE GAUGE still clamps to its 0…100 arc — the
+         * dot has nowhere further to go — which is why the clamp moved to the gauge maths
+         * below instead of being applied to the value itself.
+         *
+         * ⏳ The FORMULA is deliberately untouched: whether expenses belong in the
+         * numerator (Anna's simulator) or subtracted from income (here) is still her open
+         * question. Note the divide-by-zero only exists because of the current shape —
+         * `(payment + expenses) / income` cannot produce it.
+         */
+        const dstiVal = availableIncome > 0
+          ? (paymentForDSTI / availableIncome) * 100
+          : (paymentForDSTI > 0 ? Infinity : 0);
+
+        dstiPercentEl.textContent = Number.isFinite(dstiVal)
+          ? Math.round(dstiVal) + "%"
+          : ">100%";
     
         // Gauge
         if (gaugeDot && !isNaN(dstiVal)) {
