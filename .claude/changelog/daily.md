@@ -451,6 +451,39 @@ Prazo do crédito (em anos): 20 anos Montante: 360 000 €   LTV: 80%
 Taxa de juro (anual): Fixa — 2.80%  TAN: 2.800%           Imposto Selo: 3 600 €
 ```
 
+### 🚀 DSTI froze at 100% — a constant and a silent cap, not the loan term
+
+Petr: drag the term to 5 years, DSTI sticks at 100%, and then no other slider moves it.
+
+📌 **The loan term had nothing to do with it.** His screenshot happened to trip two
+independent things at once:
+
+1. `availableIncome > 0 ? … : 100` returned a **constant**. With expenses 2 000 against income 2 000 the denominator is zero. Measured the freeze: the payment fell from **10 996,17 € to 1 027,24 €** across four slider moves and DSTI never left 100%.
+2. `Math.min(dstiVal, 100)` capped the **display**. At 5 years the true ratio is 223%, at 10 years 120% — both printed "100%" while the payment visibly changed, so even with expenses at zero it read as frozen until ~15 years.
+
+Now the ratio prints its real value and "no disposable income" says **`>100%`** instead of
+inventing a number. A broker needs 223% and 100% to look different. **The gauge still
+clamps** to its 0…100 arc — the dot has nowhere further to go — so the clamp moved into the
+gauge maths rather than onto the value. Verified: the dot pins at the arc end for both 122%
+and Infinity and tracks normally at 28%.
+
+Live on production, his exact inputs:
+
+| term | payment | before | now (expenses 0) |
+|---|---|---|---|
+| 5y | 10 996,17 € | 100% | **550%** |
+| 10y | 5 881,88 € | 100% | **294%** |
+| 20y | 3 349,53 € | 100% | **167%** |
+| 30y | 2 527,00 € | 100% | **126%** |
+
+⏳ **The formula is deliberately untouched — and this bug is an argument in that pending
+decision.** With expenses ≥ income the readout is now honest but still does not *move*,
+because under `payment / (income − expenses)` it genuinely cannot: the denominator is zero
+whatever the payment does. Under the standard shape Anna's simulator uses,
+`(payment + expenses) / income`, the same case reads **650% → 226%** across 5y→30y — 
+responsive, and no divide-by-zero possible. **The freeze is a symptom of the formula
+question, not just a coding slip.** Worth putting in front of her with these numbers.
+
 ### Still open
 
 - ⏳ **IMT is still wrong, and was NOT guessed.** Our bracket table gives 22 506 € where Anna's gives 22 237 (delta 270) and 14 506 where hers gives 1 557 (**delta 12 950**). The two cases differ only by the client's age — 31 vs 36 — which is almost certainly the **IMT Jovem** first-time-buyer relief, and explains why her tool has a date-of-birth field at all. Implementing it needs the actual brackets and eligibility rules. **Asked, not invented.**
