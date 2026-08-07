@@ -498,3 +498,39 @@ question, not just a coding slip.** Worth putting in front of her with these num
 - ⚠️ **The stale-Divi-CSS sweep is now worth scheduling rather than noting.** Removing `contact-form` proved the point on live markup: orphan rules from deleted modules are still reaching our elements, and they win on load order. Something should enumerate what else `et-builder-module-design-deferred-11-cached-inline-styles` still matches before phase 4.
 - **The rate row ships TWO modes, not the design's three.** Figma shows «Вручну»; `updateCalculation()` branches on exactly `'fixed'` and `'variable'` and initialises `interestRate` to 0, so a third option would compute the payment at 0% and understate it. Petr's call (2026-07-31): ship the two that work.
 - ⚠️ **Not deployable by file sync alone.** Production needs the same DB seeding: 11 chrome strings, five Gravity Form 3 strings, `ak_calc_heading` / `ak_calc_intro` on 2483, the 16 tip bodies in pt, and `ak_calc_tip_label` in pt/en/ru. And the deploy still has to strip the calculator's Divi original (`ak_inline_sections` carries `calculator = calculator` locally; production deliberately does not yet), which is what makes this the deploy that finally takes the homepage to zero Divi sections.
+
+### What is left of Divi on the homepage — and why the pt calculator is *still* slightly off
+
+**Production moved mid-session.** The earlier diagnosis in this file describes the *pre-deploy* state; `calculator.php` on production is dated 2026-08-07 09:07 and `dist/` 10:29, and page 11's `ak_inline_sections` now leads with `calculator = calculator`. The native calculator is live. Re-measured everything afterwards rather than leaving a stale conclusion standing.
+
+#### Divi sections remaining: ZERO
+
+`.et_pb_section` and `.et_pb_module` both count **0** on `/` and `/pt/`. All ten sections are native — hero, about, cta, services, trust, calculator, order, testimonials, faq, seo. `/en/` and `/ru/` still 404 (their front pages 2484 / 2485 are drafts), so there is no third or fourth homepage to check.
+
+✅ **The floating consent checkbox is gone.** Both `.ginput_container_checkbox` instances are now `position: static` — one inside `.calculator`, one in the footer — on both languages. The `position:absolute; bottom:40px` rule went with the Divi module that carried it.
+
+#### What Divi still contributes
+
+- **Wrappers**, one each: `#page-container`, `#et-main-area`, `.et_builder_inner_content`, `.et-l--post` (Theme Builder). `footer.php` closes them deliberately; phase 4 removes them.
+- **Body classes** — `wp-theme-Divi`, `et_header_style_left`, `et_pb_footer_columns2`, …
+- **Assets on every page load** — `et-divi-dynamic-{id}.css`, `et-divi-customizer-global.min.css`, `Divi/js/scripts.min.js`, `core/admin/js/common.js`, `jquery.fitvids.js`.
+- ⚠️ **~17 KB of per-page CSS on the UK homepage only** — `et-builder-module-design-deferred-11-cached-inline-styles`, **122 rules, of which 112 match nothing on the page**. That is the orphan-CSS problem this file recorded on 2026-08-04, now quantified: the dead rules are the old Divi calculator (`.calculator-form`, `.interest-rate-*`, `input[type=range]::-webkit-slider-thumb`, …). `/pt/` ships **0** of it.
+
+#### ⚠️ The other 10 rules are NOT dead — the native calculator still leans on them
+
+This is the part worth catching. Ten rules in that leftover block still match, and the native calculator depends on them because it reuses the old ids and class names:
+
+| | uk (has the CSS) | pt (does not) |
+|---|---|---|
+| `input[type=range]` border-radius | **24px** | **0px** — square sliders |
+| `#dsti-svg` overflow | **visible** | **hidden** — the gauge dot sits outside the viewBox and gets clipped |
+| `#dsti-info` | `display:flex; column; width 187px` | `display:block; width **42px**` — the DSTI label block is squashed |
+| `.percent-symbol` right/top | `8px / 50%` | `auto / auto` — inert, the element is `position:static` and 0×0 on both |
+
+So Petr's original report is still true after the migration, only with a different cause: the Divi *section* is gone, but the *styling* the native calculator inherited never existed on the Portuguese page. Same root as before — **`_et_pb_custom_css` is post meta and a Polylang translation copies `post_content`, not meta.**
+
+**Recommendation: move those 10 rules into `_calculator.scss` and then empty page 11's `_et_pb_custom_css`.** That is the right fix rather than copying meta to 2483, because it (a) makes both languages identical by construction, since our SCSS has no language, (b) drops ~17 KB of dead CSS from the uk homepage, and (c) removes the last thing on the homepage that depends on a Divi page setting. Copying the meta across would instead duplicate 24 KB of dead weight onto three more pages.
+
+⚠️ **Do not empty the meta before the rules are ported** — the sliders, the gauge and the DSTI block would break on uk, which currently looks correct precisely *because* the stale CSS is still there.
+
+Still open, unchanged: the Review Wall `remodal.min.js` `b.map is not a function` error on every page, and page **#566 (Калькулятор)** carrying 22 867 chars of the same page-level CSS — harmless only while it has no translations.
