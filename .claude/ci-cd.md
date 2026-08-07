@@ -8,7 +8,7 @@
 
 Both original blockers are closed:
 
-1. ~~No git repository.~~ **`git@github.com:Norml-Studio/kalynyuk.git`** — the repo root is the THEME folder. Resolved 2026-07-30 (GitHub, not Bitbucket; the pattern name still says Bitbucket).
+1. ~~No git repository.~~ **`git@github.com:Norml-Studio/kalynyuk.git`** — the repo root is the THEME folder. Resolved 2026-07-30; GitHub is canonical.
 2. ~~No credentials file.~~ **`~/.config/norml-studio/credentials/projects/anna-kalynyuk.json`** and `servers/admtools-anna-kalynyuk.json` both exist, key-based SSH verified. Resolved 2026-07-28.
 
 ⚠️ **This STATUS block was stale for four days** — it still read "DEPLOYS BLOCKED" on
@@ -88,22 +88,21 @@ section's own class before you decide.
 
 ## Pattern
 
-`pattern: local-bitbucket-prod`
+`pattern: local-github-prod`
 
 Full pattern detail:
-`{norml-claude-skills}/.claude/skills/dev-ci-cd/references/patterns/local-bitbucket-prod.md`
+`{norml-claude-skills}/.claude/skills/dev-ci-cd/references/patterns/local-github-prod.md`
 
 **Why this pattern was picked:** confirmed by Petr on 2026-07-27. It is the catalog
 default and the right target shape for this project — a low-change-rate Divi site with a
 ~40-line child theme, one occasional developer, and no staging worth the overhead.
 
-**Why it is a target rather than a description:** the pattern assumes local dev + a
-Bitbucket repo + rsync to prod. Local dev exists (OpenServer at `kalynyuk.loc`); the repo
-does not. See STATUS above.
+**Current shape:** local dev + the canonical private GitHub repository + rsync to production.
+Local dev exists at `kalynyuk.loc`; see STATUS above for the verified repo and credentials.
 
 ⚠️ **Pattern-fit caveat worth re-reading before the first real deploy.** The catalog says
-*don't* use `local-bitbucket-prod` for "a client-facing site that drives revenue" —
-`local-bitbucket-staging-prod` is the prescribed choice there. This is a lead-generating
+*don't* use `local-github-prod` for "a client-facing site that drives revenue" —
+`local-github-staging-prod` is the prescribed choice there. This is a lead-generating
 site for a financial-services business, so if the change rate rises or a second developer
 joins, migrate. Record the migration under *Migration history* below.
 
@@ -198,7 +197,7 @@ rollback.** Any pre-deploy backup must include the database.
 
 ## Permissions matrix
 
-Defaults from `local-bitbucket-prod`, with project-specific overrides applied.
+Defaults from `local-github-prod`, with project-specific overrides applied.
 
 | Action | Claude autonomous | Human go-ahead |
 |---|---|---|
@@ -416,6 +415,8 @@ Project-specific things that will bite:
   `dev-wp-init-project` Mode A run, confirmed by Petr. Declared as a **target**: the
   Bitbucket repo and the credentials JSON both still need to be created, and deploys are
   blocked until they are. Backup provider recorded as `TBD`.
+- **2026-08-07** — Active contract renamed to `local-github-prod`. GitHub
+  `Norml-Studio/kalynyuk` is canonical; the Bitbucket-era name above is history only.
 
 ---
 
@@ -423,12 +424,12 @@ Project-specific things that will bite:
 
 Close these to lift the deploy block:
 
-- [ ] Create the Bitbucket repo for the child theme and push an initial commit
+- [x] Create the private GitHub repo `Norml-Studio/kalynyuk` for the child theme and push the initial history
 - [ ] Add `.gitignore` (exclude `.claude/wp-config.json`) and `.gitattributes` (`* text=auto eol=lf`)
 - [ ] Create `~/.config/norml-studio/credentials/projects/anna-kalynyuk.json` — production URL, server slug, site path, WP admin URL, credential-store entry names
 - [ ] Create / confirm `~/.config/norml-studio/credentials/servers/{server-slug}.json` — SSH user, host, port, key path
 - [ ] Add the `backup` block to the project JSON and pick the matching `backup/{provider}.md` strategy
-- [ ] Add the `ci_cd` block to the project JSON recording `pattern: local-bitbucket-prod`
+- [ ] Add the `ci_cd` block to the project JSON recording `pattern: local-github-prod`
 - [ ] Verify production PHP version and record `wp_cli_php` if shell PHP ≠ FPM PHP
 - [ ] Verify a real, recent, restorable UpdraftPlus backup **including the database**
 - [ ] Fill the `TBD` rows in *Environments* above from the credentials JSON
@@ -438,7 +439,7 @@ Close these to lift the deploy block:
 
 ## Cross-references
 
-- Pattern: `{norml-claude-skills}/.claude/skills/dev-ci-cd/references/patterns/local-bitbucket-prod.md`
+- Pattern: `{norml-claude-skills}/.claude/skills/dev-ci-cd/references/patterns/local-github-prod.md`
 - DB strategy: `{norml-claude-skills}/.claude/skills/dev-ci-cd/references/database/single-env.md`
 - Backup strategy: `{norml-claude-skills}/.claude/skills/dev-ci-cd/references/backup/{provider}.md` — provider TBD
 - Credentials JSON: `~/.config/norml-studio/credentials/projects/anna-kalynyuk.json` — **missing**
