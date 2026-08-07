@@ -54,7 +54,12 @@ $ak_help_html = (string) ak_section_field( 'ak_calc_help_content', $ak_id );
 $ak_indexante = ak_section_field( 'ak_calc_indexante', $ak_id );
 $ak_indexante = ( '' === $ak_indexante || null === $ak_indexante ) ? 2.143 : (float) $ak_indexante;
 ?>
-<section class="calculator" data-ak-indexante="<?php echo esc_attr( (string) $ak_indexante ); ?>">
+<section
+	class="calculator"
+	data-ak-indexante="<?php echo esc_attr( (string) $ak_indexante ); ?>"
+	<?php /* The term field's value suffix — «20 років» / «20 anos». See formatYears(). */ ?>
+	data-ak-years="<?php echo esc_attr( ak_str( 'ak_calc_years', 'років' ) ); ?>"
+>
 	<div class="calculator__inner">
 
 		<?php

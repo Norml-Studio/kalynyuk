@@ -441,6 +441,10 @@ function ak_register_pll_strings() {
 		// The third rate mode and the head CTA, both added 2026-08-05.
 		'ak_calc_manual'     => 'Вручну',
 		'ak_calc_cta'        => 'Розрахувати',
+		// The term field's value suffix. It is written into the INPUT'S VALUE by
+		// formatYears(), which is why it hid from the Cyrillic sweep and shipped as
+		// «20 років» on the Portuguese page.
+		'ak_calc_years'      => 'років',
 		'ak_calc_form_title' => 'Надсилайте нам розрахунок і ми з вами зв’яжемось',
 		// The ⓘ buttons' accessible name. A FORMAT STRING — %s is the field label, so a
 		// screen reader announces "Пояснення: Вартість нерухомості" rather than 16

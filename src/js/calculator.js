@@ -40,6 +40,7 @@ export function initCalculator() {
   initCalculatorHelp();
   initCalculatorTips();
   initCalculatorCta();
+  initCalcSummarySync();
 
   /* ═══ block 1 — inputs, sliders, steppers ═══ */
   (function () {
@@ -49,10 +50,24 @@ export function initCalculator() {
       if (isNaN(number)) return "";
       return number.toLocaleString("en-US") + " €";
     }
+    /*
+     * ⚠️ THE SUFFIX WAS HARDCODED UKRAINIAN and shipped that way to production: the
+     * Portuguese page showed «20 років» inside the term field. It is written into the
+     * input's VALUE, which is why the Cyrillic sweep that cleared this section missed it
+     * — that sweep read text nodes, aria-label and placeholder, and an input's value is
+     * none of those. Widen the sweep, not just the fix.
+     *
+     * Comes through a data attribute for the same reason INDEXANTE_CONST does: the value
+     * belongs to PHP (ak_str, so it is editable per language in Polylang) and the JS is
+     * a plain consumer. The fallback keeps the old behaviour if the attribute is absent.
+     */
+    const YEARS_SUFFIX =
+      document.querySelector('.calculator')?.dataset.akYears || 'років';
+
     function formatYears(value) {
       const number = Number(value);
       if (isNaN(number)) return "";
-      return number.toLocaleString("en-US") + " років";
+      return number.toLocaleString("en-US") + " " + YEARS_SUFFIX;
     }
     function unformatEuro(value) {
       return String(value).replace(/[^\d.-]/g, "");
@@ -662,13 +677,27 @@ export function initCalculator() {
   
         const impostoSelo = Math.round(propertyPrice * 0.008);
         impostoSeloEl.textContent = impostoSelo.toLocaleString("fr-FR") + " €";
+
+        // Every recalculation refreshes what the form will email. See syncCalcSummary().
+        syncCalcSummary();
       }
     
       /* ---------- Events ---------- */
+      /*
+       * ⚠️ `manualRateInp` BELONGS HERE AND WAS MISSING — my bug, from adding the third
+       * rate mode. `updateCalculation()` reads it, but nothing ever called
+       * updateCalculation when it changed, so switching TO Вручну recalculated (the radio
+       * fires) while editing its value did not. The −/+ dispatch an `input` event that no
+       * one was listening for.
+       *
+       * It slipped through because the check I wrote asserted the FIELD value changed and
+       * merely printed TAN alongside — TAN read 2.700% after the value went to 2.71 and
+       * the test still passed. Assert the thing you are claiming, not its neighbour.
+       */
       const inputs = [
         propertyPriceInput, downPaymentInput, loanTermInput,
         netIncomeInput, expensesInput,
-        variableRateInp, fixedRateInp
+        variableRateInp, fixedRateInp, manualRateInp
       ].filter(Boolean);
     
       inputs.forEach(el => el.addEventListener("input", updateCalculation));
@@ -677,6 +706,111 @@ export function initCalculator() {
       updateCalculation();
       setTimeout(updateCalculation, 200);
   })();
+}
+
+/**
+ * Fill the Gravity Forms carrier field with the whole calculation.
+ *
+ * ⚠️ THIS REPLACES A SCRIPT IN DIVI → THEME OPTIONS → INTEGRATION (`et_divi`'s
+ * `divi_integration_body`), which is why nothing in the theme appeared to write the field.
+ * That script emailed zeros, and for two compounding reasons:
+ *
+ *   1. It watched `document.querySelector('.result-data')` — a LEGACY class the BEM rewrite
+ *      removed. `if (target)` was false, so its MutationObserver was never attached and the
+ *      value was never refreshed after a keystroke.
+ *   2. Its one remaining call ran on `DOMContentLoaded`, before this module computes, so it
+ *      captured the placeholder markup: `Montante: 0 €`, `Prazo: 0 Meses`, `LTV: 0%`,
+ *      `TAN: 0.000%`.
+ *
+ * Anna therefore received a lead with no numbers in it. Reported by Petr, 2026-08-06.
+ *
+ * ⚠️ LABELS ARE READ FROM THE DOM, NOT HARDCODED — that is what makes this work "на всех
+ * языках". The field labels come out in whatever language the visitor used, so the email
+ * matches what they actually saw; the metric labels are Portuguese banking terms by design
+ * (design.md / the section docblock) and stay Portuguese everywhere. Hardcoding Ukrainian
+ * here would have quietly re-broken the pt page the same way the section itself was broken.
+ *
+ * It captures EVERYTHING, not the four values the old script sent: all six inputs, the rate
+ * mode and its rate, and every output including Mensalidade and DSTI.
+ */
+function syncCalcSummary() {
+  const field = document.getElementById('input_3_6');
+  const calc = document.querySelector('.calculator');
+
+  if (!field || !calc) return;
+
+  // A label carries its ⓘ tip inside it; the tip's text is help copy, not a label.
+  const labelText = (el) => {
+    if (!el) return '';
+    const clone = el.cloneNode(true);
+    clone.querySelectorAll('.calc-tip').forEach((n) => n.remove());
+    return clone.textContent.trim().replace(/\s+/g, ' ');
+  };
+
+  const lines = [];
+
+  calc.querySelectorAll('.calculator__field').forEach((f) => {
+    const input = f.querySelector('.calculator__input');
+    const label = labelText(f.querySelector('.calculator__label'));
+
+    if (input && label) {
+      lines.push(label + ': ' + input.value.trim());
+      return;
+    }
+
+    // The rate row has no __input — it is a radio set plus a stepper.
+    const mode = f.querySelector('input[name="rate-type"]:checked');
+    const stepper = [...f.querySelectorAll('.calculator__stepper')]
+      .find((s) => getComputedStyle(s).display !== 'none');
+
+    if (label && mode) {
+      const modeName = labelText(mode.closest('.calculator__mode'));
+      const rate = stepper ? (stepper.querySelector('.calculator__step-value') || {}).value : '';
+      lines.push(label + ': ' + modeName + (rate ? ' — ' + rate.trim() + '%' : ''));
+    }
+  });
+
+  const payment = document.getElementById('mensalidade');
+  if (payment) {
+    lines.push('');
+    lines.push(labelText(calc.querySelector('.calculator__payment .calculator__metric-label')) +
+      ': ' + payment.textContent.trim());
+  }
+
+  const dsti = document.getElementById('dsti-percent');
+  if (dsti) lines.push('DSTI: ' + dsti.textContent.trim());
+
+  calc.querySelectorAll('.calculator__metric').forEach((m) => {
+    const label = labelText(m.querySelector('.calculator__metric-label'));
+    const value = m.querySelector('.calculator__metric-value');
+    if (label && value) lines.push(label + ': ' + value.textContent.trim());
+  });
+
+  // Which language the lead used — so Anna can reply in it without guessing.
+  const lang = document.documentElement.getAttribute('lang');
+  if (lang) {
+    lines.push('');
+    lines.push('—');
+    lines.push(lang + ' · ' + location.href);
+  }
+
+  field.value = lines.join('\n');
+}
+
+/**
+ * ⚠️ Gravity Forms REPLACES the form markup on every AJAX render, so `#input_3_6` becomes a
+ * NEW, EMPTY element — after a failed validation, most obviously. Without this the visitor
+ * corrects a typo'd email, resubmits, and the calculation arrives blank: the original bug
+ * wearing a different hat. `gform_post_render` is GF's own hook for exactly this.
+ */
+function initCalcSummarySync() {
+  if (!document.getElementById('mensalidade')) return;
+
+  syncCalcSummary();
+
+  if (window.jQuery) {
+    window.jQuery(document).on('gform_post_render', syncCalcSummary);
+  }
 }
 
 /**
